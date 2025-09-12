@@ -5,7 +5,8 @@ from app.domain.entities import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    Usuario,)
+    Usuario,
+    GeneracionResiduo,)
 
 """ Ejemplo de implementación de un repositorio para el modelo Gerencia """
 class GerenciaRepository(ABC):
@@ -80,6 +81,22 @@ class UsuarioRepository(ABC):
 
     @abstractmethod
     def update(self, id: int, entity: Usuario) -> Usuario: ...
+
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
+
+class GeneracionResiduoRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[GeneracionResiduo]: ...
+
+    @abstractmethod
+    def get_by_id(self, id: int) -> GeneracionResiduo: ...
+
+    @abstractmethod
+    def create(self, entity: GeneracionResiduo) -> GeneracionResiduo: ...
+
+    @abstractmethod
+    def update(self, id: int, entity: GeneracionResiduo) -> GeneracionResiduo: ...
 
     @abstractmethod
     def delete(self, id: int) -> None: ...

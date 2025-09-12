@@ -9,21 +9,24 @@ from app.application.services import (
     ProcedenciaService,
     ActaService,
     ActaGeneracionResiduoService,
-    UsuarioService,)
+    UsuarioService,
+    GeneracionResiduoService,)
 
 from app.infrastructure.repositories import (
     GerenciaRepositoryImpl,
     ProcedenciaRepositoryImpl,
     ActaRepositoryImpl,
     ActaGeneracionResiduoRepositoryImpl,
-    UsuarioRepositoryImpl,)
+    UsuarioRepositoryImpl,
+    GeneracionResiduoRepositoryImpl)
 
 from app.infrastructure.serializers import (
     GerenciaSerializer,
     ProcedenciaSerializer,
     ActaSerializer,
     ActaGeneracionResiduoSerializer,
-    UsuarioSerializer,)
+    UsuarioSerializer,
+    GeneracionResiduoSerializer,)
 
 # Generic ViewSet Generator
 def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filterable_fields=None):
@@ -128,3 +131,12 @@ UsuarioViewSet = generate_viewset(
     "Usuario",
     filterable_fields=["usernameA", "area_id", "rol_administrativo_id"]
 )
+
+GeneracionResiduoViewSet = generate_viewset(
+    GeneracionResiduoService,
+    GeneracionResiduoRepositoryImpl,
+    GeneracionResiduoSerializer,
+    "Generacionresiduo",
+    filterable_fields=["fecha", "residuo_id", "operario_id"]
+)
+

@@ -13,21 +13,23 @@ from typing import List, Optional
 from app.domain.entities import (
     Gerencia,
     Procedencia,
-    ActaGeneracionResiduo)
+    ActaGeneracionResiduo,
+    GeneracionResiduo)
 
 from app.domain.repositories import (
     GerenciaRepository,
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
-    UsuarioRepository,)
+    UsuarioRepository,
+    GeneracionResiduoRepository,)
 
 from app.models import (GerenciaModel)
 from app.infrastructure.models_residuos import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    Generacionresiduo,Usuario,)
+    GeneracionResiduo,Usuario,)
 from django.forms.models import model_to_dict
 
 """ funciones de utilidad para convertir entre modelos y DTOs """
@@ -214,3 +216,41 @@ class UsuarioRepositoryImpl(UsuarioRepository):
 
     def delete(self, id: int) -> None:
         Usuario.objects.filter(id=id).delete()
+
+# ---------- GENERACION RESIDUO ----------
+class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
+    def list_all(self, filtros: dict = {}) -> list[GeneracionResiduo]:
+        queryset = GeneracionResiduo.objects.filter(**filtros)
+        return [
+            GeneracionResiduo(
+                id=g.id,
+                fecha=g.fecha,
+                peso=g.peso,
+                residuo_id=g.residuo_id,
+                operario_id=g.operario_id,
+                motivo=g.motivo,
+            )
+            for g in queryset
+        ]
+
+    def get_by_id(self, id: int) -> GeneracionResiduo:
+        g = GeneracionResiduo.objects.get(id=id)
+        return GeneracionResiduo(
+            id=g.id,
+            fecha=g.fecha,
+            peso=g.peso,
+            residuo_id=g.residuo_id,
+            operario_id=g.operario_id,
+            motivo=g.motivo,
+        )
+
+    def create(self, data: GeneracionResiduo) -> GeneracionResiduo:
+        obj = GeneracionResiduo.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+    def update(self, id: int, data: GeneracionResiduo) -> GeneracionResiduo:
+        GeneracionResiduo.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+
+    def delete(self, id: int) -> None:
+        GeneracionResiduo.objects.filter(id=id).delete()

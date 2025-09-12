@@ -61,7 +61,7 @@ class Centrocosto(models.Model):
         db_table = 'CentroCosto'
 
 
-class Generacionresiduo(models.Model):
+class GeneracionResiduo(models.Model):
     fecha = models.TextField()  # This field type is a guess.
     peso = models.DecimalField(max_digits=10, decimal_places=5)  # max_digits and decimal_places have been guessed, as this database handles decimal fields as float
     residuo = models.ForeignKey('Residuoespecifico', models.DO_NOTHING)

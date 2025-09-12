@@ -41,3 +41,11 @@ class UsuarioSerializer(serializers.Serializer):
     password_hash = serializers.CharField(max_length=255)
     area_id = serializers.IntegerField(required=False, allow_null=True)
     rol_administrativo_id = serializers.IntegerField(required=False, allow_null=True)
+
+class GeneracionResiduoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    fecha = serializers.CharField(max_length=50)
+    peso = serializers.DecimalField(max_digits=10, decimal_places=5)
+    residuo_id = serializers.IntegerField()
+    operario_id = serializers.IntegerField()
+    motivo = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)

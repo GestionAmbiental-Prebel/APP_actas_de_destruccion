@@ -43,3 +43,12 @@ class Usuario:
     password_hash: str
     area_id: int | None = None
     rol_administrativo_id: int | None = None
+
+@dataclass
+class GeneracionResiduo:
+    id: int | None
+    fecha: str
+    peso: float
+    residuo_id: int
+    operario_id: int
+    motivo: str | None = None
