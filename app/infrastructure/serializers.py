@@ -25,9 +25,6 @@ class ActaSerializer(serializers.Serializer):
     firma_recepcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
 
 
-from rest_framework import serializers
-
-
 class ActaGeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     acta_id = serializers.IntegerField()
@@ -49,3 +46,13 @@ class GeneracionResiduoSerializer(serializers.Serializer):
     residuo_id = serializers.IntegerField()
     operario_id = serializers.IntegerField()
     motivo = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+
+class AreaSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+    procedencia_id = serializers.IntegerField()
+
+class CategoriaResiduoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+    descripcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)

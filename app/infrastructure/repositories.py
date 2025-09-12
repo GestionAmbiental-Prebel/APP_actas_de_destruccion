@@ -14,7 +14,9 @@ from app.domain.entities import (
     Gerencia,
     Procedencia,
     ActaGeneracionResiduo,
-    GeneracionResiduo)
+    GeneracionResiduo,
+    Area,Acta,CategoriaResiduo,
+    Usuario,)
 
 from app.domain.repositories import (
     GerenciaRepository,
@@ -22,14 +24,15 @@ from app.domain.repositories import (
     ActaRepository,
     ActaGeneracionResiduoRepository,
     UsuarioRepository,
-    GeneracionResiduoRepository,)
+    GeneracionResiduoRepository,
+    AreaRepository,ActaRepository,)
 
 from app.models import (GerenciaModel)
 from app.infrastructure.models_residuos import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    GeneracionResiduo,Usuario,)
+    GeneracionResiduo,Usuario,Area,)
 from django.forms.models import model_to_dict
 
 """ funciones de utilidad para convertir entre modelos y DTOs """
@@ -254,3 +257,58 @@ class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
 
     def delete(self, id: int) -> None:
         GeneracionResiduo.objects.filter(id=id).delete()
+
+# ---------- AREA ----------
+class AreaRepositoryImpl(AreaRepository):
+    def list_all(self, filtros: dict = {}) -> list[Area]:
+        queryset = Area.objects.filter(**filtros)
+        return [
+            Area(
+                id=a.id,
+                nombre=a.nombre,
+                procedencia_id=a.procedencia_id,
+            )
+            for a in queryset
+        ]
+
+    def get_by_id(self, id: int) -> Area:
+        a = Area.objects.get(id=id)
+        return Area(
+            id=a.id,
+            nombre=a.nombre,
+            procedencia_id=a.procedencia_id,
+        )
+    def create(self, data: Area) -> Area:
+        obj = Area.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+# ---------- CATEGORIA RESIDUO ----------
+class CategoriaResiduoRepositoryImpl(CategoriaResiduo):
+    def list_all(self, filtros: dict = {}) -> list[CategoriaResiduo]:
+        queryset = CategoriaResiduo.objects.filter(**filtros)
+        return [
+            CategoriaResiduo(
+                id=c.id,
+                nombre=c.nombre,
+                area_id=c.area_id,
+            )
+            for c in queryset
+        ]
+
+    def get_by_id(self, id: int) -> CategoriaResiduo:
+        c = CategoriaResiduo.objects.get(id=id)
+        return CategoriaResiduo(
+            id=c.id,
+            nombre=c.nombre,
+            area_id=c.area_id,
+        )
+    def create(self, data: CategoriaResiduo) -> CategoriaResiduo:
+        obj = CategoriaResiduo.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+    
+    def update(self, id: int, data: Area) -> Area:
+        Area.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+    
+    def delete(self, id: int) -> None:
+        Area.objects.filter(id=id).delete()

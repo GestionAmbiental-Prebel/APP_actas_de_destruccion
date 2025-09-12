@@ -7,7 +7,9 @@ from app.interfaces.views import (
     ActasViewSet,
     ActaGeneracionResiduoViewSet,
     UsuarioViewSet,
-    GeneracionResiduoViewSet)   
+    GeneracionResiduoViewSet,
+    AreaViewSet,
+    CategoriaResiduoViewSet,)   
 """
     Registrar aqui los endpoints de la API
     Se recomienda usar un router para generar los endpoints automaticamente
@@ -20,6 +22,8 @@ router.register(r'actas', ActasViewSet, basename='acta')
 router.register(r'acta-generacionresiduo', ActaGeneracionResiduoViewSet, basename='acta-generacionresiduo')
 router.register(r'usuarios', UsuarioViewSet, basename='usuario')
 router.register(r'generacionresiduo', GeneracionResiduoViewSet, basename='generacionresiduo')
+router.register(r'areas', AreaViewSet, basename='area')
+router.register(r'categoriaresiduo', CategoriaResiduoViewSet, basename='categoriaresiduo')
 
 urlpatterns = [
     path('api/', include(router.urls)),  # Prefijo para todas las rutas de API

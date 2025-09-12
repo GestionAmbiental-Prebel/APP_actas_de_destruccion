@@ -52,3 +52,15 @@ class GeneracionResiduo:
     residuo_id: int
     operario_id: int
     motivo: str | None = None
+
+@dataclass
+class Area:
+    id: int | None
+    nombre: str
+    procedencia_id: int
+
+@dataclass
+class CategoriaResiduo:
+    id: int | None
+    nombre: str
+    area_id: int

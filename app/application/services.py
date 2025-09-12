@@ -8,6 +8,8 @@ from app.domain.entities import (
     ActaGeneracionResiduo,
     Usuario,
     GeneracionResiduo,
+    Area,
+    CategoriaResiduo,
 )
 from app.domain.repositories import (
     GerenciaRepository,
@@ -16,6 +18,8 @@ from app.domain.repositories import (
     ActaGeneracionResiduoRepository,
     UsuarioRepository,
     GeneracionResiduoRepository,
+    AreaRepository,
+    CategoriaResiduoRepository,
 )
 
 class GerenciaService:
@@ -129,5 +133,37 @@ class GeneracionResiduoService:
     def update(self, id: int, data: dict) -> GeneracionResiduo:
         return self.repository.update(id, GeneracionResiduo(**data))
 
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
+
+class AreaService:
+    def __init__(self, repository: AreaRepository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list[Area]:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int) -> Area:
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict) -> Area:
+        return self.repository.create(Area(**data))
+
+class CategoriaResiduoService:
+    def __init__(self, repository: CategoriaResiduoRepository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list[CategoriaResiduo]:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int) -> CategoriaResiduo:
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict) -> CategoriaResiduo:
+        return self.repository.create(CategoriaResiduo(**data))
+    
+    def update(self, id: int, data: dict) -> CategoriaResiduo:
+        return self.repository.update(id, CategoriaResiduo(**data))
+    
     def delete(self, id: int) -> None:
         self.repository.delete(id)
