@@ -16,7 +16,11 @@ from app.domain.entities import (
     ActaGeneracionResiduo,
     GeneracionResiduo,
     Area,Acta,CategoriaResiduo,
-    Usuario,)
+    Usuario,
+    ResiduoEspecifico,
+    CentroCosto,
+    RolAdministrativo,
+    Operario,)
 
 from app.domain.repositories import (
     GerenciaRepository,
@@ -25,14 +29,18 @@ from app.domain.repositories import (
     ActaGeneracionResiduoRepository,
     UsuarioRepository,
     GeneracionResiduoRepository,
-    AreaRepository,ActaRepository,)
+    AreaRepository,ResiduoEspecificoRepository,
+    CategoriaResiduoRepository,CentroCostoRepository,
+    RolAdministrativoRepository,
+    OperarioRepository,)
 
 from app.models import (GerenciaModel)
 from app.infrastructure.models_residuos import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    GeneracionResiduo,Usuario,Area,)
+    GeneracionResiduo,Usuario,Area,
+    ResiduoEspecifico,CentroCosto,RolAdministrativo,Operario)
 from django.forms.models import model_to_dict
 
 """ funciones de utilidad para convertir entre modelos y DTOs """
@@ -283,7 +291,7 @@ class AreaRepositoryImpl(AreaRepository):
         return self.get_by_id(obj.id)
 
 # ---------- CATEGORIA RESIDUO ----------
-class CategoriaResiduoRepositoryImpl(CategoriaResiduo):
+class CategoriaResiduoRepositoryImpl(CategoriaResiduoRepository):
     def list_all(self, filtros: dict = {}) -> list[CategoriaResiduo]:
         queryset = CategoriaResiduo.objects.filter(**filtros)
         return [
@@ -312,3 +320,132 @@ class CategoriaResiduoRepositoryImpl(CategoriaResiduo):
     
     def delete(self, id: int) -> None:
         Area.objects.filter(id=id).delete()
+
+# ---------- RESIDUO ESPECIFCO ----------
+class ResiduoEspecificoRepositoryImpl(ResiduoEspecificoRepository):
+    def list_all(self, filtros: dict = {}) -> list[ResiduoEspecifico]:
+        queryset = ResiduoEspecifico.objects.filter(**filtros)
+        return [
+            ResiduoEspecifico(
+                id=r.id,
+                nombre=r.nombre,
+                categoria_id=r.categoria_id,
+            )
+            for r in queryset
+        ]
+
+    def get_by_id(self, id: int) -> ResiduoEspecifico:
+        r = ResiduoEspecifico.objects.get(id=id)
+        return ResiduoEspecifico(
+            id=r.id,
+            nombre=r.nombre,
+            categoria_id=r.categoria_id,
+        )
+    def create(self, data: ResiduoEspecifico) -> ResiduoEspecifico:
+        obj = ResiduoEspecifico.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+    
+    def update(self, id: int, data: Area) -> Area:
+        Area.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+    
+    def delete(self, id: int) -> None:
+        Area.objects.filter(id=id).delete()
+
+# ---------- CENTRO DE COSTOS ----------
+class CentroCostoRepositoryImpl(CentroCostoRepository):
+    def list_all(self, filtros: dict = {}) -> list[CentroCosto]:
+        queryset = CentroCosto.objects.filter(**filtros)
+        return [
+            CentroCosto(
+                id=cc.id,
+                codigo=cc.codigo,
+                area_id=cc.area_id,
+            )
+            for cc in queryset
+        ]
+
+    def get_by_id(self, id: int) -> CentroCosto:
+        cc = CentroCosto.objects.get(id=id)
+        return CentroCosto(
+            id=cc.id,
+            codigo=cc.codigo,
+            area_id=cc.area_id,
+        )
+
+    def create(self, data: CentroCosto) -> CentroCosto:
+        obj = CentroCosto.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+    def update(self, id: int, data: CentroCosto) -> CentroCosto:
+        CentroCosto.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+
+    def delete(self, id: int) -> None:
+        CentroCosto.objects.filter(id=id).delete()
+
+# ---------- ROL ADMINISTRATIVO ----------
+class RolAdministrativoRepositoryImpl(RolAdministrativoRepository):
+    def list_all(self, filtros: dict = {}) -> list[RolAdministrativo]:
+        queryset = RolAdministrativo.objects.filter(**filtros)
+        return [
+            RolAdministrativo(
+                id=ra.id,
+                nombre=ra.nombre,
+            )
+            for ra in queryset
+        ]
+
+    def get_by_id(self, id: int) -> RolAdministrativo:
+        ra = RolAdministrativo.objects.get(id=id)
+        return RolAdministrativo(
+            id=ra.id,
+            nombre=ra.nombre,
+        )
+
+    def create(self, data: RolAdministrativo) -> RolAdministrativo:
+        obj = RolAdministrativo.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+    def update(self, id: int, data: RolAdministrativo) -> RolAdministrativo:
+        RolAdministrativo.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+
+    def delete(self, id: int) -> None:
+        RolAdministrativo.objects.filter(id=id).delete()
+
+# ---------- OPERARIO ----------
+class OperarioRepositoryImpl(OperarioRepository):
+    def list_all(self, filtros: dict = {}) -> list[Operario]:
+        queryset = Operario.objects.filter(**filtros)
+        return [
+            Operario(
+                id=o.id,
+                nombre=o.nombre,
+                apellido=o.apellido,
+                documento=o.documento,
+                area_id=o.area_id,
+            )
+            for o in queryset
+        ]
+
+    def get_by_id(self, id: int) -> Operario:
+        o = Operario.objects.get(id=id)
+        return Operario(
+            id=o.id,
+            nombre=o.nombre,
+            apellido=o.apellido,
+            documento=o.documento,
+            area_id=o.area_id,
+        )
+
+    def create(self, data: Operario) -> Operario:
+        obj = Operario.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+    def update(self, id: int, data: Operario) -> Operario:
+        Operario.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+
+    def delete(self, id: int) -> None:
+        Operario.objects.filter(id=id).delete()

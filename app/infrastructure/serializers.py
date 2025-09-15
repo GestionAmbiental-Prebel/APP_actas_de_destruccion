@@ -56,3 +56,24 @@ class CategoriaResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     descripcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+
+class ResiduoEspecificoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+    categoria_id = serializers.IntegerField()
+
+class CentroCostoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    codigo = serializers.CharField(max_length=50)
+    area_id = serializers.IntegerField()
+
+class RolAdministrativoSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+
+class OperarioSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+    apellido = serializers.CharField(max_length=100)
+    documento = serializers.IntegerField()
+    area_id = serializers.IntegerField()

@@ -8,7 +8,10 @@ from app.domain.entities import (
     Usuario,
     GeneracionResiduo,
     Area,
-    CategoriaResiduo,)
+    CategoriaResiduo,
+    ResiduoEspecifico,
+    CentroCosto,
+    RolAdministrativo,Operario)
 
 """ Ejemplo de implementación de un repositorio para el modelo Gerencia """
 class GerenciaRepository(ABC):
@@ -126,5 +129,61 @@ class CategoriaResiduoRepository(ABC):
     @abstractmethod
     def update(self, id: int, entity: CategoriaResiduo) -> CategoriaResiduo: ...
 
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
+
+class ResiduoEspecificoRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[ResiduoEspecifico]: ...
+
+    @abstractmethod
+    def get_by_id(self, id: int) -> ResiduoEspecifico: ...
+
+    @abstractmethod
+    def create(self, entity: ResiduoEspecifico) -> ResiduoEspecifico: ...
+
+    @abstractmethod
+    def update(self, id: int, entity: ResiduoEspecifico) -> ResiduoEspecifico: ...
+
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
+
+class CentroCostoRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[CentroCosto]: ...
+
+    @abstractmethod
+    def get_by_id(self, id: int) -> CentroCosto: ...
+
+    @abstractmethod
+    def create(self, entity: CentroCosto) -> CentroCosto: ...
+
+    @abstractmethod
+    def update(self, id: int, entity: CentroCosto) -> CentroCosto: ...
+
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
+
+class RolAdministrativoRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[RolAdministrativo]: ...
+    @abstractmethod
+    def get_by_id(self, id: int) -> RolAdministrativo: ...
+    @abstractmethod
+    def create(self, data: RolAdministrativo) -> RolAdministrativo: ...
+    @abstractmethod
+    def update(self, id: int, data: RolAdministrativo) -> RolAdministrativo: ...
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
+
+class OperarioRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[Operario]: ...
+    @abstractmethod
+    def get_by_id(self, id: int) -> Operario: ...
+    @abstractmethod
+    def create(self, data: Operario) -> Operario: ...
+    @abstractmethod
+    def update(self, id: int, data: Operario) -> Operario: ...
     @abstractmethod
     def delete(self, id: int) -> None: ...

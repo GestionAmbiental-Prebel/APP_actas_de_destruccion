@@ -10,6 +10,7 @@ from app.domain.entities import (
     GeneracionResiduo,
     Area,
     CategoriaResiduo,
+    ResiduoEspecifico
 )
 from app.domain.repositories import (
     GerenciaRepository,
@@ -20,6 +21,7 @@ from app.domain.repositories import (
     GeneracionResiduoRepository,
     AreaRepository,
     CategoriaResiduoRepository,
+    ResiduoEspecificoRepository,
 )
 
 class GerenciaService:
@@ -165,5 +167,75 @@ class CategoriaResiduoService:
     def update(self, id: int, data: dict) -> CategoriaResiduo:
         return self.repository.update(id, CategoriaResiduo(**data))
     
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
+
+class ResiduoEspecificoService:
+    def __init__(self, repository: ResiduoEspecificoRepository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list[ResiduoEspecifico]:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int) -> ResiduoEspecifico:
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict) -> ResiduoEspecifico:
+        return self.repository.create(ResiduoEspecifico(**data))
+    
+    def update(self, id: int, data: dict) -> ResiduoEspecifico:
+        return self.repository.update(id, ResiduoEspecifico(**data))
+    
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
+
+class CentroCostoService:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int):
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict):
+        return self.repository.create(data)
+
+class RolAdministrativoService:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int):
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict):
+        return self.repository.create(data)
+
+    def update(self, id: int, data: dict):
+        return self.repository.update(id, data)
+
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
+
+class OperarioService:
+    def __init__(self, repository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> list:
+        return self.repository.list_all(filtros)
+
+    def get_by_id(self, id: int):
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict):
+        return self.repository.create(data)
+
+    def update(self, id: int, data: dict):
+        return self.repository.update(id, data)
+
     def delete(self, id: int) -> None:
         self.repository.delete(id)

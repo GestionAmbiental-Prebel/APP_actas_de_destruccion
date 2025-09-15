@@ -52,7 +52,7 @@ class Categoriaresiduo(models.Model):
         db_table = 'CategoriaResiduo'
 
 
-class Centrocosto(models.Model):
+class CentroCosto(models.Model):
     codigo = models.CharField()
     area = models.ForeignKey(Area, models.DO_NOTHING)
 
@@ -93,7 +93,7 @@ class Procedencia(models.Model):
         db_table = 'Procedencia'
 
 
-class Residuoespecifico(models.Model):
+class ResiduoEspecifico(models.Model):
     nombre = models.CharField()
     categoria = models.ForeignKey(Categoriaresiduo, models.DO_NOTHING)
 
@@ -102,7 +102,7 @@ class Residuoespecifico(models.Model):
         db_table = 'ResiduoEspecifico'
 
 
-class Roladministrativo(models.Model):
+class RolAdministrativo(models.Model):
     nombre = models.CharField()
 
     class Meta:
@@ -114,7 +114,7 @@ class Usuario(models.Model):
     usernameA = models.CharField(unique=True)
     password_hash = models.CharField()
     area = models.ForeignKey(Area, models.DO_NOTHING, blank=True, null=True)
-    rol_administrativo = models.ForeignKey(Roladministrativo, models.DO_NOTHING, blank=True, null=True)
+    rol_administrativo = models.ForeignKey(RolAdministrativo, models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
         db_table = 'Usuario'

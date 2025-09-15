@@ -64,3 +64,28 @@ class CategoriaResiduo:
     id: int | None
     nombre: str
     area_id: int
+
+@dataclass
+class ResiduoEspecifico:
+    id: int | None
+    nombre: str
+    categoria_id: int
+
+@dataclass
+class CentroCosto:
+    id: int | None
+    codigo: str
+    area_id: int
+
+@dataclass
+class RolAdministrativo:
+    id: int | None
+    nombre: str
+
+@dataclass
+class Operario:
+    id: int | None
+    nombre: str
+    apellido: str
+    documento: int
+    area_id: int

@@ -10,7 +10,11 @@ from app.application.services import (
     ActaService,
     ActaGeneracionResiduoService,
     UsuarioService,
-    GeneracionResiduoService,)
+    GeneracionResiduoService,
+    ResiduoEspecificoService,
+    CentroCostoService,
+    RolAdministrativoService,
+    OperarioService)
 
 from app.infrastructure.repositories import (
     GerenciaRepositoryImpl,
@@ -19,7 +23,11 @@ from app.infrastructure.repositories import (
     ActaGeneracionResiduoRepositoryImpl,
     UsuarioRepositoryImpl,
     GeneracionResiduoRepositoryImpl,
-    AreaRepositoryImpl)
+    AreaRepositoryImpl,
+    ResiduoEspecificoRepositoryImpl,
+    CentroCostoRepositoryImpl,
+    RolAdministrativoRepositoryImpl,
+    OperarioRepositoryImpl,)
 
 from app.infrastructure.serializers import (
     GerenciaSerializer,
@@ -28,7 +36,11 @@ from app.infrastructure.serializers import (
     ActaGeneracionResiduoSerializer,
     UsuarioSerializer,
     GeneracionResiduoSerializer,
-    AreaSerializer,)
+    AreaSerializer,
+    ResiduoEspecificoSerializer,
+    CentroCostoSerializer,
+    RolAdministrativoSerializer,
+    OperarioSerializer,)
 
 # Generic ViewSet Generator
 def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filterable_fields=None):
@@ -160,3 +172,37 @@ CategoriaResiduoViewSet = generate_viewset(
     filterable_fields=["nombre", "descripcion"]
 )
 
+ResiduoEspecificoViewSet = generate_viewset(
+    ResiduoEspecificoService,
+    ResiduoEspecificoRepositoryImpl,
+    ResiduoEspecificoSerializer,
+  
+    "Residuoespecifico",
+    filterable_fields=["nombre","categoria_residuo_id"]
+)
+
+CentroCostoViewSet = generate_viewset(
+    CentroCostoService,
+    CentroCostoRepositoryImpl,
+    CentroCostoSerializer,
+  
+    "Centrocosto",
+    filterable_fields=["codigo","area_id"]
+)
+
+RolAdministrativoViewSet = generate_viewset(
+    RolAdministrativoService,
+    RolAdministrativoRepositoryImpl,
+    RolAdministrativoSerializer,
+  
+    "Roladministrativo",
+    filterable_fields=["nombre"]
+)
+
+OperarioViewSet = generate_viewset(
+    OperarioService,
+    OperarioRepositoryImpl,
+    OperarioSerializer,
+    "Operario",
+    filterable_fields=["nombre", "apellido", "documento", "area_id"]
+)
