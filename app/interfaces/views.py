@@ -5,7 +5,6 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 # Descomentar y agregar las importaciones necesarias
 from app.application.services import (
-    GerenciaService,
     ProcedenciaService,
     ActaService,
     ActaGeneracionResiduoService,
@@ -17,7 +16,6 @@ from app.application.services import (
     OperarioService)
 
 from app.infrastructure.repositories import (
-    GerenciaRepositoryImpl,
     ProcedenciaRepositoryImpl,
     ActaRepositoryImpl,
     ActaGeneracionResiduoRepositoryImpl,
@@ -30,7 +28,6 @@ from app.infrastructure.repositories import (
     OperarioRepositoryImpl,)
 
 from app.infrastructure.serializers import (
-    GerenciaSerializer,
     ProcedenciaSerializer,
     ActaSerializer,
     ActaGeneracionResiduoSerializer,
@@ -106,13 +103,6 @@ def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filt
 """
 
 # Ejemplo de uso de la función generate_viewset para crear ViewSets específicos
-GerenciaViewSet = generate_viewset(
-    GerenciaService,
-    GerenciaRepositoryImpl,
-    GerenciaSerializer,
-    "Gerencia",
-    filterable_fields=["estado"]
-)
 
 ProcedenciaViewSet = generate_viewset(
     ProcedenciaService,

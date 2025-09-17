@@ -1,11 +1,5 @@
 from rest_framework import serializers
 
-class GerenciaSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    nombre = serializers.CharField(max_length=50)
-    descripcion = serializers.CharField(max_length=100)
-    image = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
-    estado = serializers.BooleanField()
 
 class ProcedenciaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)

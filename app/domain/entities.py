@@ -2,13 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
 
-@dataclass
-class Gerencia:
-    id: Optional[int]
-    nombre: str
-    descripcion: str
-    image: Optional[str]
-    estado: bool
+
 
 @dataclass
 class Procedencia:

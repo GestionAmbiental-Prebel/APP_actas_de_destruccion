@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
 from app.domain.entities import (
-    Gerencia,
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
@@ -14,17 +13,6 @@ from app.domain.entities import (
     RolAdministrativo,Operario)
 
 """ Ejemplo de implementación de un repositorio para el modelo Gerencia """
-class GerenciaRepository(ABC):
-    @abstractmethod
-    def list_all(self) -> List[Gerencia]: ...
-    @abstractmethod
-    def get_by_id(self, id: int) -> Gerencia: ...
-    @abstractmethod
-    def create(self, data: Gerencia) -> Gerencia: ...
-    @abstractmethod
-    def update(self, id: int, data: Gerencia) -> Gerencia: ...
-    @abstractmethod
-    def delete(self, id: int) -> None: ...
 
 class ProcedenciaRepository(ABC):
     @abstractmethod

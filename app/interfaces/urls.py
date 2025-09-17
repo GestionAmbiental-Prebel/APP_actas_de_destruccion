@@ -2,7 +2,6 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from app.interfaces.views import (
-    GerenciaViewSet,
     ProcedenciaViewSet,
     ActasViewSet,
     ActaGeneracionResiduoViewSet,
@@ -20,7 +19,6 @@ from app.interfaces.views import (
 """
 
 router = DefaultRouter()
-router.register(r'gerencias', GerenciaViewSet, basename='gerencia')
 router.register(r'procedencias', ProcedenciaViewSet, basename='procedencia')
 router.register(r'actas', ActasViewSet, basename='acta')
 router.register(r'acta-generacionresiduo', ActaGeneracionResiduoViewSet, basename='acta-generacionresiduo')

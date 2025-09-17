@@ -11,7 +11,6 @@ from typing import List, Optional
     Importaciones necesarias para el funcionamiento de los repositorios.
 """
 from app.domain.entities import (
-    Gerencia,
     Procedencia,
     ActaGeneracionResiduo,
     GeneracionResiduo,
@@ -23,7 +22,6 @@ from app.domain.entities import (
     Operario,)
 
 from app.domain.repositories import (
-    GerenciaRepository,
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
@@ -34,7 +32,7 @@ from app.domain.repositories import (
     RolAdministrativoRepository,
     OperarioRepository,)
 
-from app.models import (GerenciaModel)
+
 from app.infrastructure.models_residuos import (
     Procedencia,
     Acta,
@@ -53,37 +51,6 @@ def to_dto(instance, dto_class):
     return dto_class(**model_to_dict(instance))
 
 """ Ejemplo de implementación de un repositorio para el modelo Gerencia """
-# ---------- GERENCIA ----------
-class GerenciaRepositoryImpl(GerenciaRepository):
-    def list_all(self, filtros: dict = {}) -> list[Gerencia]:
-        print("filtros", filtros)
-        queryset = GerenciaModel.objects.filter(**filtros)
-        return [Gerencia(
-            id=g.id,
-            nombre=g.nombre,
-            descripcion=g.descripcion,
-            image=g.image,
-            estado=g.estado,
-        ) for g in queryset]
-
-    def get_by_id(self, id: int) -> Gerencia:
-        g = GerenciaModel.objects.get(id=id)
-        return Gerencia(
-            id=g.id,
-            nombre=g.nombre,
-            descripcion=g.descripcion
-        )
-
-    def create(self, data: Gerencia) -> Gerencia:
-        obj = GerenciaModel.objects.create(**data.__dict__)
-        return self.get_by_id(obj.id)
-
-    def update(self, id: int, data: Gerencia) -> Gerencia:
-        GerenciaModel.objects.filter(id=id).update(**data.__dict__)
-        return self.get_by_id(id)
-
-    def delete(self, id: int) -> None:
-        GerenciaModel.objects.filter(id=id).delete()
 
 
 # ---------- PROCEDENCIA ----------

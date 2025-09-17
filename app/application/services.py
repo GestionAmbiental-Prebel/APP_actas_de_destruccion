@@ -2,7 +2,6 @@
     Registrar los servicios de la aplicación (Ver manual de arquitecturra))
 """
 from app.domain.entities import (
-    Gerencia,
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
@@ -13,7 +12,6 @@ from app.domain.entities import (
     ResiduoEspecifico
 )
 from app.domain.repositories import (
-    GerenciaRepository,
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
@@ -24,24 +22,6 @@ from app.domain.repositories import (
     ResiduoEspecificoRepository,
 )
 
-class GerenciaService:
-    def __init__(self, repository: GerenciaRepository):
-        self.repository = repository
-
-    def list_all(self, filtros: dict = {}) -> list[Gerencia]:
-        return self.repository.list_all(filtros)
-
-    def get_by_id(self, id: int) -> Gerencia:
-        return self.repository.get_by_id(id)
-
-    def create(self, data: dict) -> Gerencia:
-        return self.repository.create(Gerencia(**data))
-
-    def update(self, id: int, data: dict) -> Gerencia:
-        return self.repository.update(id, Gerencia(**data))
-
-    def delete(self, id: int) -> None:
-        self.repository.delete(id)
 
 class ProcedenciaService:
     def __init__(self, repository: ProcedenciaRepository):
