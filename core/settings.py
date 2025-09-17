@@ -27,6 +27,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+AUTH_USER_MODEL = "app.Usuario"
+
+
 LOCAL_APPS = [
     'app',
 ]
@@ -71,7 +74,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'residuos.db',
+        'NAME': BASE_DIR / 'actas.db',
     }
 }
 

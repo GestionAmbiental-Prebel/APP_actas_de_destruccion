@@ -1,11 +1,9 @@
 from rest_framework import serializers
 
-
 class ProcedenciaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     sede = serializers.CharField(max_length=20)
-
 
 class ActaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -18,7 +16,6 @@ class ActaSerializer(serializers.Serializer):
     firma_entrega = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
     firma_recepcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
 
-
 class ActaGeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     acta_id = serializers.IntegerField()
@@ -28,8 +25,8 @@ class ActaGeneracionResiduoSerializer(serializers.Serializer):
 
 class UsuarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    usernameA = serializers.CharField(max_length=150)
-    password_hash = serializers.CharField(max_length=255)
+    username = serializers.CharField(max_length=150)  # Cambiado de usernameA a username
+    password = serializers.CharField(max_length=255)  # Cambiado de password_hash a password para coincidir con la entidad
     area_id = serializers.IntegerField(required=False, allow_null=True)
     rol_administrativo_id = serializers.IntegerField(required=False, allow_null=True)
 
@@ -49,7 +46,7 @@ class AreaSerializer(serializers.Serializer):
 class CategoriaResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
-    descripcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+    area_id = serializers.IntegerField()  # Cambiado de descripcion a area_id para coincidir con la entidad
 
 class ResiduoEspecificoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -69,5 +66,5 @@ class OperarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     apellido = serializers.CharField(max_length=100)
-    documento = serializers.IntegerField()
+    documento = serializers.CharField()  # Cambiado a CharField para coincidir con la entidad
     area_id = serializers.IntegerField()

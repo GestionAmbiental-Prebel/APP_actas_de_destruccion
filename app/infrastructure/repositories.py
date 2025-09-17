@@ -33,12 +33,18 @@ from app.domain.repositories import (
     OperarioRepository,)
 
 
-from app.infrastructure.models_residuos import (
+from app.infrastructure.models import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    GeneracionResiduo,Usuario,Area,
-    ResiduoEspecifico,CentroCosto,RolAdministrativo,Operario)
+    GeneracionResiduo,
+    Usuario,
+    Area,
+    ResiduoEspecifico,
+    CentroCosto,
+    RolAdministrativo,
+    Operario)
+
 from django.forms.models import model_to_dict
 
 """ funciones de utilidad para convertir entre modelos y DTOs """
@@ -166,7 +172,7 @@ class UsuarioRepositoryImpl(UsuarioRepository):
         return [
             Usuario(
                 id=u.id,
-                usernameA=u.usernameA,
+                username=u.username,  # Cambiado de usernameA a username
                 password_hash=u.password_hash,
                 area_id=u.area_id,
                 rol_administrativo_id=u.rol_administrativo_id,
@@ -178,7 +184,7 @@ class UsuarioRepositoryImpl(UsuarioRepository):
         u = Usuario.objects.get(id=id)
         return Usuario(
             id=u.id,
-            usernameA=u.usernameA,
+            username=u.username,  # Cambiado de usernameA a username
             password_hash=u.password_hash,
             area_id=u.area_id,
             rol_administrativo_id=u.rol_administrativo_id,
@@ -194,6 +200,7 @@ class UsuarioRepositoryImpl(UsuarioRepository):
 
     def delete(self, id: int) -> None:
         Usuario.objects.filter(id=id).delete()
+
 
 # ---------- GENERACION RESIDUO ----------
 class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
@@ -281,12 +288,13 @@ class CategoriaResiduoRepositoryImpl(CategoriaResiduoRepository):
         obj = CategoriaResiduo.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
     
-    def update(self, id: int, data: Area) -> Area:
-        Area.objects.filter(id=id).update(**data.__dict__)
+    def update(self, id: int, data: CategoriaResiduo) -> CategoriaResiduo:
+        CategoriaResiduo.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
     
     def delete(self, id: int) -> None:
-        Area.objects.filter(id=id).delete()
+        CategoriaResiduo.objects.filter(id=id).delete()
+
 
 # ---------- RESIDUO ESPECIFCO ----------
 class ResiduoEspecificoRepositoryImpl(ResiduoEspecificoRepository):
@@ -312,12 +320,12 @@ class ResiduoEspecificoRepositoryImpl(ResiduoEspecificoRepository):
         obj = ResiduoEspecifico.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
     
-    def update(self, id: int, data: Area) -> Area:
-        Area.objects.filter(id=id).update(**data.__dict__)
+    def update(self, id: int, data: ResiduoEspecifico) -> ResiduoEspecifico:
+        ResiduoEspecifico.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
     
     def delete(self, id: int) -> None:
-        Area.objects.filter(id=id).delete()
+        ResiduoEspecifico.objects.filter(id=id).delete()
 
 # ---------- CENTRO DE COSTOS ----------
 class CentroCostoRepositoryImpl(CentroCostoRepository):

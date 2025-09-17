@@ -13,7 +13,8 @@ from app.application.services import (
     ResiduoEspecificoService,
     CentroCostoService,
     RolAdministrativoService,
-    OperarioService)
+    OperarioService,AreaService,
+    CategoriaResiduoService)
 
 from app.infrastructure.repositories import (
     ProcedenciaRepositoryImpl,
@@ -25,7 +26,8 @@ from app.infrastructure.repositories import (
     ResiduoEspecificoRepositoryImpl,
     CentroCostoRepositoryImpl,
     RolAdministrativoRepositoryImpl,
-    OperarioRepositoryImpl,)
+    OperarioRepositoryImpl,
+    CategoriaResiduoRepositoryImpl)
 
 from app.infrastructure.serializers import (
     ProcedenciaSerializer,
@@ -37,7 +39,8 @@ from app.infrastructure.serializers import (
     ResiduoEspecificoSerializer,
     CentroCostoSerializer,
     RolAdministrativoSerializer,
-    OperarioSerializer,)
+    OperarioSerializer,
+    CategoriaResiduoSerializer,)
 
 # Generic ViewSet Generator
 def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filterable_fields=None):
@@ -104,6 +107,8 @@ def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filt
 
 # Ejemplo de uso de la función generate_viewset para crear ViewSets específicos
 
+# ...existing imports...
+
 ProcedenciaViewSet = generate_viewset(
     ProcedenciaService,
     ProcedenciaRepositoryImpl,
@@ -124,7 +129,7 @@ ActaGeneracionResiduoViewSet = generate_viewset(
     ActaGeneracionResiduoService,
     ActaGeneracionResiduoRepositoryImpl,
     ActaGeneracionResiduoSerializer,
-    "ActaGeneracionresiduo",
+    "ActaGeneracionResiduo",
     filterable_fields=["acta_id", "generacion_residuo_id", "peso_reportado", "peso_conciliado"]
 )
 
@@ -133,59 +138,54 @@ UsuarioViewSet = generate_viewset(
     UsuarioRepositoryImpl,
     UsuarioSerializer,
     "Usuario",
-    filterable_fields=["usernameA", "area_id", "rol_administrativo_id"]
+    filterable_fields=["username", "area_id", "rol_administrativo_id"]
 )
 
 GeneracionResiduoViewSet = generate_viewset(
     GeneracionResiduoService,
     GeneracionResiduoRepositoryImpl,
     GeneracionResiduoSerializer,
-    "Generacionresiduo",
-    filterable_fields=["fecha", "residuo_id", "operario_id"]
+    "GeneracionResiduo",
+    filterable_fields=["fecha", "residuo_id", "operario_id", "motivo"]
 )
 
 AreaViewSet = generate_viewset(
-    ActaGeneracionResiduoService,
+    AreaService,
     AreaRepositoryImpl,
     AreaSerializer,
-  
     "Area",
     filterable_fields=["nombre", "procedencia_id"]
 )
 
 CategoriaResiduoViewSet = generate_viewset(
-    ActaGeneracionResiduoService,
-    AreaRepositoryImpl,
-    AreaSerializer,
-  
+    CategoriaResiduoService,
+    CategoriaResiduoRepositoryImpl,
+    CategoriaResiduoSerializer,
     "CategoriaResiduo",
-    filterable_fields=["nombre", "descripcion"]
+    filterable_fields=["nombre", "area_id"]
 )
 
 ResiduoEspecificoViewSet = generate_viewset(
     ResiduoEspecificoService,
     ResiduoEspecificoRepositoryImpl,
     ResiduoEspecificoSerializer,
-  
-    "Residuoespecifico",
-    filterable_fields=["nombre","categoria_residuo_id"]
+    "ResiduoEspecifico",
+    filterable_fields=["nombre", "categoria_id"]
 )
 
 CentroCostoViewSet = generate_viewset(
     CentroCostoService,
     CentroCostoRepositoryImpl,
     CentroCostoSerializer,
-  
-    "Centrocosto",
-    filterable_fields=["codigo","area_id"]
+    "CentroCosto",
+    filterable_fields=["codigo", "area_id"]
 )
 
 RolAdministrativoViewSet = generate_viewset(
     RolAdministrativoService,
     RolAdministrativoRepositoryImpl,
     RolAdministrativoSerializer,
-  
-    "Roladministrativo",
+    "RolAdministrativo",
     filterable_fields=["nombre"]
 )
 

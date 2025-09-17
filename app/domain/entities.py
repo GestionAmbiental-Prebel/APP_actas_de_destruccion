@@ -2,50 +2,11 @@ from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
 
-
-
 @dataclass
 class Procedencia:
-    id:int | None
+    id: int | None
     nombre: str
-    sede : str
-
-@dataclass
-class Acta:
-    id: int | None
-    numero_acta: str
-    fecha_acta: str
-    area_id: int
-    centro_costo_id: int
-    operario_entrega_id: int
-    operario_recepcion_id: int
-    firma_entrega: str | None = None
-    firma_recepcion: str | None = None
-
-@dataclass
-class ActaGeneracionResiduo:
-    id: int | None
-    acta_id: int
-    generacion_residuo_id: int
-    peso_reportado: float | None = None
-    peso_conciliado: float | None = None
-
-@dataclass
-class Usuario:
-    id: int | None
-    usernameA: str
-    password_hash: str
-    area_id: int | None = None
-    rol_administrativo_id: int | None = None
-
-@dataclass
-class GeneracionResiduo:
-    id: int | None
-    fecha: str
-    peso: float
-    residuo_id: int
-    operario_id: int
-    motivo: str | None = None
+    sede: str
 
 @dataclass
 class Area:
@@ -66,6 +27,23 @@ class ResiduoEspecifico:
     categoria_id: int
 
 @dataclass
+class Operario:
+    id: int | None
+    nombre: str
+    apellido: str
+    documento: str
+    area_id: int
+
+@dataclass
+class GeneracionResiduo:
+    id: int | None
+    fecha: datetime
+    peso: float
+    residuo_id: int
+    operario_id: int
+    motivo: str | None = None
+
+@dataclass
 class CentroCosto:
     id: int | None
     codigo: str
@@ -77,9 +55,29 @@ class RolAdministrativo:
     nombre: str
 
 @dataclass
-class Operario:
+class Usuario:
     id: int | None
-    nombre: str
-    apellido: str
-    documento: int
+    username: str
+    password: str
+    area_id: int | None = None
+    rol_administrativo_id: int | None = None
+
+@dataclass
+class Acta:
+    id: int | None
+    numero_acta: str
+    fecha_acta: datetime
     area_id: int
+    centro_costo_id: int
+    operario_entrega_id: int
+    operario_recepcion_id: int
+    firma_entrega: str
+    firma_recepcion: str
+
+@dataclass
+class ActaGeneracionResiduo:
+    id: int | None
+    acta_id: int
+    generacion_residuo_id: int
+    peso_reportado: float
+    peso_conciliado: float
