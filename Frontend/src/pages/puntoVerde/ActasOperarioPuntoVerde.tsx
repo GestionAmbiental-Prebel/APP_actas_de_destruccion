@@ -1,4 +1,6 @@
+// src/pages/puntoVerde/ActasOperarioPuntoVerde.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const mockActas = [
   {
@@ -45,10 +47,11 @@ const mockActas = [
   },
 ];
 
-export const ActasOperario = () => {
+export const ActasOperarioPuntoVerde = () => {
   const [busqueda, setBusqueda] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+  const navigate = useNavigate();
 
   // 🔹 Filtrar actas por residuo y fechas
   const actasFiltradas = mockActas.filter((acta) => {
@@ -68,14 +71,14 @@ export const ActasOperario = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-6 font-acidGrotesk">
-      <h2 className="text-2xl font-bold mb-6 text-skyBlue dark:text-lightBlue text-center">
-        Mis Actas
+      <h2 className="text-2xl font-bold mb-6 text-green-700 dark:text-green-400 text-center">
+        Actas Punto Verde
       </h2>
 
       {/* Filtros */}
-      <div className="bg-lightBlue/10 dark:bg-gray-800 p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 items-end gap-4">
+      <div className="bg-green-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 items-end gap-4">
         <div className="md:col-span-2 flex flex-col">
-          <label className="text-xs font-medium mb-1 text-skyBlue dark:text-lightBlue">
+          <label className="text-xs font-medium mb-1 text-green-700 dark:text-green-400">
             Buscar
           </label>
           <input
@@ -83,31 +86,31 @@ export const ActasOperario = () => {
             placeholder="Buscar por residuo..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full p-2 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-700 text-skyBlue dark:text-lightBlue placeholder:text-gray-400"
+            className="w-full p-2 border border-green-700 dark:border-green-400 rounded bg-white dark:bg-gray-700 text-green-700 dark:text-green-400 placeholder:text-gray-400"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-medium mb-1 text-skyBlue dark:text-lightBlue">
+          <label className="text-xs font-medium mb-1 text-green-700 dark:text-green-400">
             Desde
           </label>
           <input
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="p-2 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-700 text-skyBlue dark:text-lightBlue"
+            className="p-2 border border-green-700 dark:border-green-400 rounded bg-white dark:bg-gray-700 text-green-700 dark:text-green-400"
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-xs font-medium mb-1 text-skyBlue dark:text-lightBlue">
+          <label className="text-xs font-medium mb-1 text-green-700 dark:text-green-400">
             Hasta
           </label>
           <input
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="p-2 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-700 text-skyBlue dark:text-lightBlue"
+            className="p-2 border border-green-700 dark:border-green-400 rounded bg-white dark:bg-gray-700 text-green-700 dark:text-green-400"
           />
         </div>
       </div>
@@ -125,11 +128,11 @@ export const ActasOperario = () => {
             return (
               <div
                 key={acta.id}
-                className="p-6 border border-skyBlue dark:border-lightBlue rounded-lg shadow bg-white dark:bg-gray-800"
+                className="p-6 border border-green-700 dark:border-green-400 rounded-lg shadow bg-white dark:bg-gray-800"
               >
                 {/* Header de la tarjeta */}
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-lightBlue">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-green-300">
                     Acta #{acta.id}
                   </h3>
                   <span className="text-sm text-gray-500 dark:text-gray-300">
@@ -165,12 +168,12 @@ export const ActasOperario = () => {
 
                 {/* Residuos */}
                 <div>
-                  <h4 className="font-semibold mb-2 text-skyBlue dark:text-lightBlue">
+                  <h4 className="font-semibold mb-2 text-green-700 dark:text-green-400">
                     Residuos registrados:
                   </h4>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm border border-skyBlue dark:border-lightBlue rounded-lg">
-                      <thead className="bg-lightBlue/20 dark:bg-gray-700">
+                    <table className="w-full text-sm border border-green-700 dark:border-green-400 rounded-lg">
+                      <thead className="bg-green-100 dark:bg-gray-700">
                         <tr>
                           <th className="p-2 text-left">Residuo</th>
                           <th className="p-2 text-left">Categoría</th>
@@ -182,7 +185,7 @@ export const ActasOperario = () => {
                         {acta.residuos.map((r, idx) => (
                           <tr
                             key={idx}
-                            className="border-t border-skyBlue/30 dark:border-lightBlue/30"
+                            className="border-t border-green-700/30 dark:border-green-400/30"
                           >
                             <td className="p-2">{r.residuo}</td>
                             <td className="p-2">{r.categoria}</td>
@@ -192,7 +195,7 @@ export const ActasOperario = () => {
                         ))}
 
                         {/* 🔹 Total de peso */}
-                        <tr className="font-semibold bg-lightBlue/10 dark:bg-gray-700">
+                        <tr className="font-semibold bg-green-50 dark:bg-gray-700">
                           <td colSpan={3} className="p-2 text-right">
                             Total peso:
                           </td>
@@ -201,6 +204,18 @@ export const ActasOperario = () => {
                       </tbody>
                     </table>
                   </div>
+                </div>
+
+                {/* 🔹 Botón Conciliar */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() =>
+                      navigate(`/operario-punto-verde/conciliar/${acta.id}`)
+                    }
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  >
+                    Conciliar
+                  </button>
                 </div>
               </div>
             );

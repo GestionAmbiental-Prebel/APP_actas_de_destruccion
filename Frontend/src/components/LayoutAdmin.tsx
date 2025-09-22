@@ -1,22 +1,47 @@
-import { Outlet, Link } from "react-router-dom";
+// src/components/LayoutAdmin.tsx
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
 
-export default function LayoutAdmin() {
+export const LayoutAdmin = () => {
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const navItems = [
+    { name: "Dashboard", path: "/admin/dashboard" },
+    { name: "Actas", path: "/admin/actas" },
+    { name: "Reportes", path: "/admin/reportes" },
+  ];
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-100 dark:bg-[#202020] p-4 hidden md:block">
-        <h2 className="text-xl font-bold mb-6">Admin Panel</h2>
+      <aside className={`bg-gray-800 text-white p-4 ${sidebarOpen ? "w-64" : "w-20"} transition-all`}>
+        <button
+          className="mb-4"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          {sidebarOpen ? "Cerrara" : "Abrir"}
+        </button>
+
         <nav className="flex flex-col gap-2">
-          <Link to="dashboard">Dashboard</Link>
-          <Link to="actas">Actas</Link>
-          <Link to="reportes">Reportes</Link>
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`p-2 rounded hover:bg-gray-700 ${
+                location.pathname === item.path ? "bg-gray-700" : ""
+              }`}
+            >
+              {sidebarOpen ? item.name : item.name[0]}
+            </Link>
+          ))}
         </nav>
       </aside>
 
-      {/* Contenido */}
-      <div className="flex-1 p-6 overflow-auto">
+      {/* Main content */}
+      <main className="flex-1 p-6 bg-gray-100 overflow-auto">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
-}
+};

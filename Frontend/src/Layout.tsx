@@ -1,5 +1,5 @@
 import { Header } from "./components/header/header";
-import { Outlet, Link } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 
 export default function Layout() {
   return (
@@ -8,7 +8,7 @@ export default function Layout() {
       {/* Contenido principal */}
       <div className="flex-1 flex flex-col">
         <Header />
-        <div className="p-6 flex-1 overflow-auto">
+        <div className="p-6 flex-1 overflow-auto text-[#202020] dark:text-skyBlue bg-radial from-skyBlue via-skyBlue to-white dark:from-skyBlue dark:via-none dark:to-[#202020] rounded-tl-2xl">
           <Outlet />
         </div>
       </div>
