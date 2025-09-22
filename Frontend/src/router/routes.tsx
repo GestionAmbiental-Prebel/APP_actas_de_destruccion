@@ -10,6 +10,8 @@ import { ActasOperario } from "../pages/operario/ActasOperario";
 // 🔹 Nuevas pantallas para operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
 import { ConciliarActa } from "../pages/puntoVerde/ConciliarActa";
+import { ActasConciliadas } from "../pages/puntoVerde/ActasConciliadas";
+
 
 import { Dashboard } from "../pages/admin/Dashboard";
 import { ActasList } from "../pages/admin/ActasList";
@@ -43,6 +45,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "actas", element: <ActasOperarioPuntoVerde /> },
           { path: "conciliar/:id", element: <ConciliarActa /> },
+          { path: "conciliadas", element: <ActasConciliadas /> }
         ],
       },
 

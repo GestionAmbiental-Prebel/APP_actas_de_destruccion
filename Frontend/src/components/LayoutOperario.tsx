@@ -2,7 +2,7 @@
 import { Outlet } from "react-router-dom";
 
 interface LayoutOperarioProps {
-  variant?: "normal" | "punto-verde"; // 🔹 Nuevo
+  variant?: "normal" | "punto-verde"; 
 }
 
 export const LayoutOperario = ({ variant = "normal" }: LayoutOperarioProps) => {

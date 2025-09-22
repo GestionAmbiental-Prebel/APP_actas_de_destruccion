@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 interface NavbarProps {
   role: "admin" | "operario";
-  variant?: "normal" | "punto-verde"; // 🔹 Nuevo
+  variant?: "normal" | "punto-verde"; // 👈 Nuevo
 }
 
 export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
@@ -12,9 +12,12 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
     <section className="flex items-center w-full">
       <nav className="w-full">
         <ul className="flex gap-4 justify-center">
-          {/* Inicio */}
+          {/* Inicio siempre visible */}
           <li>
-            <Link to="/" className="border-b-4 hover:border-current border-transparent flex gap-1 items-center">
+            <Link
+              to="/"
+              className="border-b-4 hover:border-current border-transparent flex gap-1 items-center"
+            >
               Inicio <HomeIcon className="w-6 h-6 fill-cyan dark:fill-bone" />
             </Link>
           </li>
@@ -23,12 +26,18 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
           {role === "operario" && variant === "normal" && (
             <>
               <li>
-                <Link to="/operario/formulario" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/operario/formulario"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Formulario
                 </Link>
               </li>
               <li>
-                <Link to="/operario/actas" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/operario/actas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Mis Actas
                 </Link>
               </li>
@@ -39,12 +48,18 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
           {role === "operario" && variant === "punto-verde" && (
             <>
               <li>
-                <Link to="/operario-punto-verde/actas" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/operario-punto-verde/actas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Todas las Actas
                 </Link>
               </li>
               <li>
-                <Link to="/operario-punto-verde/actas" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/operario-punto-verde/conciliadas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Actas Conciliadas
                 </Link>
               </li>
@@ -55,25 +70,33 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
           {role === "admin" && (
             <>
               <li>
-                <Link to="/admin/dashboard" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/admin/dashboard"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Dashboard
                 </Link>
               </li>
               <li>
-                <Link to="/admin/usuarios" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/admin/usuarios"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Usuarios
                 </Link>
               </li>
               <li>
-                <Link to="/admin/actas" className="border-b-4 hover:border-current border-transparent">
+                <Link
+                  to="/admin/actas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
                   Todas las Actas
                 </Link>
               </li>
-              
             </>
           )}
 
-          {/* Toggle de tema */}
+          {/* Toggle de tema siempre visible */}
           <li>
             <ToggleTheme />
           </li>
