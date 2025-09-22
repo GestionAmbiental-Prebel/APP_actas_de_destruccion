@@ -1,6 +1,6 @@
-// src/pages/admin/EditarActa.tsx
+// src/pages/gestor/EditarActa.tsx
 import { useParams, useNavigate } from "react-router-dom";
-import { ActaForm, ActaFormData } from "../../components/admin/ActaForm";
+import { ActaForm, ActaFormData } from "../../components/gestor/ActaForm";
 
 // Datos de ejemplo (simulando lo que vendría de la API)
 const mockActas = [
@@ -8,7 +8,7 @@ const mockActas = [
     id: "1",
     nombre: "Juan Pérez",
     cedula: "123456789",
-    perfil: "administrativo",
+    perfil: "gestor",
     sede: "Medellín",
     procedencia: "Producción",
     area: "Planta A",
@@ -49,7 +49,7 @@ export const EditarActa = () => {
     // Ejemplo: await api.put(`/actas/${id}`, data);
 
     // Después de editar, volvemos al listado
-    navigate("/admin/actas");
+    navigate("/gestor/actas");
   };
 
   return (

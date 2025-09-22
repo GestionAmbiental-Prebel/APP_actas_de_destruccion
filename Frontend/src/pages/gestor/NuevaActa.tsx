@@ -1,6 +1,6 @@
-// src/pages/admin/NuevaActa.tsx
+// src/pages/gestor/NuevaActa.tsx
 import { useNavigate } from "react-router-dom";
-import { ActaForm, ActaFormData } from "../../components/admin/ActaForm";
+import { ActaForm, ActaFormData } from "../../components/gestor/ActaForm";
 
 export const NuevaActa = () => {
   const navigate = useNavigate();
@@ -11,7 +11,7 @@ export const NuevaActa = () => {
     // Ejemplo: await api.post("/actas", data);
 
     // Después de crear, volvemos al listado
-    navigate("/admin/actas");
+    navigate("/gestor/actas");
   };
 
   return (

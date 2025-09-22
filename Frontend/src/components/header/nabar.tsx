@@ -3,8 +3,8 @@ import HomeIcon from "../../icons/homeIcon";
 import { Link } from "react-router-dom";
 
 interface NavbarProps {
-  role: "admin" | "operario";
-  variant?: "normal" | "punto-verde"; // 👈 Nuevo
+  role: "gestor" | "operario" | "admin"; // 👈 ahora también puede ser admin
+  variant?: "normal" | "punto-verde"; // 👈 para gestor/operario
 }
 
 export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
@@ -66,17 +66,61 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
             </>
           )}
 
-          {/* Links para admin */}
-          {role === "admin" && (
+          {/* Links para gestor normal */}
+          {role === "gestor" && variant === "normal" && (
             <>
               <li>
                 <Link
-                  to="/admin/dashboard"
+                  to="/gestor/dashboard"
                   className="border-b-4 hover:border-current border-transparent"
                 >
                   Dashboard
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/gestor/actas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
+                  Todas las Actas
+                </Link>
+              </li>
+            </>
+          )}
+
+          {/* Links para gestor punto verde */}
+          {role === "gestor" && variant === "punto-verde" && (
+            <>
+              <li>
+                <Link
+                  to="/gestor-punto-verde/dashboard"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/gestor-punto-verde/actas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
+                  Todas las Actas
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/gestor-punto-verde/actas-conciliadas"
+                  className="border-b-4 hover:border-current border-transparent"
+                >
+                  Actas Conciliadas
+                </Link>
+              </li>
+            </>
+          )}
+
+          {/* Links para administrador */}
+          {role === "admin" && (
+            <>
               <li>
                 <Link
                   to="/admin/usuarios"
@@ -87,10 +131,10 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
               </li>
               <li>
                 <Link
-                  to="/admin/actas"
+                  to="/admin/configuraciones"
                   className="border-b-4 hover:border-current border-transparent"
                 >
-                  Todas las Actas
+                  Configuraciones
                 </Link>
               </li>
             </>

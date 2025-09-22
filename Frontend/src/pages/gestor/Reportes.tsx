@@ -1,7 +1,7 @@
 // src/pages/admin/Reportes.tsx
 import { useState } from "react";
-import { ReportChart } from "../../components/admin/ReportChart";
-import { FilterBar } from "../../components/admin/FilterBar";
+import { ReportChart } from "../../components/gestor/ReportChart";
+import { FilterBar } from "../../components/gestor/FilterBar";
 import { exportToExcel } from "../../utils/exportExcel";
 
 export const Reportes = () => {

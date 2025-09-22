@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"operario" | "admin" | "">("");
+  const [selectedRole, setSelectedRole] = useState<"operario" | "gestor" | "">("");
   const navigate = useNavigate();
 
   const handleLogin = () => {
@@ -15,8 +15,8 @@ export const LoginPage = () => {
     }
     if (selectedRole === "operario") {
       navigate("/operario/formulario");
-    } else if (selectedRole === "admin") {
-      navigate("/admin/dashboard");
+    } else if (selectedRole === "gestor") {
+      navigate("/gestor/dashboard");
     }
   };
 
@@ -57,13 +57,13 @@ export const LoginPage = () => {
         <select
           value={selectedRole}
           onChange={(e) =>
-            setSelectedRole(e.target.value as "operario" | "admin" | "")
+            setSelectedRole(e.target.value as "operario" | "gestor" | "")
           }
           className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 mb-6 focus:outline-none focus:ring-2 focus:ring-sky-400 dark:focus:ring-sky-500 transition"
         >
           <option value="">Selecciona un rol</option>
           <option value="operario">Operario</option>
-          <option value="admin">Administrador</option>
+          <option value="gestor">Administrador</option>
         </select>
 
         {/* Botón */}
