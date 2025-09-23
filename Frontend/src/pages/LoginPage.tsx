@@ -26,8 +26,8 @@ export const LoginPage = () => {
         
         {/* Logos */}
         <div className="flex justify-between w-full mb-6">
-          <img src="/logo1.png" alt="Logo 1" className="h-12 object-contain" />
-          <img src="/logo2.png" alt="Logo 2" className="h-12 object-contain" />
+          <img src="/image/Ambiental_AzulClaro.webp" alt="Logo 1" className="h-12 object-contain" />
+          <img src="/image/Prebel_AzulClaro_SF.webp" alt="Logo 2" className="h-12 object-contain" />
         </div>
 
         {/* Título */}

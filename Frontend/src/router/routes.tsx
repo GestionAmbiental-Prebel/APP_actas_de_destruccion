@@ -24,6 +24,7 @@ import { LayoutAdmin } from "../components/LayoutAdmin";
 import { Usuarios } from "../pages/admin/Usuarios";
 import { Configuraciones } from "../pages/admin/Configuraciones"
 import { NuevoUsuario } from "../pages/admin/NuevoUsuario";
+import { EditarUsuario } from "../pages/admin/EditarUsuario";
 // 🔹 Gestor Punto Verde
 import { ActasConciliadasGestorPuntoVerde } from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 
@@ -88,9 +89,9 @@ export const router = createBrowserRouter([
         element: <LayoutAdmin />,
         children: [
           { path: "usuarios", element: <Usuarios /> },
+          { path: "usuarios/nuevo", element: <NuevoUsuario /> },
+          { path: "usuarios/editar/:id", element: <EditarUsuario /> },
           { path: "configuraciones", element: <Configuraciones /> },
-          {path: "nuevo-usuario", element: <NuevoUsuario />}
-
         ],
       },
 

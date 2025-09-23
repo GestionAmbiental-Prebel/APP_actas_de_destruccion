@@ -1,4 +1,4 @@
-// src/pages/admin/Reportes.tsx
+// src/pages/gestor/Reportes.tsx
 import { useState } from "react";
 import { ReportChart } from "../../components/gestor/ReportChart";
 import { FilterBar } from "../../components/gestor/FilterBar";
