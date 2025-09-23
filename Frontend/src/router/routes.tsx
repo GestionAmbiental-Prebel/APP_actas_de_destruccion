@@ -4,10 +4,11 @@ import Layout from "../Layout";
 import { LayoutOperario } from "../components/LayoutOperario";
 import { LayoutGestor } from "../components/LayoutGestor";
 
+// 🔹 Operario
 import { FormularioActa } from "../pages/operario/FormularioActa";
 import { ActasOperario } from "../pages/operario/ActasOperario";
 
-// 🔹 Nuevas pantallas para operario Punto Verde
+// 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
 import { ConciliarActa } from "../pages/puntoVerde/ConciliarActa";
 import { ActasConciliadas } from "../pages/puntoVerde/ActasConciliadas";
@@ -22,9 +23,13 @@ import { EditarActa } from "../pages/gestor/EditarActa";
 // 🔹 Admin
 import { LayoutAdmin } from "../components/LayoutAdmin";
 import { Usuarios } from "../pages/admin/Usuarios";
-import { Configuraciones } from "../pages/admin/Configuraciones"
+import { Configuraciones } from "../pages/admin/Configuraciones";
 import { NuevoUsuario } from "../pages/admin/NuevoUsuario";
 import { EditarUsuario } from "../pages/admin/EditarUsuario";
+
+// 🔹 Admin Configuraciones
+import { GestionarSedes } from "../pages/admin/configuraciones/GestionarSedes";
+
 // 🔹 Gestor Punto Verde
 import { ActasConciliadasGestorPuntoVerde } from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 
@@ -75,7 +80,7 @@ export const router = createBrowserRouter([
       // Rutas de Gestor Punto Verde
       {
         path: "gestor-punto-verde",
-        element: <LayoutGestor />, // mismo layout que gestor
+        element: <LayoutGestor />,
         children: [
           { path: "dashboard", element: <DashboardPuntoVerde /> },
           { path: "actas", element: <ActasList /> },
@@ -83,8 +88,9 @@ export const router = createBrowserRouter([
           { path: "actas-conciliadas", element: <ActasConciliadasGestorPuntoVerde /> },
         ],
       },
+
       // Rutas de Admin
-            {
+      {
         path: "admin",
         element: <LayoutAdmin />,
         children: [
@@ -92,9 +98,11 @@ export const router = createBrowserRouter([
           { path: "usuarios/nuevo", element: <NuevoUsuario /> },
           { path: "usuarios/editar/:id", element: <EditarUsuario /> },
           { path: "configuraciones", element: <Configuraciones /> },
+
+          // 🔹 Subrutas de configuraciones
+          { path: "configuraciones/sedes", element: <GestionarSedes /> },
         ],
       },
-
     ],
   },
 

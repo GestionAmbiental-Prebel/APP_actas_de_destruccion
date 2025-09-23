@@ -4,25 +4,26 @@ import { useState } from "react";
 export const NuevoUsuario = () => {
   const [formData, setFormData] = useState({
     nombre: "",
-    email: "",
     rol: "operario",
     password: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Nuevo usuario creado:", formData);
-    // 🔹 Aquí iría la lógica para enviar a backend
+    console.log("Nueva área creada:", formData);
+    // 🔹 Aquí iría el POST al backend
   };
 
   return (
     <div className="p-6 font-acidGrotesk max-w-2xl mx-auto">
       <h2 className="text-3xl font-bold mb-8 text-cyan-700 dark:text-cyan-400">
-        Crear Nuevo Usuario
+        Crear Nueva Área/Subárea
       </h2>
 
       <form
@@ -32,7 +33,7 @@ export const NuevoUsuario = () => {
         {/* Nombre */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Nombre completo
+            Nombre del Área/Subárea
           </label>
           <input
             type="text"
@@ -44,12 +45,10 @@ export const NuevoUsuario = () => {
           />
         </div>
 
-       
-
         {/* Rol */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Rol de usuario
+            Rol asignado
           </label>
           <select
             name="rol"
@@ -76,6 +75,7 @@ export const NuevoUsuario = () => {
             value={formData.password}
             onChange={handleChange}
             required
+            placeholder="••••••••"
             className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           />
         </div>
@@ -86,7 +86,7 @@ export const NuevoUsuario = () => {
             type="submit"
             className="px-6 py-3 rounded-lg bg-cyan-600 text-white font-semibold hover:bg-cyan-700 transition"
           >
-            Guardar Usuario
+            Guardar Área
           </button>
         </div>
       </form>

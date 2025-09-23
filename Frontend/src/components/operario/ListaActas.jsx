@@ -1,57 +1,12 @@
 import { useState } from "react";
 
-const mockActas = [
-  {
-    id: 1,
-    nombre: "Juan Pérez",
-    cedula: "123456789",
-    sede: "Medellín",
-    procedencia: "Producción",
-    area: "Planta A",
-    centroCostos: "CC-1001",
-    fecha: "2025-01-05",
-    residuos: [
-      {
-        residuo: "Papel",
-        categoria: "Reciclable",
-        motivo: "Documentos obsoletos",
-        peso: "5",
-      },
-      {
-        residuo: "Cartón",
-        categoria: "Reciclable",
-        motivo: "Cajas dañadas",
-        peso: "8",
-      },
-    ],
-  },
-  {
-    id: 2,
-    nombre: "Ana Gómez",
-    cedula: "987654321",
-    sede: "Bogotá",
-    procedencia: "Logística",
-    area: "Planta B",
-    centroCostos: "CC-2001",
-    fecha: "2025-01-12",
-    residuos: [
-      {
-        residuo: "Plástico",
-        categoria: "Reciclable",
-        motivo: "Envases rotos",
-        peso: "3",
-      },
-    ],
-  },
-];
-
-export const ActasOperario = () => {
+export default function ListaActas({ actas }) {
   const [busqueda, setBusqueda] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
 
-  // Filtrar actas por residuo y fechas
-  const actasFiltradas = mockActas.filter((acta) => {
+  // 🔹 Filtrado de actas
+  const actasFiltradas = actas.filter((acta) => {
     const matchResiduo = acta.residuos.some((r) =>
       r.residuo.toLowerCase().includes(busqueda.toLowerCase())
     );
@@ -72,15 +27,15 @@ export const ActasOperario = () => {
         Mis Actas
       </h2>
 
-      {/* Filtros */}
+      {/* 🔹 Filtros */}
       <div className="bg-lightBlue/10 dark:bg-gray-800 p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-4 items-end gap-4">
         <div className="md:col-span-2 flex flex-col">
           <label className="text-xs font-medium mb-1 text-skyBlue dark:text-lightBlue">
-            Buscar
+            Buscar por residuo
           </label>
           <input
             type="text"
-            placeholder="Buscar por residuo..."
+            placeholder="Ej: Papel, Plástico..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full p-2 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-700 text-skyBlue dark:text-lightBlue placeholder:text-gray-400"
@@ -112,11 +67,10 @@ export const ActasOperario = () => {
         </div>
       </div>
 
-      {/* Listado */}
+      {/* 🔹 Listado */}
       {actasFiltradas.length > 0 ? (
         <div className="grid gap-6">
           {actasFiltradas.map((acta) => {
-            // 🔹 Calcular total de peso
             const totalPeso = acta.residuos.reduce(
               (acc, r) => acc + Number(r.peso || 0),
               0
@@ -127,7 +81,7 @@ export const ActasOperario = () => {
                 key={acta.id}
                 className="p-6 border border-skyBlue dark:border-lightBlue rounded-lg shadow bg-white dark:bg-gray-800"
               >
-                {/* Header de la tarjeta */}
+                {/* Header */}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-lightBlue">
                     Acta #{acta.id}
@@ -140,12 +94,10 @@ export const ActasOperario = () => {
                 {/* Datos generales */}
                 <div className="grid md:grid-cols-2 gap-4 text-sm mb-4">
                   <p>
-                    <span className="font-semibold">Nombre:</span>{" "}
-                    {acta.nombre}
+                    <span className="font-semibold">Nombre:</span> {acta.nombre}
                   </p>
                   <p>
-                    <span className="font-semibold">Cédula:</span>{" "}
-                    {acta.cedula}
+                    <span className="font-semibold">Cédula:</span> {acta.cedula}
                   </p>
                   <p>
                     <span className="font-semibold">Sede:</span> {acta.sede}
@@ -154,7 +106,7 @@ export const ActasOperario = () => {
                     <span className="font-semibold">Área:</span> {acta.area}
                   </p>
                   <p>
-                    <span className="font-semibold">Sub Area:</span>{" "}
+                    <span className="font-semibold">Sub Área:</span>{" "}
                     {acta.procedencia}
                   </p>
                   <p>
@@ -166,7 +118,7 @@ export const ActasOperario = () => {
                 {/* Residuos */}
                 <div>
                   <h4 className="font-semibold mb-2 text-skyBlue dark:text-lightBlue">
-                    Residuos registrados:
+                    Residuos registrados
                   </h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm border border-skyBlue dark:border-lightBlue rounded-lg">
@@ -190,8 +142,6 @@ export const ActasOperario = () => {
                             <td className="p-2">{r.peso}</td>
                           </tr>
                         ))}
-
-                        {/* 🔹 Total de peso */}
                         <tr className="font-semibold bg-lightBlue/10 dark:bg-gray-700">
                           <td colSpan={3} className="p-2 text-right">
                             Total peso:
@@ -213,4 +163,4 @@ export const ActasOperario = () => {
       )}
     </div>
   );
-};
+}

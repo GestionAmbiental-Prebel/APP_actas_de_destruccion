@@ -1,5 +1,5 @@
 // src/pages/operario/ConciliarActa.tsx
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useState } from "react";
 
 // 🔹 Mock para cargar datos de acta (mismo formato que ActasOperarioPuntoVerde)
@@ -22,21 +22,30 @@ const mockActas = [
 
 export const ConciliarActa = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [docConciliador, setDocConciliador] = useState("");
   const [pesoConciliado, setPesoConciliado] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const acta = mockActas.find((a) => a.id.toString() === id);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     console.log({
       actaId: id,
       documento: docConciliador,
       pesoConciliado,
     });
-    alert("Conciliación guardada con éxito ✅");
-    navigate("/operario/punto-verde/actas");
+
+    // Mostrar modal
+    setShowModal(true);
+
+    // Limpiar campos
+    setDocConciliador("");
+    setPesoConciliado("");
+
+    // Timer Modal
+    setTimeout(() => setShowModal(false), 2000);
   };
 
   if (!acta) {
@@ -46,7 +55,7 @@ export const ConciliarActa = () => {
   const pesoOriginal = acta.residuos.reduce((acc, r) => acc + Number(r.peso || 0), 0);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 font-acidGrotesk">
+    <div className="max-w-5xl mx-auto p-6 font-acidGrotesk relative">
       <h2 className="text-2xl font-bold mb-6 text-skyBlue dark:text-lightBlue text-center">
         Conciliar Acta #{acta.id}
       </h2>
@@ -106,10 +115,15 @@ export const ConciliarActa = () => {
           </label>
           <input
             type="text"
+            inputMode="numeric"
             value={docConciliador}
-            onChange={(e) => setDocConciliador(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
+              setDocConciliador(value);
+            }}
             required
             className="p-3 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-700 text-skyBlue dark:text-lightBlue"
+            placeholder="Máximo 10 dígitos"
           />
         </div>
 
@@ -135,6 +149,18 @@ export const ConciliarActa = () => {
           </button>
         </div>
       </form>
+
+      {/* Modal de éxito */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
+          <div className="bg-white dark:bg-gray-800 px-8 py-6 rounded-2xl shadow-lg text-center">
+            <span className="text-4xl">✅</span>
+            <h3 className="mt-4 text-xl font-bold text-skyBlue dark:text-lightBlue">
+              ¡Acta conciliada con éxito!
+            </h3>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
