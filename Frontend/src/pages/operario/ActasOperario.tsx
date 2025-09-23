@@ -154,7 +154,7 @@ export const ActasOperario = () => {
                     <span className="font-semibold">Área:</span> {acta.area}
                   </p>
                   <p>
-                    <span className="font-semibold">Procedencia:</span>{" "}
+                    <span className="font-semibold">Sub Area:</span>{" "}
                     {acta.procedencia}
                   </p>
                   <p>

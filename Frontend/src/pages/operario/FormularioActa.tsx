@@ -3,22 +3,45 @@ import { useState } from "react";
 
 const data: Record<
   string,
-  { sede: string; procedencia: string; areas: Record<string, { centros: string[]; residuos: string[] }> }
+  {
+    sede: string;
+    procedencia: string;
+    areas: Record<
+      string,
+      { centros: string[]; residuos: string[]; subAreas: string[] } // añadimos subAreas
+    >;
+  }
 > = {
   administrativo: {
     sede: "Bogotá",
     procedencia: "Oficina Central",
     areas: {
-      Finanzas: { centros: ["Contabilidad", "Tesorería"], residuos: ["Papelería", "Archivos"] },
-      TalentoHumano: { centros: ["Bienestar", "Selección"], residuos: ["Hojas de vida", "Formatos"] },
+      Finanzas: {
+        centros: ["Contabilidad", "Tesorería"],
+        residuos: ["Papelería", "Archivos"],
+        subAreas: ["Cuentas por pagar", "Cuentas por cobrar"],
+      },
+      TalentoHumano: {
+        centros: ["Bienestar", "Selección"],
+        residuos: ["Hojas de vida", "Formatos"],
+        subAreas: ["Capacitación", "Reclutamiento"],
+      },
     },
   },
   operario: {
     sede: "Medellín",
     procedencia: "Planta Principal",
     areas: {
-      Producción: { centros: ["Línea A", "Línea B"], residuos: ["Plásticos", "Metales"] },
-      Logística: { centros: ["Transporte", "Almacén"], residuos: ["Cajas", "Embalajes"] },
+      Producción: {
+        centros: ["Línea A", "Línea B"],
+        residuos: ["Plásticos", "Metales"],
+        subAreas: ["Montaje", "Empaque"],
+      },
+      Logística: {
+        centros: ["Transporte", "Almacén"],
+        residuos: ["Cajas", "Embalajes"],
+        subAreas: ["Recepción", "Despacho"],
+      },
     },
   },
 };
@@ -36,13 +59,9 @@ export const FormularioActa = () => {
   const [sede, setSede] = useState("");
   const [procedencia, setProcedencia] = useState("");
 
-  const [residuos, setResiduos] = useState([
-    { residuo: "", categoria: "", motivo: "", peso: "" },
-  ]);
-
+  const [residuos, setResiduos] = useState([{ residuo: "", categoria: "", motivo: "", peso: "" }]);
   const [showToast, setShowToast] = useState(false);
 
-  // 🔹 Fake usuarios para autocompletar
   const fakeUsuarios: Record<string, { nombre: string; apellido: string }> = {
     "123": { nombre: "Carlos", apellido: "Ramírez" },
     "456": { nombre: "Ana", apellido: "Gómez" },
@@ -62,8 +81,8 @@ export const FormularioActa = () => {
     for (const areaKey in data[perfil].areas) {
       if (data[perfil].areas[areaKey].centros.includes(value)) {
         setArea(areaKey);
-        setProcedencia(data[perfil].procedencia);
         setSede(data[perfil].sede);
+        setProcedencia(""); // Limpiamos sub área para que el usuario seleccione
       }
     }
   };
@@ -79,28 +98,17 @@ export const FormularioActa = () => {
   };
 
   const eliminarResiduo = (index: number) => {
-    const nuevos = residuos.filter((_, i) => i !== index);
-    setResiduos(nuevos);
+    setResiduos(residuos.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({
-      cedula,
-      nombre,
-      apellido,
-      perfil,
-      centroCostos,
-      sede,
-      procedencia,
-      area,
-      residuos,
-    });
+    console.log({ cedula, nombre, apellido, perfil, centroCostos, sede, procedencia, area, residuos });
 
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
 
-    // limpiar
+    // Limpiar
     setCedula("");
     setNombre("");
     setApellido("");
@@ -122,7 +130,7 @@ export const FormularioActa = () => {
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* 🔹 Identificación */}
+        {/* Identificación */}
         <div>
           <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">Identificación</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -139,31 +147,20 @@ export const FormularioActa = () => {
             </div>
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Nombre</label>
-              <input
-                type="text"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                required
-                className={inputClasses}
-              />
+              <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required className={inputClasses} />
             </div>
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Apellido</label>
-              <input
-                type="text"
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
-                required
-                className={inputClasses}
-              />
+              <input type="text" value={apellido} onChange={(e) => setApellido(e.target.value)} required className={inputClasses} />
             </div>
           </div>
         </div>
 
-        {/* 🔹 Ubicación organizacional */}
+        {/* Ubicación organizacional */}
         <div>
           <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">Ubicación organizacional</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Perfil */}
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Perfil</label>
               <select
@@ -180,13 +177,12 @@ export const FormularioActa = () => {
               >
                 <option value="">Seleccione perfil</option>
                 {Object.keys(data).map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
+                  <option key={p} value={p}>{p}</option>
                 ))}
               </select>
             </div>
 
+            {/* Centro de costos */}
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Centro de Costos</label>
               <select
@@ -199,33 +195,43 @@ export const FormularioActa = () => {
                 <option value="">Seleccione centro de costos</option>
                 {perfil &&
                   Object.entries(data[perfil].areas).flatMap(([a, { centros }]) =>
-                    centros.map((c) => (
-                      <option key={c} value={c}>
-                        {c} — {a}
-                      </option>
-                    ))
+                    centros.map((c) => <option key={c} value={c}>{c}</option>)
                   )}
               </select>
             </div>
 
+            {/* Área */}
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Área</label>
               <input type="text" value={area} readOnly className={inputClasses} />
             </div>
 
+            {/* Sede */}
             <div className="flex flex-col">
               <label className="mb-1 font-medium">Sede</label>
               <input type="text" value={sede} readOnly className={inputClasses} />
             </div>
 
+            {/* Sub Área */}
             <div className="flex flex-col md:col-span-2">
-              <label className="mb-1 font-medium">Procedencia</label>
-              <input type="text" value={procedencia} readOnly className={inputClasses} />
+              <label className="mb-1 font-medium">Sub Área</label>
+              <select
+                value={procedencia}
+                onChange={(e) => setProcedencia(e.target.value)}
+                required
+                disabled={!area}
+                className={inputClasses}
+              >
+                <option value="">Seleccione sub área</option>
+                {perfil && area && data[perfil].areas[area].subAreas.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        {/* 🔹 Residuos */}
+        {/* Residuos */}
         <div>
           <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">Residuos</h3>
 
