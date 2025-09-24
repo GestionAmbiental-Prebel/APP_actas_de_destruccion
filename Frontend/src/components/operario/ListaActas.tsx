@@ -1,6 +1,31 @@
+// src/components/operario/ListaActas.tsx
 import { useState } from "react";
 
-export default function ListaActas({ actas }) {
+// 🔹 Tipos
+interface Residuo {
+  residuo: string;
+  categoria: string;
+  motivo: string;
+  peso: string;
+}
+
+interface Acta {
+  id: number;
+  nombre: string;
+  cedula: string;
+  sede: string;
+  procedencia: string;
+  area: string;
+  centroCostos: string;
+  fecha: string;
+  residuos: Residuo[];
+}
+
+interface ListaActasProps {
+  actas: Acta[];
+}
+
+export default function ListaActas({ actas }: ListaActasProps) {
   const [busqueda, setBusqueda] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -67,7 +92,7 @@ export default function ListaActas({ actas }) {
         </div>
       </div>
 
-      {/* 🔹 Listado */}
+      {/*Listado */}
       {actasFiltradas.length > 0 ? (
         <div className="grid gap-6">
           {actasFiltradas.map((acta) => {

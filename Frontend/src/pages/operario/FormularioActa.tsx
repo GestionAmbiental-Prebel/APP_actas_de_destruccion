@@ -1,17 +1,10 @@
 // src/pages/operario/FormularioActa.tsx
 import { useState } from "react";
+import SeccionIdentificacion from "../../components/operario/SeccionIdentificacion";
+import SeccionUbicacion from "../../components/operario/SeccionUbicacion";
+import SeccionResiduos from "../../components/operario/SeccionResiduos";
 
-const data: Record<
-  string,
-  {
-    sede: string;
-    procedencia: string;
-    areas: Record<
-      string,
-      { centros: string[]; residuos: string[]; subAreas: string[] }
-    >;
-  }
-> = {
+const data = {
   operario: {
     sede: "Medellín",
     procedencia: "Planta Principal",
@@ -38,22 +31,29 @@ const motivos = [
   "Otro",
 ];
 
-export const FormularioActa = () => {
+export default function FormularioActa() {
+  const perfil = "operario"; // se obtiene del login/contexto
+
+  // Identificación
   const [cedula, setCedula] = useState("");
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
 
-  const perfil = "operario"; // se obtiene del login/contexto
+  // Ubicación
   const [area, setArea] = useState("");
   const [centroCostos, setCentroCostos] = useState("");
   const [sede, setSede] = useState(data[perfil].sede);
   const [procedencia, setProcedencia] = useState("");
 
+  // Residuos
   const [residuos, setResiduos] = useState([
     { residuo: "", categoria: "", motivo: "", peso: "" },
   ]);
+
+  // Toast
   const [showToast, setShowToast] = useState(false);
 
+  // Fake usuarios para demo
   const fakeUsuarios: Record<string, { nombre: string; apellido: string }> = {
     "123": { nombre: "Carlos", apellido: "Ramírez" },
     "456": { nombre: "Ana", apellido: "Gómez" },
@@ -68,39 +68,16 @@ export const FormularioActa = () => {
 
   const handleCentroChange = (value: string) => {
     setCentroCostos(value);
-
-    for (const areaKey in data[perfil].areas) {
-      if (data[perfil].areas[areaKey].centros.includes(value)) {
-        setArea(areaKey);
-        setSede(data[perfil].sede);
-        setProcedencia("");
-      }
-    }
-  };
-
-  const handleResiduoChange = (
-    index: number,
-    field: string,
-    value: string
-  ) => {
-    const nuevos = [...residuos];
-    nuevos[index] = { ...nuevos[index], [field]: value };
-    setResiduos(nuevos);
-  };
-
-  const agregarResiduo = () => {
-    setResiduos([
-      ...residuos,
-      { residuo: "", categoria: "", motivo: "", peso: "" },
-    ]);
-  };
-
-  const eliminarResiduo = (index: number) => {
-    setResiduos(residuos.filter((_, i) => i !== index));
+    const areaEncontrada = Object.entries(data[perfil].areas).find(([_, { centros }]) =>
+      centros.includes(value)
+    );
+    setArea(areaEncontrada ? areaEncontrada[0] : "");
+    setProcedencia("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     console.log({
       cedula,
       nombre,
@@ -116,7 +93,7 @@ export const FormularioActa = () => {
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
 
-    // Limpiar
+    // limpiar form
     setCedula("");
     setNombre("");
     setApellido("");
@@ -128,7 +105,7 @@ export const FormularioActa = () => {
   };
 
   const inputClasses =
-    "p-3 border border-skyBlue dark:border-lightBlue rounded focus:ring-2 focus:ring-lightBlue text-skyBlue dark:text-lightBlue placeholder:text-lightBlue/70 dark:placeholder:text-gray-400 bg-white dark:bg-gray-700";
+    "p-3 border border-skyBlue dark:border-lightBlue rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue transition";
 
   return (
     <div className="relative max-w-4xl mx-auto bg-lightBlue/10 dark:bg-gray-800 p-8 rounded-lg shadow-md font-acidGrotesk">
@@ -138,216 +115,42 @@ export const FormularioActa = () => {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Identificación */}
-  <div>
-    <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">
-      Identificación
-    </h3>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Cédula */}
-      <div className="flex flex-col">
-        <label className="mb-1 font-medium">Cédula</label>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={cedula}
-          onChange={(e) => {
-            const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 10);
-            setCedula(value);
-          }}
-          onBlur={handleCedulaBlur}
-          required
-          className={inputClasses}
+        <SeccionIdentificacion
+          cedula={cedula}
+          setCedula={setCedula}
+          nombre={nombre}
+          setNombre={setNombre}
+          apellido={apellido}
+          setApellido={setApellido}
+          onCedulaBlur={handleCedulaBlur}
+          inputClasses={inputClasses}
         />
-      </div>
 
-      {/* Nombre */}
-      <div className="flex flex-col">
-        <label className="mb-1 font-medium">Nombre</label>
-        <input
-          type="text"
-          value={nombre}
-          onChange={(e) => {
-            const value = e.target.value
-              .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ ]/g, "")
-              .slice(0, 50);
-            setNombre(value);
-          }}
-          required
-          className={inputClasses}
+        {/* Ubicación */}
+        <SeccionUbicacion
+          perfil={perfil}
+          area={area}
+          setArea={setArea}
+          centroCostos={centroCostos}
+          setCentroCostos={setCentroCostos}
+          sede={sede}
+          procedencia={procedencia}
+          setProcedencia={setProcedencia}
+          data={data}
+          handleCentroChange={handleCentroChange}
+          inputClasses={inputClasses}
         />
-      </div>
-
-      {/* Apellido */}
-      <div className="flex flex-col">
-        <label className="mb-1 font-medium">Apellido</label>
-        <input
-          type="text"
-          value={apellido}
-          onChange={(e) => {
-            const value = e.target.value
-              .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ ]/g, "")
-              .slice(0, 50);
-            setApellido(value);
-          }}
-          required
-          className={inputClasses}
-        />
-      </div>
-    </div>
-  </div>
-
-        {/* Ubicación organizacional */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">
-            Ubicación organizacional
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Centro de costos */}
-            <div className="flex flex-col">
-              <label className="mb-1 font-medium">Centro de Costos</label>
-              <select
-                value={centroCostos}
-                onChange={(e) => handleCentroChange(e.target.value)}
-                required
-                className={inputClasses}
-              >
-                <option value="">Seleccione centro de costos</option>
-                {Object.entries(data[perfil].areas).flatMap(([a, { centros }]) =>
-                  centros.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            {/* Área */}
-            <div className="flex flex-col">
-              <label className="mb-1 font-medium">Área</label>
-              <input type="text" value={area} readOnly className={inputClasses} />
-            </div>
-
-            {/* Sub Área */}
-            <div className="flex flex-col">
-              <label className="mb-1 font-medium">Sub Área</label>
-              <select
-                value={procedencia}
-                onChange={(e) => setProcedencia(e.target.value)}
-                required
-                disabled={!area}
-                className={inputClasses}
-              >
-                <option value="">Seleccione sub área</option>
-                {area &&
-                  data[perfil].areas[area].subAreas.map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* Sede */}
-            <div className="flex flex-col">
-              <label className="mb-1 font-medium">Sede</label>
-              <input type="text" value={sede} readOnly className={inputClasses} />
-            </div>
-          </div>
-        </div>
 
         {/* Residuos */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4 text-skyBlue dark:text-lightBlue">Residuos</h3>
-
-          {residuos.map((item, index) => (
-            <div key={index} className="border p-4 rounded-lg mb-4 bg-white/10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col">
-                  <label>Residuo</label>
-                  <select
-                    value={item.residuo}
-                    onChange={(e) => handleResiduoChange(index, "residuo", e.target.value)}
-                    required
-                    disabled={!area}
-                    className={inputClasses}
-                  >
-                    <option value="">Seleccione residuo</option>
-                    {perfil && area &&
-                      data[perfil].areas[area].residuos.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col">
-                  <label>Categoría</label>
-                  <select
-                    value={item.categoria}
-                    onChange={(e) => handleResiduoChange(index, "categoria", e.target.value)}
-                    required
-                    className={inputClasses}
-                  >
-                    <option value="">Seleccione categoría</option>
-                    <option value="peligroso">Peligroso</option>
-                    <option value="noPeligroso">No peligroso</option>
-                    <option value="reciclable">Reciclable</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col md:col-span-2">
-                  <label>Motivo</label>
-                  <select
-                    value={item.motivo}
-                    onChange={(e) => handleResiduoChange(index, "motivo", e.target.value)}
-                    required
-                    className={inputClasses}
-                  >
-                    <option value="">Seleccione motivo</option>
-                    {motivos.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col md:col-span-2">
-                  <label>Peso (kg)</label>
-                  <input
-                    type="number"
-                    value={item.peso}
-                    onChange={(e) => handleResiduoChange(index, "peso", e.target.value)}
-                    required
-                    className={inputClasses}
-                  />
-                </div>
-              </div>
-
-              {residuos.length > 1 && (
-                <div className="flex justify-end mt-2">
-                  <button
-                    type="button"
-                    onClick={() => eliminarResiduo(index)}
-                    className="text-red-500 hover:text-red-700 text-sm"
-                  >
-                    Eliminar residuo
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={agregarResiduo}
-            className="mt-2 bg-lightBlue text-white px-4 py-2 rounded shadow hover:bg-skyBlue transition"
-          >
-            ➕ Agregar residuo
-          </button>
-        </div>
+        <SeccionResiduos
+          perfil={perfil}
+          area={area}
+          residuos={residuos}
+          setResiduos={setResiduos}
+          data={data}
+          motivos={motivos}
+          inputClasses={inputClasses}
+        />
 
         {/* Botón principal */}
         <div className="flex justify-center mt-6">
@@ -360,6 +163,7 @@ export const FormularioActa = () => {
         </div>
       </form>
 
+      {/* Toast */}
       {showToast && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4 bg-gradient-to-r from-skyBlue to-lightBlue text-white px-10 py-8 rounded-2xl shadow-2xl animate-fade-in">
@@ -370,4 +174,4 @@ export const FormularioActa = () => {
       )}
     </div>
   );
-};
+}

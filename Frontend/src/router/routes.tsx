@@ -5,8 +5,8 @@ import { LayoutOperario } from "../components/LayoutOperario";
 import { LayoutGestor } from "../components/LayoutGestor";
 
 // 🔹 Operario
-import { FormularioActa } from "../pages/operario/FormularioActa";
-import { ActasOperario } from "../pages/operario/ActasOperario";
+import  FormularioActa  from "../pages/operario/FormularioActa";
+import ActasOperario from "../pages/operario/ActasOperario";
 
 // 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
