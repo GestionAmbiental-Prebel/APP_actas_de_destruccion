@@ -1,5 +1,5 @@
 // src/pages/operario/ActasOperario.tsx
-import React from "react";
+
 import { useUser } from "../../context/UserContext";
 import ListaActas from "../../components/operario/ListaActas";
 
