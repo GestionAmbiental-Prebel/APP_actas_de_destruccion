@@ -3,68 +3,77 @@ from rest_framework import serializers
 class ProcedenciaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
-    sede = serializers.CharField(max_length=20)
+    sede_id = serializers.IntegerField()
+
 
 class ActaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     numero_acta = serializers.CharField(max_length=50)
-    fecha_acta = serializers.CharField(max_length=50)
-    area_id = serializers.IntegerField()
+    fecha_acta = serializers.DateTimeField()
+    subarea_id = serializers.IntegerField()
     centro_costo_id = serializers.IntegerField()
-    operario_entrega_id = serializers.IntegerField()
-    operario_recepcion_id = serializers.IntegerField()
-    firma_entrega = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
-    firma_recepcion = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+    documento_entrega = serializers.CharField(max_length=100)
+    documento_recepcion = serializers.CharField(max_length=100)
+
 
 class ActaGeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     acta_id = serializers.IntegerField()
     generacion_residuo_id = serializers.IntegerField()
-    peso_reportado = serializers.DecimalField(max_digits=10, decimal_places=5, required=False, allow_null=True)
-    peso_conciliado = serializers.DecimalField(max_digits=10, decimal_places=5, required=False, allow_null=True)
+    peso_reportado = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    peso_conciliado = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
-class UsuarioSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    username = serializers.CharField(max_length=150)  # Cambiado de usernameA a username
-    password = serializers.CharField(max_length=255)  # Cambiado de password_hash a password para coincidir con la entidad
-    area_id = serializers.IntegerField(required=False, allow_null=True)
-    rol_administrativo_id = serializers.IntegerField(required=False, allow_null=True)
 
 class GeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    fecha = serializers.CharField(max_length=50)
-    peso = serializers.DecimalField(max_digits=10, decimal_places=5)
-    residuo_id = serializers.IntegerField()
-    operario_id = serializers.IntegerField()
+    fecha = serializers.DateTimeField(required=False, allow_null=True)
+    peso = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    residuo_id = serializers.IntegerField(required=False, allow_null=True)
+    operario_id = serializers.IntegerField(required=False, allow_null=True)
     motivo = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+    motivo_otro = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+
 
 class AreaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     procedencia_id = serializers.IntegerField()
 
+
 class CategoriaResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
-    area_id = serializers.IntegerField()  # Cambiado de descripcion a area_id para coincidir con la entidad
+    subarea_id = serializers.IntegerField()
+
 
 class ResiduoEspecificoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     categoria_id = serializers.IntegerField()
 
+
 class CentroCostoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     codigo = serializers.CharField(max_length=50)
-    area_id = serializers.IntegerField()
+    nombre = serializers.CharField(max_length=100, required=False, allow_null=True)
+    clase_movimiento = serializers.IntegerField(required=False, allow_null=True)
+    subarea_id = serializers.IntegerField(required=False, allow_null=True)
+
 
 class RolAdministrativoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
 
+
 class OperarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
-    apellido = serializers.CharField(max_length=100)
-    documento = serializers.CharField()  # Cambiado a CharField para coincidir con la entidad
+    apellido = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
+    documento = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True)
+    subarea_id = serializers.IntegerField(required=False, allow_null=True)
+
+class SubAreaSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField()
     area_id = serializers.IntegerField()
+

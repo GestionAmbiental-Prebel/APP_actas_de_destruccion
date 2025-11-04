@@ -1,120 +1,120 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-# Descomentar y agregar las importaciones necesarias
 from app.application.services import (
     ProcedenciaService,
     ActaService,
     ActaGeneracionResiduoService,
-    UsuarioService,
     GeneracionResiduoService,
+    AreaService,
+    CategoriaResiduoService,
     ResiduoEspecificoService,
     CentroCostoService,
     RolAdministrativoService,
-    OperarioService,AreaService,
-    CategoriaResiduoService)
+    OperarioService,
+    SubAreaService,
+)
 
 from app.infrastructure.repositories import (
     ProcedenciaRepositoryImpl,
     ActaRepositoryImpl,
     ActaGeneracionResiduoRepositoryImpl,
-    UsuarioRepositoryImpl,
     GeneracionResiduoRepositoryImpl,
     AreaRepositoryImpl,
+    CategoriaResiduoRepositoryImpl,
     ResiduoEspecificoRepositoryImpl,
     CentroCostoRepositoryImpl,
     RolAdministrativoRepositoryImpl,
     OperarioRepositoryImpl,
-    CategoriaResiduoRepositoryImpl)
+    SubAreaRepositoryImpl,
+)
 
 from app.infrastructure.serializers import (
     ProcedenciaSerializer,
     ActaSerializer,
     ActaGeneracionResiduoSerializer,
-    UsuarioSerializer,
     GeneracionResiduoSerializer,
     AreaSerializer,
+    CategoriaResiduoSerializer,
     ResiduoEspecificoSerializer,
     CentroCostoSerializer,
     RolAdministrativoSerializer,
     OperarioSerializer,
-    CategoriaResiduoSerializer,)
+    SubAreaSerializer,
+)
 
-# Generic ViewSet Generator
-def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name, filterable_fields=None):
+
+# ====================================================
+# GENERADOR GENÉRICO DE VIEWSETS
+# ====================================================
+
+def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name):
     """
-    Genera un ViewSet genérico para manejar operaciones CRUD en un modelo específico.
-    :param service_cls: Clase del servicio que maneja la lógica de negocio.
-    :param repository_cls: Clase del repositorio que maneja la persistencia de datos.
-    :param serializer_cls: Clase del serializador que maneja la validación y serialización de datos.
-    :param tag_name: Nombre del modelo para la documentación de la API.
-    :param filterable_fields: Lista de campos que se pueden filtrar en la consulta (QueryParams).
+    Genera un ViewSet genérico para operaciones CRUD.
+    service_cls: Clase de servicio (lógica de negocio)
+    repository_cls: Clase del repositorio (acceso a datos)
+    serializer_cls: Clase del serializador (validación)
+    tag_name: Nombre descriptivo para Swagger
     """
+
     @extend_schema_view(
         list=extend_schema(summary=f"Listar {tag_name}"),
-        retrieve=extend_schema(summary=f"Obtener un {tag_name} por ID"),
+        retrieve=extend_schema(summary=f"Obtener {tag_name} por ID"),
         create=extend_schema(summary=f"Crear un {tag_name}"),
         update=extend_schema(summary=f"Actualizar un {tag_name}"),
-        partial_update=extend_schema(summary=f"Actualizar parcialmente un {tag_name}"),
         destroy=extend_schema(summary=f"Eliminar un {tag_name}")
     )
     class GenericViewSet(viewsets.ViewSet):
         permission_classes = [AllowAny]
-        # permission_classes = [IsAuthenticated]
         service = service_cls(repository_cls())
 
         def list(self, request):
-            filters = {}
-            if filterable_fields:
-                for field in filterable_fields:
-                    if field in request.query_params:
-                        filters[field] = request.query_params[field]
-
-            print(f"Filters: {filters}")
-            data = self.service.list_all(filters)
+            """GET /api/<modelo>/"""
+            data = self.service.list_all()
             serializer = serializer_cls(data, many=True)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         def retrieve(self, request, pk=None):
+            """GET /api/<modelo>/{id}/"""
             item = self.service.get_by_id(int(pk))
+            if not item:
+                return Response({"detail": f"{tag_name} no encontrado."}, status=status.HTTP_404_NOT_FOUND)
             serializer = serializer_cls(item)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         def create(self, request):
+            """POST /api/<modelo>/"""
             serializer = serializer_cls(data=request.data)
             serializer.is_valid(raise_exception=True)
-            item = self.service.create(serializer.validated_data)
-            return Response(serializer_cls(item).data, status=status.HTTP_201_CREATED)
+            created = self.service.create(serializer.validated_data)
+            return Response(serializer_cls(created).data, status=status.HTTP_201_CREATED)
 
         def update(self, request, pk=None):
+            """PUT /api/<modelo>/{id}/"""
             serializer = serializer_cls(data=request.data)
             serializer.is_valid(raise_exception=True)
-            item = self.service.update(int(pk), serializer.validated_data)
-            return Response(serializer_cls(item).data)
+            updated = self.service.update(int(pk), serializer.validated_data)
+            return Response(serializer_cls(updated).data, status=status.HTTP_200_OK)
 
         def destroy(self, request, pk=None):
+            """DELETE /api/<modelo>/{id}/"""
             self.service.delete(int(pk))
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     return GenericViewSet
 
-"""
-    Aquí puedes definir tus ViewSets específicos para tu API
-    Puedes usar la función generate_viewset o crear tus propios ViewSets
-"""
 
-# Ejemplo de uso de la función generate_viewset para crear ViewSets específicos
-
-# ...existing imports...
+# ====================================================
+# REGISTRO DE VIEWSETS ESPECÍFICOS
+# ====================================================
 
 ProcedenciaViewSet = generate_viewset(
     ProcedenciaService,
     ProcedenciaRepositoryImpl,
     ProcedenciaSerializer,
     "Procedencia",
-    filterable_fields=["sede", "nombre"]
 )
 
 ActasViewSet = generate_viewset(
@@ -122,7 +122,6 @@ ActasViewSet = generate_viewset(
     ActaRepositoryImpl,
     ActaSerializer,
     "Acta",
-    filterable_fields=["numero_acta", "area_id", "centro_costo_id", "operario_entrega_id", "operario_recepcion_id"]
 )
 
 ActaGeneracionResiduoViewSet = generate_viewset(
@@ -130,15 +129,6 @@ ActaGeneracionResiduoViewSet = generate_viewset(
     ActaGeneracionResiduoRepositoryImpl,
     ActaGeneracionResiduoSerializer,
     "ActaGeneracionResiduo",
-    filterable_fields=["acta_id", "generacion_residuo_id", "peso_reportado", "peso_conciliado"]
-)
-
-UsuarioViewSet = generate_viewset(
-    UsuarioService,
-    UsuarioRepositoryImpl,
-    UsuarioSerializer,
-    "Usuario",
-    filterable_fields=["username", "area_id", "rol_administrativo_id"]
 )
 
 GeneracionResiduoViewSet = generate_viewset(
@@ -146,7 +136,6 @@ GeneracionResiduoViewSet = generate_viewset(
     GeneracionResiduoRepositoryImpl,
     GeneracionResiduoSerializer,
     "GeneracionResiduo",
-    filterable_fields=["fecha", "residuo_id", "operario_id", "motivo"]
 )
 
 AreaViewSet = generate_viewset(
@@ -154,7 +143,6 @@ AreaViewSet = generate_viewset(
     AreaRepositoryImpl,
     AreaSerializer,
     "Area",
-    filterable_fields=["nombre", "procedencia_id"]
 )
 
 CategoriaResiduoViewSet = generate_viewset(
@@ -162,7 +150,6 @@ CategoriaResiduoViewSet = generate_viewset(
     CategoriaResiduoRepositoryImpl,
     CategoriaResiduoSerializer,
     "CategoriaResiduo",
-    filterable_fields=["nombre", "area_id"]
 )
 
 ResiduoEspecificoViewSet = generate_viewset(
@@ -170,7 +157,6 @@ ResiduoEspecificoViewSet = generate_viewset(
     ResiduoEspecificoRepositoryImpl,
     ResiduoEspecificoSerializer,
     "ResiduoEspecifico",
-    filterable_fields=["nombre", "categoria_id"]
 )
 
 CentroCostoViewSet = generate_viewset(
@@ -178,7 +164,6 @@ CentroCostoViewSet = generate_viewset(
     CentroCostoRepositoryImpl,
     CentroCostoSerializer,
     "CentroCosto",
-    filterable_fields=["codigo", "area_id"]
 )
 
 RolAdministrativoViewSet = generate_viewset(
@@ -186,7 +171,6 @@ RolAdministrativoViewSet = generate_viewset(
     RolAdministrativoRepositoryImpl,
     RolAdministrativoSerializer,
     "RolAdministrativo",
-    filterable_fields=["nombre"]
 )
 
 OperarioViewSet = generate_viewset(
@@ -194,5 +178,11 @@ OperarioViewSet = generate_viewset(
     OperarioRepositoryImpl,
     OperarioSerializer,
     "Operario",
-    filterable_fields=["nombre", "apellido", "documento", "area_id"]
+)
+
+SubAreaViewSet = generate_viewset(
+    SubAreaService,
+    SubAreaRepositoryImpl,
+    SubAreaSerializer,
+    "SubArea",
 )

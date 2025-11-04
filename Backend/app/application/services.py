@@ -1,11 +1,11 @@
 """
-    Registrar los servicios de la aplicación (Ver manual de arquitecturra))
+Registrar los servicios de la aplicación (ver manual de arquitectura)
 """
+from typing import List, Optional
 from app.domain.entities import (
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
-    Usuario,
     GeneracionResiduo,
     Area,
     CategoriaResiduo,
@@ -13,12 +13,12 @@ from app.domain.entities import (
     CentroCosto,
     RolAdministrativo,
     Operario,
+    SubArea,
 )
 from app.domain.repositories import (
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
-    UsuarioRepository,
     GeneracionResiduoRepository,
     AreaRepository,
     CategoriaResiduoRepository,
@@ -26,16 +26,21 @@ from app.domain.repositories import (
     CentroCostoRepository,
     RolAdministrativoRepository,
     OperarioRepository,
+    SubAreaRepository,
 )
+
+# =======================================
+# SERVICIOS (Lógica de negocio)
+# =======================================
 
 class ProcedenciaService:
     def __init__(self, repository: ProcedenciaRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[Procedencia]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[Procedencia]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> Procedencia:
+    def get_by_id(self, id: int) -> Optional[Procedencia]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Procedencia:
@@ -47,14 +52,15 @@ class ProcedenciaService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
+
 class ActaService:
     def __init__(self, repository: ActaRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[Acta]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[Acta]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> Acta:
+    def get_by_id(self, id: int) -> Optional[Acta]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Acta:
@@ -66,14 +72,15 @@ class ActaService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
+
 class ActaGeneracionResiduoService:
     def __init__(self, repository: ActaGeneracionResiduoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[ActaGeneracionResiduo]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[ActaGeneracionResiduo]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> ActaGeneracionResiduo:
+    def get_by_id(self, id: int) -> Optional[ActaGeneracionResiduo]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> ActaGeneracionResiduo:
@@ -85,33 +92,18 @@ class ActaGeneracionResiduoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
-class UsuarioService:
-    def __init__(self, repository: UsuarioRepository):
-        self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[Usuario]:
-        return self.repository.list_all(filtros)
 
-    def get_by_id(self, id: int) -> Usuario:
-        return self.repository.get_by_id(id)
 
-    def create(self, data: dict) -> Usuario:
-        return self.repository.create(Usuario(**data))
-
-    def update(self, id: int, data: dict) -> Usuario:
-        return self.repository.update(id, Usuario(**data))
-
-    def delete(self, id: int) -> None:
-        self.repository.delete(id)
 
 class GeneracionResiduoService:
     def __init__(self, repository: GeneracionResiduoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[GeneracionResiduo]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[GeneracionResiduo]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> GeneracionResiduo:
+    def get_by_id(self, id: int) -> Optional[GeneracionResiduo]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> GeneracionResiduo:
@@ -123,65 +115,89 @@ class GeneracionResiduoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
+
 class AreaService:
     def __init__(self, repository: AreaRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[Area]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[Area]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> Area:
+    def get_by_id(self, id: int) -> Optional[Area]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Area:
         return self.repository.create(Area(**data))
 
+
+class SubAreaService:
+    def __init__(self, repository: SubAreaRepository):
+        self.repository = repository
+
+    def list_all(self) -> List[SubArea]:
+        return self.repository.list_all()
+
+    def get_by_id(self, id: int) -> Optional[SubArea]:
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict) -> SubArea:
+        return self.repository.create(SubArea(**data))
+
+    def update(self, id: int, data: dict) -> SubArea:
+        return self.repository.update(id, SubArea(**data))
+
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
+
+
 class CategoriaResiduoService:
     def __init__(self, repository: CategoriaResiduoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[CategoriaResiduo]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[CategoriaResiduo]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> CategoriaResiduo:
+    def get_by_id(self, id: int) -> Optional[CategoriaResiduo]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> CategoriaResiduo:
         return self.repository.create(CategoriaResiduo(**data))
-    
+
     def update(self, id: int, data: dict) -> CategoriaResiduo:
         return self.repository.update(id, CategoriaResiduo(**data))
-    
+
     def delete(self, id: int) -> None:
         self.repository.delete(id)
+
 
 class ResiduoEspecificoService:
     def __init__(self, repository: ResiduoEspecificoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[ResiduoEspecifico]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[ResiduoEspecifico]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> ResiduoEspecifico:
+    def get_by_id(self, id: int) -> Optional[ResiduoEspecifico]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> ResiduoEspecifico:
         return self.repository.create(ResiduoEspecifico(**data))
-    
+
     def update(self, id: int, data: dict) -> ResiduoEspecifico:
         return self.repository.update(id, ResiduoEspecifico(**data))
-    
+
     def delete(self, id: int) -> None:
         self.repository.delete(id)
+
 
 class CentroCostoService:
     def __init__(self, repository: CentroCostoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[CentroCosto]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[CentroCosto]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> CentroCosto:
+    def get_by_id(self, id: int) -> Optional[CentroCosto]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> CentroCosto:
@@ -193,14 +209,15 @@ class CentroCostoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
+
 class RolAdministrativoService:
     def __init__(self, repository: RolAdministrativoRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[RolAdministrativo]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[RolAdministrativo]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> RolAdministrativo:
+    def get_by_id(self, id: int) -> Optional[RolAdministrativo]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> RolAdministrativo:
@@ -212,14 +229,15 @@ class RolAdministrativoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
+
 class OperarioService:
     def __init__(self, repository: OperarioRepository):
         self.repository = repository
 
-    def list_all(self, filtros: dict = {}) -> list[Operario]:
-        return self.repository.list_all(filtros)
+    def list_all(self) -> List[Operario]:
+        return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> Operario:
+    def get_by_id(self, id: int) -> Optional[Operario]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Operario:

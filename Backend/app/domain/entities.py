@@ -1,83 +1,102 @@
 from dataclasses import dataclass
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+
+@dataclass
+class Sede:
+    id: Optional[int]
+    nombre: str
+
 
 @dataclass
 class Procedencia:
-    id: int | None
+    id: Optional[int]
     nombre: str
-    sede: str
+    sede_id: int
+
 
 @dataclass
 class Area:
-    id: int | None
+    id: Optional[int]
     nombre: str
     procedencia_id: int
 
+
 @dataclass
-class CategoriaResiduo:
-    id: int | None
+class SubArea:
+    id: Optional[int]
     nombre: str
     area_id: int
+
+
+@dataclass
+class CategoriaResiduo:
+    id: Optional[int]
+    nombre: str
+    subarea_id: int
+
 
 @dataclass
 class ResiduoEspecifico:
-    id: int | None
+    id: Optional[int]
     nombre: str
     categoria_id: int
 
-@dataclass
-class Operario:
-    id: int | None
-    nombre: str
-    apellido: str
-    documento: str
-    area_id: int
 
 @dataclass
-class GeneracionResiduo:
-    id: int | None
-    fecha: datetime
-    peso: float
-    residuo_id: int
-    operario_id: int
-    motivo: str | None = None
+class Operario:
+    id: Optional[int]
+    nombre: str
+    apellido: Optional[str]
+    documento: Optional[str]
+    subarea_id: Optional[int]
+
 
 @dataclass
 class CentroCosto:
-    id: int | None
+    id: Optional[int]
     codigo: str
-    area_id: int
+    nombre: Optional[str]
+    clase_movimiento: Optional[int]
+    subarea_id: Optional[int]
+
 
 @dataclass
 class RolAdministrativo:
-    id: int | None
+    id: Optional[int]
     nombre: str
 
+
 @dataclass
-class Usuario:
-    id: int | None
-    username: str
-    password: str
-    area_id: int | None = None
-    rol_administrativo_id: int | None = None
+class GeneracionResiduo:
+    id: Optional[int]
+    fecha: Optional[datetime]
+    peso: Optional[float]
+    residuo_id: Optional[int]
+    operario_id: Optional[int]
+    motivo: Optional[str] = None
+    motivo_otro: Optional[str] = None
+
 
 @dataclass
 class Acta:
-    id: int | None
+    id: Optional[int]
     numero_acta: str
     fecha_acta: datetime
-    area_id: int
+    subarea_id: int
     centro_costo_id: int
-    operario_entrega_id: int
-    operario_recepcion_id: int
-    firma_entrega: str
-    firma_recepcion: str
+    documento_entrega: str
+    documento_recepcion: str
+
 
 @dataclass
 class ActaGeneracionResiduo:
-    id: int | None
+    id: Optional[int]
     acta_id: int
     generacion_residuo_id: int
-    peso_reportado: float
-    peso_conciliado: float
+    peso_reportado: Optional[float] = None
+    peso_conciliado: Optional[float] = None
+
+
+

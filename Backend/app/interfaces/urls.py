@@ -1,38 +1,34 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from app.interfaces.views import (
-    ProcedenciaViewSet,
-    ActasViewSet,
-    ActaGeneracionResiduoViewSet,
-    UsuarioViewSet,
-    GeneracionResiduoViewSet,
-    AreaViewSet,
-    CategoriaResiduoViewSet,
-    ResiduoEspecificoViewSet,
-    CentroCostoViewSet,
-    RolAdministrativoViewSet,
-    OperarioViewSet,)   
+from app.interfaces.views import *
+
 """
-    Registrar aqui los endpoints de la API
-    Se recomienda usar un router para generar los endpoints automaticamente
+Registrar aquí los endpoints de la API
+Se recomienda usar un router para generar los endpoints automáticamente
 """
 
 router = DefaultRouter()
+
+# --- Catálogos ---
+
 router.register(r'procedencias', ProcedenciaViewSet, basename='procedencia')
-router.register(r'actas', ActasViewSet, basename='acta')
-router.register(r'acta-generacionresiduo', ActaGeneracionResiduoViewSet, basename='acta-generacionresiduo')
-router.register(r'usuarios', UsuarioViewSet, basename='usuario')
-router.register(r'generacionresiduo', GeneracionResiduoViewSet, basename='generacionresiduo')
 router.register(r'areas', AreaViewSet, basename='area')
-router.register(r'categoriaresiduo', CategoriaResiduoViewSet, basename='categoriaresiduo')
-router.register(r'residuoespecifico', ResiduoEspecificoViewSet, basename='residuoespecifico')
-router.register(r'centrocosto', CentroCostoViewSet, basename='centrocosto')
-router.register(r'roladministrativo', RolAdministrativoViewSet, basename='roladministrativo')
+router.register(r'categorias-residuos', CategoriaResiduoViewSet, basename='categoria-residuo')
+router.register(r'residuos-especificos', ResiduoEspecificoViewSet, basename='residuo-especifico')
+router.register(r'centros-costos', CentroCostoViewSet, basename='centro-costo')
+router.register(r'roles-administrativos', RolAdministrativoViewSet, basename='rol-administrativo')
+
+# --- Operaciones ---
 router.register(r'operarios', OperarioViewSet, basename='operario')
+router.register(r'actas', ActasViewSet, basename='acta')
+router.register(r'actas-generacionresiduos', ActaGeneracionResiduoViewSet, basename='acta-generacion-residuo')
+router.register(r'generaciones-residuos', GeneracionResiduoViewSet, basename='generacion-residuo')
+router.register(r'subareas', SubAreaViewSet, basename='subarea')
+
 
 urlpatterns = [
     path('api/', include(router.urls)),  # Prefijo para todas las rutas de API
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),  # URL más corta
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
