@@ -323,6 +323,8 @@ class CentroCostoRepositoryImpl(CentroCostoRepository):
             CentroCosto(
                 id=cc.id,
                 codigo=cc.codigo,
+                nombre=cc.nombre,  # <- obligatorio
+                clase_movimiento=cc.clase_movimiento,  # <- obligatorio
                 subarea_id=cc.subarea_id
             )
             for cc in queryset
@@ -333,6 +335,8 @@ class CentroCostoRepositoryImpl(CentroCostoRepository):
         return CentroCosto(
             id=cc.id,
             codigo=cc.codigo,
+            nombre=cc.nombre,
+            clase_movimiento=cc.clase_movimiento,
             subarea_id=cc.subarea_id
         )
 
@@ -346,6 +350,7 @@ class CentroCostoRepositoryImpl(CentroCostoRepository):
 
     def delete(self, id: int) -> None:
         CentroCostoModel.objects.filter(id=id).delete()
+
 
 
 # ---------- ROL ADMINISTRATIVO ----------

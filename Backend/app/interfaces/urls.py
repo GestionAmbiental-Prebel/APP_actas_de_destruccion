@@ -10,8 +10,9 @@ Se recomienda usar un router para generar los endpoints automáticamente
 
 router = DefaultRouter()
 
-# --- Catálogos ---
+router = DefaultRouter()
 
+# --- Catálogos ---
 router.register(r'procedencias', ProcedenciaViewSet, basename='procedencia')
 router.register(r'areas', AreaViewSet, basename='area')
 router.register(r'categorias-residuos', CategoriaResiduoViewSet, basename='categoria-residuo')
@@ -22,9 +23,10 @@ router.register(r'roles-administrativos', RolAdministrativoViewSet, basename='ro
 # --- Operaciones ---
 router.register(r'operarios', OperarioViewSet, basename='operario')
 router.register(r'actas', ActasViewSet, basename='acta')
-router.register(r'actas-generacionresiduos', ActaGeneracionResiduoViewSet, basename='acta-generacion-residuo')
-router.register(r'generaciones-residuos', GeneracionResiduoViewSet, basename='generacion-residuo')
-router.register(r'subareas', SubAreaViewSet, basename='subarea')
+router.register(r'actas-generacion-residuo', ActaGeneracionResiduoViewSet, basename='acta-generacion-residuo')
+router.register(r'generacion-residuo', GeneracionResiduoViewSet, basename='generacion-residuo')
+router.register(r'sub-area', SubAreaViewSet, basename='sub-area')
+
 
 
 urlpatterns = [
