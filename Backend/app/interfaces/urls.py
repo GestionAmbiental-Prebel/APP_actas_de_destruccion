@@ -26,6 +26,7 @@ router.register(r'actas', ActasViewSet, basename='acta')
 router.register(r'actas-generacion-residuo', ActaGeneracionResiduoViewSet, basename='acta-generacion-residuo')
 router.register(r'generacion-residuo', GeneracionResiduoViewSet, basename='generacion-residuo')
 router.register(r'sub-area', SubAreaViewSet, basename='sub-area')
+router.register(r'novedad-conciliacion', NovedadConciliacionViewSet, basename='novedad-conciliacion')
 
 
 

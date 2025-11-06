@@ -98,5 +98,12 @@ class ActaGeneracionResiduo:
     peso_reportado: Optional[float] = None
     peso_conciliado: Optional[float] = None
 
+@dataclass
+class NovedadConciliacion:
+    id: int
+    acta_generacion_residuo_id: int
+    descripcion: str
+    fecha: datetime
+
 
 

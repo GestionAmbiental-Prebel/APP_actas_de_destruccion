@@ -77,3 +77,28 @@ class SubAreaSerializer(serializers.Serializer):
     nombre = serializers.CharField()
     area_id = serializers.IntegerField()
 
+class NovedadConciliacionSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    acta_generacion_residuo_id = serializers.IntegerField(required=True)
+    descripcion = serializers.CharField(required=True, max_length=255)
+    fecha = serializers.DateTimeField(required=True)
+
+    def create(self, validated_data):
+        """
+        Llama al servicio para crear una novedad.
+        """
+        service = self.context.get("service")
+        if not service:
+            raise ValueError("El servicio no fue inyectado en el contexto del serializer")
+
+        return service.create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Llama al servicio para actualizar una novedad.
+        """
+        service = self.context.get("service")
+        if not service:
+            raise ValueError("El servicio no fue inyectado en el contexto del serializer")
+
+        return service.update(instance.id, validated_data)

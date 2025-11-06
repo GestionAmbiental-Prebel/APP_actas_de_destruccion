@@ -15,6 +15,7 @@ from app.application.services import (
     RolAdministrativoService,
     OperarioService,
     SubAreaService,
+    NovedadConciliacionService,
 )
 
 from app.infrastructure.repositories import (
@@ -29,6 +30,7 @@ from app.infrastructure.repositories import (
     RolAdministrativoRepositoryImpl,
     OperarioRepositoryImpl,
     SubAreaRepositoryImpl,
+    NovedadConciliacionRepositoryImpl,
 )
 
 from app.infrastructure.serializers import (
@@ -43,6 +45,7 @@ from app.infrastructure.serializers import (
     RolAdministrativoSerializer,
     OperarioSerializer,
     SubAreaSerializer,
+    NovedadConciliacionSerializer,
 )
 
 
@@ -185,4 +188,11 @@ SubAreaViewSet = generate_viewset(
     SubAreaRepositoryImpl,
     SubAreaSerializer,
     "SubArea",
+)
+
+NovedadConciliacionViewSet = generate_viewset(
+    NovedadConciliacionService,
+    NovedadConciliacionRepositoryImpl,
+    NovedadConciliacionSerializer,
+    "NovedadConciliacion",
 )

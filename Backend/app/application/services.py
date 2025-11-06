@@ -14,6 +14,7 @@ from app.domain.entities import (
     RolAdministrativo,
     Operario,
     SubArea,
+    NovedadConciliacion,
 )
 from app.domain.repositories import (
     ProcedenciaRepository,
@@ -27,6 +28,7 @@ from app.domain.repositories import (
     RolAdministrativoRepository,
     OperarioRepository,
     SubAreaRepository,
+    NovedadConciliacionRepository,
 )
 
 # =======================================
@@ -248,3 +250,52 @@ class OperarioService:
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
+
+class NovedadConciliacionService:
+    def __init__(self, repository: NovedadConciliacionRepository):
+        self.repository = repository
+
+    def list_all(self, filtros: dict = {}) -> List[NovedadConciliacion]:
+        """Lista todas las novedades de conciliación (puede filtrar por campos)."""
+        try:
+            return self.repository.list_all(filtros)
+        except Exception as e:
+            raise ValueError(f"Error al listar novedades: {str(e)}")
+
+    def get_by_id(self, id: int) -> Optional[NovedadConciliacion]:
+        """Obtiene una novedad por su ID."""
+        try:
+            return self.repository.get_by_id(id)
+        except ValueError as e:
+            raise e
+        except Exception as e:
+            raise ValueError(f"Error al obtener la novedad con id {id}: {str(e)}")
+
+    def create(self, data: dict) -> NovedadConciliacion:
+        """Crea una nueva novedad asociada a un acta de generación de residuo."""
+        try:
+            entity = NovedadConciliacion(**data)
+            return self.repository.create(entity)
+        except ValueError as e:
+            raise e
+        except Exception as e:
+            raise ValueError(f"Error al crear la novedad: {str(e)}")
+
+    def update(self, id: int, data: dict) -> NovedadConciliacion:
+        """Actualiza una novedad existente."""
+        try:
+            entity = NovedadConciliacion(**data)
+            return self.repository.update(id, entity)
+        except ValueError as e:
+            raise e
+        except Exception as e:
+            raise ValueError(f"Error al actualizar la novedad con id {id}: {str(e)}")
+
+    def delete(self, id: int) -> None:
+        """Elimina una novedad existente."""
+        try:
+            self.repository.delete(id)
+        except ValueError as e:
+            raise e
+        except Exception as e:
+            raise ValueError(f"Error al eliminar la novedad con id {id}: {str(e)}")

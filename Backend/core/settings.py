@@ -117,3 +117,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configuración de celery para tareas asíncronas
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", 'redis://redis:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", 'redis://redis:6379/0')
+
+# Configuración de DRF
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # para Swagger
+    'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',  #manejo global de errores
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',  # Solo JSON por defecto
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+}
