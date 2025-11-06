@@ -1,6 +1,4 @@
 from typing import List
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import IntegrityError, DatabaseError
 
 from app.domain.entities import (
     Procedencia,
@@ -33,6 +31,7 @@ from app.domain.repositories import (
 )
 
 from app.infrastructure.models import (
+    Sede,
     Procedencia as ProcedenciaModel,
     Area as AreaModel,
     CategoriaResiduo as CategoriaResiduoModel,
@@ -50,292 +49,401 @@ from app.infrastructure.models import (
 from django.forms.models import model_to_dict
 
 
-def safe_get(model, **kwargs):
-    """Obtiene una instancia o lanza un ValueError con mensaje controlado."""
-    try:
-        return model.objects.get(**kwargs)
-    except ObjectDoesNotExist:
-        raise ValueError(f"No existe un registro con los criterios {kwargs}")
-    except DatabaseError as e:
-        raise ValueError(f"Error de base de datos al obtener registro: {str(e)}")
+def to_dto(instance, dto_class):
+    """Convierte una instancia de modelo a un DTO."""
+    return dto_class(**model_to_dict(instance))
 
 
-def safe_create(model, data):
-    """Crea un registro y captura errores de integridad o validación."""
-    try:
-        obj = model.objects.create(**data.__dict__)
-        return obj
-    except IntegrityError as e:
-        raise ValueError(f"Error de integridad al crear el registro: {str(e)}")
-    except ValidationError as e:
-        raise ValueError(f"Error de validación al crear el registro: {str(e)}")
-    except DatabaseError as e:
-        raise ValueError(f"Error de base de datos al crear registro: {str(e)}")
-
-
-def safe_update(model, id, data):
-    """Actualiza un registro y verifica su existencia."""
-    if not model.objects.filter(id=id).exists():
-        raise ValueError(f"No existe el registro con id {id} para actualizar")
-    try:
-        model.objects.filter(id=id).update(**data.__dict__)
-    except IntegrityError as e:
-        raise ValueError(f"Error de integridad al actualizar: {str(e)}")
-    except ValidationError as e:
-        raise ValueError(f"Error de validación al actualizar: {str(e)}")
-    except DatabaseError as e:
-        raise ValueError(f"Error de base de datos al actualizar: {str(e)}")
-
-
-def safe_delete(model, id):
-    """Elimina un registro con control de integridad referencial."""
-    if not model.objects.filter(id=id).exists():
-        raise ValueError(f"No existe el registro con id {id} para eliminar")
-    try:
-        model.objects.filter(id=id).delete()
-    except IntegrityError as e:
-        raise ValueError(f"No se puede eliminar el registro (referenciado por otros): {str(e)}")
-    except DatabaseError as e:
-        raise ValueError(f"Error de base de datos al eliminar: {str(e)}")
-
-
-# ---------- REPOSITORIES ----------
-
+# ---------- PROCEDENCIA ----------
 class ProcedenciaRepositoryImpl(ProcedenciaRepository):
     def list_all(self, filtros: dict = {}) -> list[Procedencia]:
-        return [Procedencia(**model_to_dict(p)) for p in ProcedenciaModel.objects.filter(**filtros)]
+        queryset = ProcedenciaModel.objects.filter(**filtros)
+        return [
+            Procedencia(
+                id=p.id,
+                nombre=p.nombre,
+                sede_id=p.sede_id
+            )
+            for p in queryset
+        ]
 
     def get_by_id(self, id: int) -> Procedencia:
-        p = safe_get(ProcedenciaModel, id=id)
-        return Procedencia(**model_to_dict(p))
+        p = ProcedenciaModel.objects.get(id=id)
+        return Procedencia(
+            id=p.id,
+            nombre=p.nombre,
+            sede_id=p.sede_id
+        )
 
     def create(self, data: Procedencia) -> Procedencia:
-        obj = safe_create(ProcedenciaModel, data)
+        obj = ProcedenciaModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: Procedencia) -> Procedencia:
-        safe_update(ProcedenciaModel, id, data)
+        ProcedenciaModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(ProcedenciaModel, id)
+        ProcedenciaModel.objects.filter(id=id).delete()
 
 
+
+# ---------- ACTA ----------
 class ActaRepositoryImpl(ActaRepository):
     def list_all(self, filtros: dict = {}) -> list[Acta]:
-        return [Acta(**model_to_dict(a)) for a in ActaModel.objects.filter(**filtros)]
+        queryset = ActaModel.objects.filter(**filtros)
+        return [
+            Acta(
+                id=a.id,
+                numero_acta=a.numero_acta,
+                fecha_acta=a.fecha_acta,
+                area_id=a.area_id,
+                centro_costo_id=a.centro_costo_id,
+                operario_entrega_id=a.operario_entrega_id,
+                operario_recepcion_id=a.operario_recepcion_id,
+                firma_entrega=a.firma_entrega,
+                firma_recepcion=a.firma_recepcion,
+            )
+            for a in queryset
+        ]
 
     def get_by_id(self, id: int) -> Acta:
-        a = safe_get(ActaModel, id=id)
-        return Acta(**model_to_dict(a))
+        a = ActaModel.objects.get(id=id)
+        return Acta(
+            id=a.id,
+            numero_acta=a.numero_acta,
+            fecha_acta=a.fecha_acta,
+            area_id=a.area_id,
+            centro_costo_id=a.centro_costo_id,
+            operario_entrega_id=a.operario_entrega_id,
+            operario_recepcion_id=a.operario_recepcion_id,
+            firma_entrega=a.firma_entrega,
+            firma_recepcion=a.firma_recepcion,
+        )
 
     def create(self, data: Acta) -> Acta:
-        obj = safe_create(ActaModel, data)
+        obj = ActaModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: Acta) -> Acta:
-        safe_update(ActaModel, id, data)
+        ActaModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(ActaModel, id)
+        ActaModel.objects.filter(id=id).delete()
 
 
+# ---------- ACTA GENERACION RESIDUO ----------
 class ActaGeneracionResiduoRepositoryImpl(ActaGeneracionResiduoRepository):
     def list_all(self, filtros: dict = {}) -> List[ActaGeneracionResiduo]:
-        return [ActaGeneracionResiduo(**model_to_dict(a)) for a in ActaGeneracionResiduoModel.objects.filter(**filtros)]
+        queryset = ActaGeneracionResiduoModel.objects.filter(**filtros)
+        return [
+            ActaGeneracionResiduo(
+                id=obj.id,
+                acta_id=obj.acta_id,
+                generacion_residuo_id=obj.generacion_residuo_id,
+                peso_reportado=obj.peso_reportado,
+                peso_conciliado=obj.peso_conciliado,
+            )
+            for obj in queryset
+        ]
 
     def get_by_id(self, id: int) -> ActaGeneracionResiduo:
-        obj = safe_get(ActaGeneracionResiduoModel, id=id)
-        return ActaGeneracionResiduo(**model_to_dict(obj))
+        obj = ActaGeneracionResiduoModel.objects.get(id=id)
+        return ActaGeneracionResiduo(
+            id=obj.id,
+            acta_id=obj.acta_id,
+            generacion_residuo_id=obj.generacion_residuo_id,
+            peso_reportado=obj.peso_reportado,
+            peso_conciliado=obj.peso_conciliado,
+        )
 
     def create(self, entity: ActaGeneracionResiduo) -> ActaGeneracionResiduo:
-        obj = safe_create(ActaGeneracionResiduoModel, entity)
+        obj = ActaGeneracionResiduoModel.objects.create(**entity.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, entity: ActaGeneracionResiduo) -> ActaGeneracionResiduo:
-        safe_update(ActaGeneracionResiduoModel, id, entity)
+        ActaGeneracionResiduoModel.objects.filter(id=id).update(**entity.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(ActaGeneracionResiduoModel, id)
+        ActaGeneracionResiduoModel.objects.filter(id=id).delete()
 
 
+# ---------- GENERACION RESIDUO ----------
 class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
     def list_all(self, filtros: dict = {}) -> list[GeneracionResiduo]:
-        return [GeneracionResiduo(**model_to_dict(g)) for g in GeneracionResiduoModel.objects.filter(**filtros)]
+        queryset = GeneracionResiduoModel.objects.filter(**filtros)
+        return [
+            GeneracionResiduo(
+                id=g.id,
+                fecha=g.fecha,
+                peso=g.peso,
+                residuo_id=g.residuo_id,
+                operario_id=g.operario_id,
+                motivo=g.motivo,
+            )
+            for g in queryset
+        ]
 
     def get_by_id(self, id: int) -> GeneracionResiduo:
-        g = safe_get(GeneracionResiduoModel, id=id)
-        return GeneracionResiduo(**model_to_dict(g))
+        g = GeneracionResiduoModel.objects.get(id=id)
+        return GeneracionResiduo(
+            id=g.id,
+            fecha=g.fecha,
+            peso=g.peso,
+            residuo_id=g.residuo_id,
+            operario_id=g.operario_id,
+            motivo=g.motivo,
+        )
 
     def create(self, data: GeneracionResiduo) -> GeneracionResiduo:
-        obj = safe_create(GeneracionResiduoModel, data)
+        obj = GeneracionResiduoModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: GeneracionResiduo) -> GeneracionResiduo:
-        safe_update(GeneracionResiduoModel, id, data)
+        GeneracionResiduoModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(GeneracionResiduoModel, id)
+        GeneracionResiduoModel.objects.filter(id=id).delete()
 
 
+# ---------- AREA ----------
 class AreaRepositoryImpl(AreaRepository):
     def list_all(self, filtros: dict = {}) -> list[Area]:
-        return [Area(**model_to_dict(a)) for a in AreaModel.objects.filter(**filtros)]
+        queryset = AreaModel.objects.filter(**filtros)
+        return [Area(id=a.id, nombre=a.nombre, procedencia_id=a.procedencia_id) for a in queryset]
 
     def get_by_id(self, id: int) -> Area:
-        a = safe_get(AreaModel, id=id)
-        return Area(**model_to_dict(a))
+        a = AreaModel.objects.get(id=id)
+        return Area(id=a.id, nombre=a.nombre, procedencia_id=a.procedencia_id)
 
     def create(self, data: Area) -> Area:
-        obj = safe_create(AreaModel, data)
+        obj = AreaModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
-
+    
     def update(self, id: int, data: Area) -> Area:
-        safe_update(AreaModel, id, data)
+        AreaModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
-
+    
     def delete(self, id: int) -> None:
-        safe_delete(AreaModel, id)
+        AreaModel.objects.filter(id=id).delete()
 
-
+# ---------- SUBAREA ----------
 class SubAreaRepositoryImpl(SubAreaRepository):
     def list_all(self, filtros: dict = {}) -> list[SubArea]:
-        return [SubArea(**model_to_dict(s)) for s in SubAreaModel.objects.filter(**filtros)]
+        queryset = SubAreaModel.objects.filter(**filtros)
+        return [
+            SubArea(
+                id=s.id,
+                nombre=s.nombre,
+                area_id=s.area_id
+            )
+            for s in queryset
+        ]
 
     def get_by_id(self, id: int) -> SubArea:
-        s = safe_get(SubAreaModel, id=id)
-        return SubArea(**model_to_dict(s))
+        s = SubAreaModel.objects.get(id=id)
+        return SubArea(
+            id=s.id,
+            nombre=s.nombre,
+            area_id=s.area_id
+        )
 
     def create(self, data: SubArea) -> SubArea:
-        obj = safe_create(SubAreaModel, data)
+        obj = SubAreaModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: SubArea) -> SubArea:
-        safe_update(SubAreaModel, id, data)
+        SubAreaModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(SubAreaModel, id)
+        SubAreaModel.objects.filter(id=id).delete()
 
 
+# ---------- CATEGORIA RESIDUO ----------
 class CategoriaResiduoRepositoryImpl(CategoriaResiduoRepository):
     def list_all(self, filtros: dict = {}) -> list[CategoriaResiduo]:
-        return [CategoriaResiduo(**model_to_dict(c)) for c in CategoriaResiduoModel.objects.filter(**filtros)]
+        queryset = CategoriaResiduoModel.objects.filter(**filtros)
+        return [
+            CategoriaResiduo(
+                id=c.id,
+                nombre=c.nombre,
+                subarea_id=c.subarea_id
+            )
+            for c in queryset
+        ]
 
     def get_by_id(self, id: int) -> CategoriaResiduo:
-        c = safe_get(CategoriaResiduoModel, id=id)
-        return CategoriaResiduo(**model_to_dict(c))
+        c = CategoriaResiduoModel.objects.get(id=id)
+        return CategoriaResiduo(
+            id=c.id,
+            nombre=c.nombre,
+            subarea_id=c.subarea_id
+        )
 
     def create(self, data: CategoriaResiduo) -> CategoriaResiduo:
-        obj = safe_create(CategoriaResiduoModel, data)
+        obj = CategoriaResiduoModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: CategoriaResiduo) -> CategoriaResiduo:
-        safe_update(CategoriaResiduoModel, id, data)
+        CategoriaResiduoModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(CategoriaResiduoModel, id)
+        CategoriaResiduoModel.objects.filter(id=id).delete()
 
 
+# ---------- RESIDUO ESPECIFICO ----------
 class ResiduoEspecificoRepositoryImpl(ResiduoEspecificoRepository):
     def list_all(self, filtros: dict = {}) -> list[ResiduoEspecifico]:
-        return [ResiduoEspecifico(**model_to_dict(r)) for r in ResiduoEspecificoModel.objects.filter(**filtros)]
+        queryset = ResiduoEspecificoModel.objects.filter(**filtros)
+        return [ResiduoEspecifico(id=r.id, nombre=r.nombre, categoria_id=r.categoria_id) for r in queryset]
 
     def get_by_id(self, id: int) -> ResiduoEspecifico:
-        r = safe_get(ResiduoEspecificoModel, id=id)
-        return ResiduoEspecifico(**model_to_dict(r))
+        r = ResiduoEspecificoModel.objects.get(id=id)
+        return ResiduoEspecifico(id=r.id, nombre=r.nombre, categoria_id=r.categoria_id)
 
     def create(self, data: ResiduoEspecifico) -> ResiduoEspecifico:
-        obj = safe_create(ResiduoEspecificoModel, data)
+        obj = ResiduoEspecificoModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: ResiduoEspecifico) -> ResiduoEspecifico:
-        safe_update(ResiduoEspecificoModel, id, data)
+        ResiduoEspecificoModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(ResiduoEspecificoModel, id)
+        ResiduoEspecificoModel.objects.filter(id=id).delete()
 
 
+# ---------- CENTRO DE COSTOS ----------
 class CentroCostoRepositoryImpl(CentroCostoRepository):
     def list_all(self, filtros: dict = {}) -> list[CentroCosto]:
-        return [CentroCosto(**model_to_dict(c)) for c in CentroCostoModel.objects.filter(**filtros)]
+        queryset = CentroCostoModel.objects.filter(**filtros)
+        return [
+            CentroCosto(
+                id=cc.id,
+                codigo=cc.codigo,
+                nombre=cc.nombre,  # <- obligatorio
+                clase_movimiento=cc.clase_movimiento,  # <- obligatorio
+                subarea_id=cc.subarea_id
+            )
+            for cc in queryset
+        ]
 
     def get_by_id(self, id: int) -> CentroCosto:
-        c = safe_get(CentroCostoModel, id=id)
-        return CentroCosto(**model_to_dict(c))
+        cc = CentroCostoModel.objects.get(id=id)
+        return CentroCosto(
+            id=cc.id,
+            codigo=cc.codigo,
+            nombre=cc.nombre,
+            clase_movimiento=cc.clase_movimiento,
+            subarea_id=cc.subarea_id
+        )
 
     def create(self, data: CentroCosto) -> CentroCosto:
-        obj = safe_create(CentroCostoModel, data)
+        obj = CentroCostoModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: CentroCosto) -> CentroCosto:
-        safe_update(CentroCostoModel, id, data)
+        CentroCostoModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(CentroCostoModel, id)
+        CentroCostoModel.objects.filter(id=id).delete()
 
 
+
+# ---------- ROL ADMINISTRATIVO ----------
 class RolAdministrativoRepositoryImpl(RolAdministrativoRepository):
     def list_all(self, filtros: dict = {}) -> list[RolAdministrativo]:
-        return [RolAdministrativo(**model_to_dict(r)) for r in RolAdministrativoModel.objects.filter(**filtros)]
+        queryset = RolAdministrativoModel.objects.filter(**filtros)
+        return [RolAdministrativo(id=ra.id, nombre=ra.nombre) for ra in queryset]
 
     def get_by_id(self, id: int) -> RolAdministrativo:
-        r = safe_get(RolAdministrativoModel, id=id)
-        return RolAdministrativo(**model_to_dict(r))
+        ra = RolAdministrativoModel.objects.get(id=id)
+        return RolAdministrativo(id=ra.id, nombre=ra.nombre)
 
     def create(self, data: RolAdministrativo) -> RolAdministrativo:
-        obj = safe_create(RolAdministrativoModel, data)
+        obj = RolAdministrativoModel.objects.create(**data.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: RolAdministrativo) -> RolAdministrativo:
-        safe_update(RolAdministrativoModel, id, data)
+        RolAdministrativoModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(RolAdministrativoModel, id)
+        RolAdministrativoModel.objects.filter(id=id).delete()
 
 
+# ---------- OPERARIO ----------
 class OperarioRepositoryImpl(OperarioRepository):
     def list_all(self, filtros: dict = {}) -> list[Operario]:
-        return [Operario(**model_to_dict(o)) for o in OperarioModel.objects.filter(**filtros)]
+        queryset = OperarioModel.objects.filter(**filtros)
+        return [
+            Operario(
+                id=o.id,
+                nombre=o.nombre,
+                apellido=o.apellido,
+                documento=o.documento,
+                subarea_id=o.subarea_id
+            )
+            for o in queryset
+        ]
 
     def get_by_id(self, id: int) -> Operario:
-        o = safe_get(OperarioModel, id=id)
-        return Operario(**model_to_dict(o))
+        o = OperarioModel.objects.get(id=id)
+        return Operario(
+            id=o.id,
+            nombre=o.nombre,
+            apellido=o.apellido,
+            documento=o.documento,
+            subarea_id=o.subarea_id
+        )
 
-    def create(self, data: Operario) -> Operario:
-        obj = safe_create(OperarioModel, data)
+    def create(self, entity: Operario) -> Operario:
+        obj = OperarioModel.objects.create(**entity.__dict__)
         return self.get_by_id(obj.id)
 
-    def update(self, id: int, data: Operario) -> Operario:
-        safe_update(OperarioModel, id, data)
+    def update(self, id: int, entity: Operario) -> Operario:
+        OperarioModel.objects.filter(id=id).update(**entity.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(OperarioModel, id)
+        OperarioModel.objects.filter(id=id).delete()
 
-
+# ---------- NOVEDAD CONCILIACION ----------
 class NovedadConciliacionRepositoryImpl(NovedadConciliacionRepository):
     def list_all(self, filtros: dict = {}) -> list[NovedadConciliacion]:
-        return [NovedadConciliacion(**model_to_dict(n)) for n in NovedadConciliacionModel.objects.filter(**filtros)]
+        queryset = NovedadConciliacionModel.objects.filter(**filtros)
+        return [
+            NovedadConciliacion(
+                id=n.id,
+                acta_generacion_residuo_id=n.acta_generacion_residuo_id,
+                descripcion=n.descripcion,
+                fecha=n.fecha
+            )
+            for n in queryset
+        ]
 
     def get_by_id(self, id: int) -> NovedadConciliacion:
-        n = safe_get(NovedadConciliacionModel, id=id)
-        return NovedadConciliacion(**model_to_dict(n))
+        n = NovedadConciliacionModel.objects.get(id=id)
+        return NovedadConciliacion(
+            id=n.id,
+            acta_generacion_residuo_id=n.acta_generacion_residuo_id,
+            descripcion=n.descripcion,
+            fecha=n.fecha
+        )
 
     def create(self, entity: NovedadConciliacion) -> NovedadConciliacion:
-        obj = safe_create(NovedadConciliacionModel, entity)
+        obj = NovedadConciliacionModel.objects.create(**entity.__dict__)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, entity: NovedadConciliacion) -> NovedadConciliacion:
-        safe_update(NovedadConciliacionModel, id, entity)
+        NovedadConciliacionModel.objects.filter(id=id).update(**entity.__dict__)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
-        safe_delete(NovedadConciliacionModel, id)
+        NovedadConciliacionModel.objects.filter(id=id).delete()
