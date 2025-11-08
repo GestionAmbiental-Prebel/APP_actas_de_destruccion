@@ -1,7 +1,7 @@
 from typing import List
 
 from app.domain.entities import (
-    Sede
+    Sede,
     Procedencia,
     ActaGeneracionResiduo,
     GeneracionResiduo,
