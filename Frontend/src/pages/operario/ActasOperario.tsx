@@ -1,7 +1,7 @@
 // src/pages/operario/ActasOperario.tsx
 
 import { useUser } from "../../context/UserContext";
-import ListaActas from "../../components/operario/ListaActas";
+import ListaActas from "../../components/list/ActaList";
 
 // 🔹 Datos mock
 const mockActas = [

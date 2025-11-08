@@ -8,6 +8,9 @@ import { LayoutGestor } from "../components/LayoutGestor";
 import FormularioActa from "../pages/operario/FormularioActa";
 import ActasOperario from "../pages/operario/ActasOperario";
 
+// Sub area 
+import NuevaActa from "../pages/subarea/NuevaActa";
+
 // 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
 import { ConciliarActa } from "../pages/puntoVerde/ConciliarActa";
@@ -16,7 +19,7 @@ import { ActasConciliadas } from "../pages/puntoVerde/ActasConciliadas";
 // 🔹 Gestor Normal
 import { Dashboard } from "../pages/gestor/Dashboard";
 import ActasPageGestor from "../pages/gestor/ActasPage";
-import { NuevaActa } from "../pages/gestor/NuevaActa";
+//import { NuevaActa } from "../pages/gestor/NuevaActa";
 import { EditarActa } from "../pages/gestor/EditarActa";
 import { Reportes } from "../pages/gestor/Reportes";
 
@@ -63,6 +66,15 @@ export const router = createBrowserRouter([
           { path: "conciliar/:id", element: <ConciliarActa /> },
           { path: "conciliadas", element: <ActasConciliadas /> },
         ],
+      },
+
+      //Sub Area
+      {
+        path: "sub-area",
+        element: <LayoutOperario />,
+        children: [
+          { path: "formulario", element: <NuevaActa /> }
+        ]
       },
 
       // Gestor normal

@@ -1,8 +1,8 @@
 // src/pages/operario/FormularioActa.tsx
 import { useState } from "react";
-import SeccionIdentificacion from "../../components/operario/SeccionIdentificacion";
-import SeccionUbicacion from "../../components/operario/SeccionUbicacion";
-import SeccionResiduos from "../../components/operario/SeccionResiduos";
+import SeccionIdentificacion from "../../components/form/SeccionIdentificacion";
+import SeccionUbicacion from "../../components/form/SeccionUbicacion";
+import SeccionResiduos from "../../components/form/SeccionResiduos";
 
 const data = {
   operario: {
