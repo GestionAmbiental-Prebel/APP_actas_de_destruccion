@@ -4,6 +4,7 @@ from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from app.application.services import (
+    SedeService,
     ProcedenciaService,
     ActaService,
     ActaGeneracionResiduoService,
@@ -19,6 +20,7 @@ from app.application.services import (
 )
 
 from app.infrastructure.repositories import (
+    SedeRepositoryImpl,
     ProcedenciaRepositoryImpl,
     ActaRepositoryImpl,
     ActaGeneracionResiduoRepositoryImpl,
@@ -34,6 +36,7 @@ from app.infrastructure.repositories import (
 )
 
 from app.infrastructure.serializers import (
+    SedeSerializer,
     ProcedenciaSerializer,
     ActaSerializer,
     ActaGeneracionResiduoSerializer,
@@ -112,6 +115,13 @@ def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name):
 # ====================================================
 # REGISTRO DE VIEWSETS ESPECÍFICOS
 # ====================================================
+
+SedeViewSet = generate_viewset(
+    SedeService,
+    SedeRepositoryImpl,
+    SedeSerializer,
+    "Sede",
+)
 
 ProcedenciaViewSet = generate_viewset(
     ProcedenciaService,
