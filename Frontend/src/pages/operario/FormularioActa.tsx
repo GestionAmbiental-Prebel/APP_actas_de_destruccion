@@ -1,35 +1,8 @@
-// src/pages/operario/FormularioActa.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SeccionIdentificacion from "../../components/operario/SeccionIdentificacion";
 import SeccionUbicacion from "../../components/operario/SeccionUbicacion";
 import SeccionResiduos from "../../components/operario/SeccionResiduos";
-
-const data = {
-  operario: {
-    sede: "Medellín",
-    procedencia: "Planta Principal",
-    areas: {
-      Producción: {
-        centros: ["Línea A", "Línea B"],
-        residuos: ["Plásticos", "Metales"],
-        subAreas: ["Montaje", "Empaque"],
-      },
-      Logística: {
-        centros: ["Transporte", "Almacén"],
-        residuos: ["Cajas", "Embalajes"],
-        subAreas: ["Recepción", "Despacho"],
-      },
-    },
-  },
-};
-
-const motivos = [
-  "Vencimiento",
-  "Deterioro",
-  "Devolución",
-  "Exceso de inventario",
-  "Otro",
-];
+import { API_URL } from "../../utils/api";
 
 export default function FormularioActa() {
   const perfil = "operario"; // se obtiene del login/contexto
@@ -40,68 +13,124 @@ export default function FormularioActa() {
   const [apellido, setApellido] = useState("");
 
   // Ubicación
-  const [area, setArea] = useState("");
-  const [centroCostos, setCentroCostos] = useState("");
-  const [sede, setSede] = useState(data[perfil].sede);
+  const [sede, setSede] = useState("");
+  const [sedes, setSedes] = useState<string[]>([]);
   const [procedencia, setProcedencia] = useState("");
+  const [area, setArea] = useState("");
+  const [areas, setAreas] = useState<any[]>([]);
+  const [centroCostos, setCentroCostos] = useState("");
+  const [centros, setCentros] = useState<string[]>([]);
 
   // Residuos
   const [residuos, setResiduos] = useState([
     { residuo: "", categoria: "", motivo: "", peso: "" },
   ]);
+  const [motivos, setMotivos] = useState<string[]>([]);
 
-  // Toast
+  // UI
   const [showToast, setShowToast] = useState(false);
 
-  // Fake usuarios para demo
-  const fakeUsuarios: Record<string, { nombre: string; apellido: string }> = {
-    "123": { nombre: "Carlos", apellido: "Ramírez" },
-    "456": { nombre: "Ana", apellido: "Gómez" },
-  };
+  // 📦 Cargar datos iniciales desde el backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [sedesRes, areasRes, motivosRes] = await Promise.all([
+          fetch(`${API_URL}sedes/`),
+          fetch(`${API_URL}areas/`),
+          fetch(`${API_URL}motivos/`),
+        ]);
 
-  const handleCedulaBlur = () => {
-    if (fakeUsuarios[cedula]) {
-      setNombre(fakeUsuarios[cedula].nombre);
-      setApellido(fakeUsuarios[cedula].apellido);
+        const [sedesData, areasData, motivosData] = await Promise.all([
+          sedesRes.json(),
+          areasRes.json(),
+          motivosRes.json(),
+        ]);
+
+        setSedes(sedesData);
+        setAreas(areasData);
+        setMotivos(motivosData);
+      } catch (error) {
+        console.error("Error al cargar datos iniciales:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // 🔍 Buscar usuario por cédula
+  const handleCedulaBlur = async () => {
+    if (!cedula) return;
+
+    try {
+      const res = await fetch(`${API_URL}usuarios/${cedula}/`);
+      if (res.ok) {
+        const data = await res.json();
+        setNombre(data.nombre);
+        setApellido(data.apellido);
+      } else {
+        console.warn("Usuario no encontrado");
+        setNombre("");
+        setApellido("");
+      }
+    } catch (err) {
+      console.error("Error al buscar usuario:", err);
     }
   };
 
-  const handleCentroChange = (value: string) => {
-    setCentroCostos(value);
-    const areaEncontrada = Object.entries(data[perfil].areas).find(([_, { centros }]) =>
-      centros.includes(value)
-    );
-    setArea(areaEncontrada ? areaEncontrada[0] : "");
-    setProcedencia("");
+  // 🔄 Cuando cambia el área, actualizar los centros disponibles
+  const handleAreaChange = (value: string) => {
+    setArea(value);
+    const selectedArea = areas.find((a) => a.nombre === value);
+    setCentros(selectedArea ? selectedArea.centros : []);
+    setCentroCostos("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 💾 Enviar formulario al backend
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log({
+    const payload = {
       cedula,
       nombre,
       apellido,
       perfil,
-      centroCostos,
       sede,
       procedencia,
       area,
+      centro_costos: centroCostos,
       residuos,
-    });
+    };
 
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    try {
+      const response = await fetch(`${API_URL}actas/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    // limpiar form
-    setCedula("");
-    setNombre("");
-    setApellido("");
-    setCentroCostos("");
-    setSede(data[perfil].sede);
-    setProcedencia("");
-    setArea("");
-    setResiduos([{ residuo: "", categoria: "", motivo: "", peso: "" }]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error al guardar el acta:", errorData);
+        alert("Hubo un error al guardar el acta. Revisa la consola.");
+        return;
+      }
+
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+
+      // limpiar form
+      setCedula("");
+      setNombre("");
+      setApellido("");
+      setSede("");
+      setProcedencia("");
+      setArea("");
+      setCentroCostos("");
+      setResiduos([{ residuo: "", categoria: "", motivo: "", peso: "" }]);
+    } catch (err) {
+      console.error("Error de conexión:", err);
+      alert("No se pudo conectar con el servidor.");
+    }
   };
 
   const inputClasses =
@@ -130,14 +159,15 @@ export default function FormularioActa() {
         <SeccionUbicacion
           perfil={perfil}
           area={area}
-          setArea={setArea}
+          setArea={handleAreaChange}
           centroCostos={centroCostos}
           setCentroCostos={setCentroCostos}
+          centros={centros}
           sede={sede}
+          setSede={setSede}
+          sedes={sedes}
           procedencia={procedencia}
           setProcedencia={setProcedencia}
-          data={data}
-          handleCentroChange={handleCentroChange}
           inputClasses={inputClasses}
         />
 
@@ -147,12 +177,10 @@ export default function FormularioActa() {
           area={area}
           residuos={residuos}
           setResiduos={setResiduos}
-          data={data}
           motivos={motivos}
           inputClasses={inputClasses}
         />
 
-        {/* Botón principal */}
         <div className="flex justify-center mt-6">
           <button
             type="submit"
@@ -163,7 +191,6 @@ export default function FormularioActa() {
         </div>
       </form>
 
-      {/* Toast */}
       {showToast && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-4 bg-gradient-to-r from-skyBlue to-lightBlue text-white px-10 py-8 rounded-2xl shadow-2xl animate-fade-in">
