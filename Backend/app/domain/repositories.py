@@ -13,11 +13,25 @@ from app.domain.entities import (
     Acta,
     ActaGeneracionResiduo,
     NovedadConciliacion,
+    Sede,
+    
 )
 
 # ==============================
 # REPOSITORIOS ABSTRACTOS (Interfaces)
 # ==============================
+
+class SedeRepository(ABC):
+    @abstractmethod
+    def list_all(self) -> List[Sede]: ...
+    @abstractmethod
+    def get_by_id(self, id: int) -> Optional[Sede]: ...
+    @abstractmethod
+    def create(self, entity: Sede) -> Sede: ...
+    @abstractmethod
+    def update(self, id: int, entity: Sede) -> Sede: ...
+    @abstractmethod
+    def delete(self, id: int) -> None: ...
 
 class ProcedenciaRepository(ABC):
     @abstractmethod

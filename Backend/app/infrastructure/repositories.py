@@ -1,6 +1,7 @@
 from typing import List
 
 from app.domain.entities import (
+    Sede,
     Procedencia,
     ActaGeneracionResiduo,
     GeneracionResiduo,
@@ -16,6 +17,7 @@ from app.domain.entities import (
 )
 
 from app.domain.repositories import (
+    SedeRepository,
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
@@ -31,7 +33,7 @@ from app.domain.repositories import (
 )
 
 from app.infrastructure.models import (
-    Sede,
+    Sede as SedeModel,
     Procedencia as ProcedenciaModel,
     Area as AreaModel,
     CategoriaResiduo as CategoriaResiduoModel,
@@ -52,6 +54,28 @@ from django.forms.models import model_to_dict
 def to_dto(instance, dto_class):
     """Convierte una instancia de modelo a un DTO."""
     return dto_class(**model_to_dict(instance))
+
+
+# ---------- SEDE ----------
+class SedeRepositoryImpl(SedeRepository):
+    def list_all(self, filtros: dict = {}) -> list[Sede]:
+        queryset = SedeModel.objects.filter(**filtros)
+        return [Sede(id=s.id, nombre=s.nombre) for s in queryset]
+
+    def get_by_id(self, id: int) -> Sede:
+        s = SedeModel.objects.get(id=id)
+        return Sede(id=s.id, nombre=s.nombre)
+
+    def create(self, data: Sede) -> Sede:
+        obj = SedeModel.objects.create(**data.__dict__)
+        return self.get_by_id(obj.id)
+
+    def update(self, id: int, data: Sede) -> Sede:
+        SedeModel.objects.filter(id=id).update(**data.__dict__)
+        return self.get_by_id(id)
+
+    def delete(self, id: int) -> None:
+        SedeModel.objects.filter(id=id).delete()
 
 
 # ---------- PROCEDENCIA ----------

@@ -3,6 +3,7 @@ Registrar los servicios de la aplicación (ver manual de arquitectura)
 """
 from typing import List, Optional
 from app.domain.entities import (
+    Sede,
     Procedencia,
     Acta,
     ActaGeneracionResiduo,
@@ -17,6 +18,7 @@ from app.domain.entities import (
     NovedadConciliacion,
 )
 from app.domain.repositories import (
+    SedeRepository,
     ProcedenciaRepository,
     ActaRepository,
     ActaGeneracionResiduoRepository,
@@ -34,6 +36,25 @@ from app.domain.repositories import (
 # =======================================
 # SERVICIOS (Lógica de negocio)
 # =======================================
+
+class SedeService:
+    def __init__(self, repository: SedeRepository):
+        self.repository = repository
+
+    def list_all(self) -> List[Sede]:
+        return self.repository.list_all()
+
+    def get_by_id(self, id: int) -> Optional[Sede]:
+        return self.repository.get_by_id(id)
+
+    def create(self, data: dict) -> Sede:
+        return self.repository.create(Sede(**data))
+
+    def update(self, id: int, data: dict) -> Sede:
+        return self.repository.update(id, Sede(**data))
+
+    def delete(self, id: int) -> None:
+        self.repository.delete(id)
 
 class ProcedenciaService:
     def __init__(self, repository: ProcedenciaRepository):

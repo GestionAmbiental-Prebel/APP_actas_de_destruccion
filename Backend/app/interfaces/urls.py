@@ -13,6 +13,7 @@ router = DefaultRouter()
 router = DefaultRouter()
 
 # --- Catálogos ---
+router.register(r'sedes', SedeViewSet, basename='sede')
 router.register(r'procedencias', ProcedenciaViewSet, basename='procedencia')
 router.register(r'areas', AreaViewSet, basename='area')
 router.register(r'categorias-residuos', CategoriaResiduoViewSet, basename='categoria-residuo')

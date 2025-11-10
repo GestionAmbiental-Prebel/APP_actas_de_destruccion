@@ -3,10 +3,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import Layout from "../Layout";
 import { LayoutOperario } from "../components/LayoutOperario";
 import { LayoutGestor } from "../components/LayoutGestor";
+import { LayoutAdmin } from "../components/LayoutAdmin";
 
-// 🔹 Operario
-import FormularioActa from "../pages/operario/FormularioActa";
-import ActasOperario from "../pages/operario/ActasOperario";
 
 // 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
@@ -28,12 +26,13 @@ import { EditarActaPV } from "../pages/gestorPuntoVerde/EditarActa";
 import { ActasConciliadasGestorPuntoVerde } from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 
 // 🔹 Admin
-import { LayoutAdmin } from "../components/LayoutAdmin";
+//import { LayoutAdmin } from "../components/LayoutAdmin";
 import { Usuarios } from "../pages/admin/Usuarios";
 import { NuevoUsuario } from "../pages/admin/NuevoUsuario";
 import { EditarUsuario } from "../pages/admin/EditarUsuario";
 import { Configuraciones } from "../pages/admin/Configuraciones";
 import { GestionarSedes } from "../pages/admin/configuraciones/GestionarSedes";
+
 
 import { LoginPage } from "../pages/LoginPage";
 
@@ -44,15 +43,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-      // Operario general
-      {
-        path: "operario",
-        element: <LayoutOperario />,
-        children: [
-          { path: "formulario", element: <FormularioActa /> },
-          { path: "actas", element: <ActasOperario /> },
-        ],
-      },
+     
 
       // Operario Punto Verde
       {
@@ -102,6 +93,8 @@ export const router = createBrowserRouter([
           { path: "usuarios/editar/:id", element: <EditarUsuario /> },
           { path: "configuraciones", element: <Configuraciones /> },
           { path: "configuraciones/sedes", element: <GestionarSedes /> },
+      
+          
         ],
       },
     ],

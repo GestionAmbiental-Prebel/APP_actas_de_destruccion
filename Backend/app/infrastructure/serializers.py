@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+class SedeSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    nombre = serializers.CharField(max_length=100)
+
 class ProcedenciaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
