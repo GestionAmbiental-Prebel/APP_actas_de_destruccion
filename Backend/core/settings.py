@@ -99,7 +99,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'gestion_residuos.db',
+        'NAME': BASE_DIR / 'db_actas.db',
     }
 }
 
