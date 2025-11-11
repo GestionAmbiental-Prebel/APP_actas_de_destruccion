@@ -77,16 +77,17 @@ class ProcedenciaService:
 
 
 class ActaService:
-    def __init__(self, repository: ActaRepository):
+    def __init__(self, repository):
         self.repository = repository
 
-    def list_all(self) -> List[Acta]:
+    def list_all(self) -> list[Acta]:
         return self.repository.list_all()
 
-    def get_by_id(self, id: int) -> Optional[Acta]:
+    def get_by_id(self, id: int) -> Acta:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Acta:
+        data.pop('id', None)  # no enviamos id, Django lo asigna
         return self.repository.create(Acta(**data))
 
     def update(self, id: int, data: dict) -> Acta:
@@ -94,6 +95,7 @@ class ActaService:
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
+
 
 
 class ActaGeneracionResiduoService:
@@ -107,14 +109,14 @@ class ActaGeneracionResiduoService:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> ActaGeneracionResiduo:
-        return self.repository.create(ActaGeneracionResiduo(**data))
+        data.pop('id', None)  # Django asigna id automáticamente
+        return self.repository.create(ActaGeneracionResiduo(**data))  # <--- CORRECTO
 
     def update(self, id: int, data: dict) -> ActaGeneracionResiduo:
         return self.repository.update(id, ActaGeneracionResiduo(**data))
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
 
 
 
@@ -257,20 +259,39 @@ class OperarioService:
     def __init__(self, repository: OperarioRepository):
         self.repository = repository
 
-    def list_all(self) -> List[Operario]:
+    def list_all(self) -> list[Operario]:
         return self.repository.list_all()
 
     def get_by_id(self, id: int) -> Optional[Operario]:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Operario:
-        return self.repository.create(Operario(**data))
+        """
+        Crea un operario. Se asegura de que 'id' no se pase
+        y que 'subarea_id' esté presente.
+        """
+        data = data.copy()
+        data.pop('id', None)  
+
+        if 'subarea_id' not in data:
+            raise ValueError("subarea_id es obligatorio para crear un Operario")
+
+        operario_entity = Operario(**data)
+        return self.repository.create(operario_entity)
 
     def update(self, id: int, data: dict) -> Operario:
-        return self.repository.update(id, Operario(**data))
+        """
+        Actualiza un operario existente. Permite cambiar la subarea si se pasa.
+        """
+        data = data.copy()
+        data.pop('id', None)  
+
+        operario_entity = Operario(**data)
+        return self.repository.update(id, operario_entity)
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
+
 
 class NovedadConciliacionService:
     def __init__(self, repository: NovedadConciliacionRepository):

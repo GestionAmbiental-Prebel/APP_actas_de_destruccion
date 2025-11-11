@@ -30,12 +30,12 @@ class ActaGeneracionResiduoSerializer(serializers.Serializer):
 
 class GeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    fecha = serializers.DateTimeField(required=False, allow_null=True)
-    peso = serializers.CharField(required=False, allow_null=True, allow_blank=True)
-    residuo_id = serializers.IntegerField(required=False, allow_null=True)
-    operario_id = serializers.IntegerField(required=False, allow_null=True)
-    motivo = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
-    motivo_otro = serializers.CharField(max_length=255, required=False, allow_null=True, allow_blank=True)
+    fecha = serializers.DateTimeField(required=True)
+    peso = serializers.FloatField(required=True)  
+    residuo_id = serializers.IntegerField(required=True)
+    operario_id = serializers.IntegerField(required=True)
+    motivo = serializers.CharField(max_length=255, required=True)
+    motivo_otro = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
 
 
 class AreaSerializer(serializers.Serializer):

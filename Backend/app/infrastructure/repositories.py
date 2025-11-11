@@ -121,12 +121,10 @@ class ActaRepositoryImpl(ActaRepository):
                 id=a.id,
                 numero_acta=a.numero_acta,
                 fecha_acta=a.fecha_acta,
-                area_id=a.area_id,
+                subarea_id=a.subarea_id,
                 centro_costo_id=a.centro_costo_id,
-                operario_entrega_id=a.operario_entrega_id,
-                operario_recepcion_id=a.operario_recepcion_id,
-                firma_entrega=a.firma_entrega,
-                firma_recepcion=a.firma_recepcion,
+                documento_entrega=a.documento_entrega,
+                documento_recepcion=a.documento_recepcion,
             )
             for a in queryset
         ]
@@ -137,12 +135,10 @@ class ActaRepositoryImpl(ActaRepository):
             id=a.id,
             numero_acta=a.numero_acta,
             fecha_acta=a.fecha_acta,
-            area_id=a.area_id,
+            subarea_id=a.subarea_id,
             centro_costo_id=a.centro_costo_id,
-            operario_entrega_id=a.operario_entrega_id,
-            operario_recepcion_id=a.operario_recepcion_id,
-            firma_entrega=a.firma_entrega,
-            firma_recepcion=a.firma_recepcion,
+            documento_entrega=a.documento_entrega,
+            documento_recepcion=a.documento_recepcion,
         )
 
     def create(self, data: Acta) -> Acta:
@@ -155,6 +151,7 @@ class ActaRepositoryImpl(ActaRepository):
 
     def delete(self, id: int) -> None:
         ActaModel.objects.filter(id=id).delete()
+
 
 
 # ---------- ACTA GENERACION RESIDUO ----------
@@ -428,15 +425,33 @@ class OperarioRepositoryImpl(OperarioRepository):
         )
 
     def create(self, entity: Operario) -> Operario:
-        obj = OperarioModel.objects.create(**entity.__dict__)
+        data = entity.__dict__.copy()
+        data.pop('id', None)  # Django asigna id automáticamente
+        subarea_id = data.pop('subarea_id', None)
+        if subarea_id is None:
+            raise ValueError("subarea_id es obligatorio para crear un Operario")
+        
+        # Usar el modelo Django correcto para la FK
+        subarea = SubAreaModel.objects.get(id=subarea_id)
+        
+        obj = OperarioModel.objects.create(subarea=subarea, **data)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, entity: Operario) -> Operario:
-        OperarioModel.objects.filter(id=id).update(**entity.__dict__)
+        data = entity.__dict__.copy()
+        data.pop('id', None)  # No actualizar el id
+        subarea_id = data.pop('subarea_id', None)
+        if subarea_id is not None:
+            subarea = SubAreaModel.objects.get(id=subarea_id)
+            data['subarea'] = subarea
+        
+        OperarioModel.objects.filter(id=id).update(**data)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
         OperarioModel.objects.filter(id=id).delete()
+
+
 
 # ---------- NOVEDAD CONCILIACION ----------
 class NovedadConciliacionRepositoryImpl(NovedadConciliacionRepository):

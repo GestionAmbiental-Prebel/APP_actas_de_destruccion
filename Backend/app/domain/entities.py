@@ -46,11 +46,11 @@ class ResiduoEspecifico:
 
 @dataclass
 class Operario:
-    id: Optional[int]
     nombre: str
-    apellido: Optional[str]
-    documento: Optional[str]
-    subarea_id: Optional[int]
+    apellido: str
+    documento: str
+    subarea_id: int
+    id: Optional[int] = None
 
 
 @dataclass
@@ -70,33 +70,33 @@ class RolAdministrativo:
 
 @dataclass
 class GeneracionResiduo:
-    id: Optional[int]
-    fecha: Optional[datetime]
-    peso: Optional[float]
-    residuo_id: Optional[int]
-    operario_id: Optional[int]
-    motivo: Optional[str] = None
-    motivo_otro: Optional[str] = None
+    fecha: datetime
+    peso: float
+    residuo_id: int
+    operario_id: int
+    motivo: str
+    motivo_otro: Optional [str] = None
+    id: Optional [int] = None
 
 
 @dataclass
 class Acta:
-    id: Optional[int]
     numero_acta: str
     fecha_acta: datetime
     subarea_id: int
     centro_costo_id: int
     documento_entrega: str
     documento_recepcion: str
+    id: Optional[int] = None
 
-
+  
 @dataclass
 class ActaGeneracionResiduo:
-    id: Optional[int]
     acta_id: int
     generacion_residuo_id: int
-    peso_reportado: Optional[float] = None
-    peso_conciliado: Optional[float] = None
+    peso_reportado: float
+    peso_conciliado: Optional[float] = None  # <- opcional
+    id: Optional[int] = None
 
 @dataclass
 class NovedadConciliacion:
