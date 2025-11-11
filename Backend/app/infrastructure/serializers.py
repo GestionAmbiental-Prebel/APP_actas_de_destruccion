@@ -71,10 +71,10 @@ class RolAdministrativoSerializer(serializers.Serializer):
 
 class OperarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    nombre = serializers.CharField(max_length=100)
-    apellido = serializers.CharField(max_length=100, required=False, allow_null=True, allow_blank=True)
-    documento = serializers.CharField(max_length=50, required=False, allow_null=True, allow_blank=True)
-    subarea_id = serializers.IntegerField(required=False, allow_null=True)
+    nombre = serializers.CharField(max_length=100, required=True)
+    apellido = serializers.CharField(max_length=100, required=True)
+    documento = serializers.CharField(max_length=50, required=True)
+    subarea_id = serializers.IntegerField(required=True)
 
 class SubAreaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)

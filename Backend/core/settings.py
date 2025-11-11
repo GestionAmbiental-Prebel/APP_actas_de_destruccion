@@ -149,7 +149,7 @@ CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", 'redis://redis:6379/0')
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Swagger/OpenAPI
-    'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',  # Manejo global de errores
+    'EXCEPTION_HANDLER': 'app.application.exceptions.custom_exception_handler',  
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',  # Solo JSON por defecto
     ],
