@@ -87,7 +87,10 @@ class ActaService:
         return self.repository.get_by_id(id)
 
     def create(self, data: dict) -> Acta:
-        data.pop('id', None)  # no enviamos id, Django lo asigna
+        data.pop('id', None)  # Django asigna id automáticamente
+        
+        data['documento_recepcion'] = ''  
+
         return self.repository.create(Acta(**data))
 
     def update(self, id: int, data: dict) -> Acta:

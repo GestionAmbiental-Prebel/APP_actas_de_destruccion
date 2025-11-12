@@ -17,7 +17,7 @@ class ActaSerializer(serializers.Serializer):
     subarea_id = serializers.IntegerField()
     centro_costo_id = serializers.IntegerField()
     documento_entrega = serializers.CharField(max_length=100)
-    documento_recepcion = serializers.CharField(max_length=100)
+    documento_recepcion = serializers.CharField(max_length=100,required=False, allow_blank=True, allow_null=True)
 
 
 class ActaGeneracionResiduoSerializer(serializers.Serializer):

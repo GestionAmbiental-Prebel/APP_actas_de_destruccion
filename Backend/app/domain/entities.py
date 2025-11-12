@@ -86,7 +86,7 @@ class Acta:
     subarea_id: int
     centro_costo_id: int
     documento_entrega: str
-    documento_recepcion: str
+    documento_recepcion: str = ''
     id: Optional[int] = None
 
   
