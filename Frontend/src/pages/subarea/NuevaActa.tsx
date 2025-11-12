@@ -12,6 +12,7 @@ type Residuo = {
   residuo_id: number | null;
   categoria_id: number | null;
   motivo: string;
+  motivo_otro?: string;
   peso: string;
 };
 
@@ -177,70 +178,88 @@ export default function NuevaActa() {
     autocompletarUbicacionDesdeCentroCosto(centroCostoId);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!centroCostoId || !subAreaId) {
-      alert('Por favor, seleccione un centro de costo');
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!centroCostoId || !subAreaId) {
+    alert('Por favor, seleccione un centro de costo');
+    return;
+  }
+
+  try {
+    setEnviando(true);
+
+    console.log('=== DATOS A ENVIAR ===');
+    console.log('Cedula:', cedula);
+    console.log('Nombre:', nombre);
+    console.log('Apellido:', apellido);
+    console.log('SubArea ID:', subAreaId);
+    console.log('Centro Costo ID:', centroCostoId);
+    console.log('Residuos:', residuos);
+
+    // 1. Obtener o crear el operario
+    console.log('1. Creando/obteniendo operario...');
+    const operarioCreado = await obtenerOCrearOperario(
+      cedula,
+      nombre,
+      apellido,
+      subAreaId
+    );
+    console.log('Operario creado/obtenido:', operarioCreado);
+
+    // 2. Preparar datos de residuos
+    const residuosValidos = residuos.filter(r => 
+      r.residuo_id && r.categoria_id && r.motivo && r.peso
+    );
+
+    if (residuosValidos.length === 0) {
+      alert('Por favor, agregue al menos un residuo completo');
+      setEnviando(false);
       return;
     }
 
-    try {
-      setEnviando(true);
+    const residuosParaEnviar = residuosValidos.map(r => ({
+      residuo_id: r.residuo_id!,
+      peso: r.peso,
+      motivo: r.motivo,
+      motivo_otro: r.motivo === 'Otro' ? r.motivo_otro || '' : null, 
+    }));
+    console.log('Residuos a enviar:', residuosParaEnviar);
 
-      // 1. Obtener o crear el operario
-      const operarioCreado = await obtenerOCrearOperario(
-        cedula,
-        nombre,
-        apellido,
-        subAreaId
-      );
+    // 3. Crear el acta completa
+    console.log('3. Creando acta completa...');
+    const resultado = await crearActaCompleta({
+      cedula,
+      nombre,
+      apellido,
+      subarea_id: subAreaId,
+      centro_costo_id: centroCostoId,
+      residuos: residuosParaEnviar,
+      operario_id: operarioCreado.id
+    });
 
-      // 2. Preparar datos de residuos (solo los que tienen datos completos)
-      const residuosValidos = residuos.filter(r => 
-        r.residuo_id && r.categoria_id && r.motivo && r.peso
-      );
+    console.log('Resultado:', resultado);
 
-      if (residuosValidos.length === 0) {
-        alert('Por favor, agregue al menos un residuo completo');
-        setEnviando(false);
-        return;
-      }
+    // 4. Mostrar mensaje de éxito
+    setNumeroActaGenerado(resultado.numeroActa);
+    setMostrarExito(true);
 
-      const residuosParaEnviar = residuosValidos.map(r => ({
-        residuo_id: r.residuo_id!,
-        peso: r.peso,
-        motivo: r.motivo
-      }));
+    setTimeout(() => {
+      resetearFormulario();
+      setMostrarExito(false);
+    }, 5000);
 
-      // 3. Crear el acta completa
-      const resultado = await crearActaCompleta({
-        cedula,
-        nombre,
-        apellido,
-        subarea_id: subAreaId,
-        centro_costo_id: centroCostoId,
-        residuos: residuosParaEnviar,
-        operario_id: operarioCreado.id  // ✅ Agregar esta línea
-      });
-
-      // 4. Mostrar mensaje de éxito
-      setNumeroActaGenerado(resultado.numeroActa);
-      setMostrarExito(true);
-
-      // 5. Limpiar formulario después de 5 segundos
-      setTimeout(() => {
-        resetearFormulario();
-        setMostrarExito(false);
-      }, 5000);
-
-    } catch (error: any) {
-      console.error('Error al crear acta:', error);
-      alert(`Error al crear el acta: ${error.message || 'Error desconocido'}`);
-    } finally {
-      setEnviando(false);
-    }
-  };
+  } catch (error: any) {
+    console.error('=== ERROR COMPLETO ===');
+    console.error('Error:', error);
+    console.error('Message:', error.message);
+    console.error('Response:', error.response);
+    
+    alert(`Error al crear el acta:\n${error.message || 'Error desconocido'}\n\nRevisa la consola para más detalles.`);
+  } finally {
+    setEnviando(false);
+  }
+};
 
   const resetearFormulario = () => {
     setCedula('');

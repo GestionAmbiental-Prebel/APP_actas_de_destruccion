@@ -43,14 +43,12 @@ type CrearActaCompleta = {
     residuo_id: number;
     peso: string;
     motivo: string;
+    motivo_otro?: string | null;
   }>;
 };
 
 // ===== FUNCIONES DEL SERVICIO =====
 
-/**
- * Genera un número de acta único
- */
 function generarNumeroActa(): string {
   const fecha = new Date();
   const year = fecha.getFullYear();
@@ -89,38 +87,39 @@ async function crearActaGeneracionResiduo(data: ActaGeneracionResiduoPayload) {
 }
 
 /**
- * Función principal: Crea un acta completa con todos sus residuos
+ * Crea un acta completa (con residuos y relaciones)
  */
 async function crearActaCompleta(datos: CrearActaCompleta) {
   try {
     const fechaActual = new Date().toISOString();
     const numeroActa = generarNumeroActa();
-    
-    // 1. Crear cada GeneracionResiduo
+
+    // 1. Crear las Generaciones de Residuos
     const generacionResiduosIds: number[] = [];
-    
+
     for (const residuo of datos.residuos) {
       const generacionResiduo = await crearGeneracionResiduo({
         fecha: fechaActual,
         peso: residuo.peso,
         residuo_id: residuo.residuo_id,
-        operario_id: 1, // TODO: Obtener del operario autenticado
+        operario_id: datos.operario_id,
         motivo: residuo.motivo,
+        motivo_otro: residuo.motivo === 'Otro' ? (residuo.motivo_otro || '') : null,
       });
-      
+
       generacionResiduosIds.push(generacionResiduo.id);
     }
-    
-    // 2. Crear el Acta
+
+    // 2. Crear el Acta (documento_recepcion vacío por ahora)
     const acta = await crearActa({
       numero_acta: numeroActa,
       fecha_acta: fechaActual,
       subarea_id: datos.subarea_id,
       centro_costo_id: datos.centro_costo_id,
       documento_entrega: datos.cedula,
-      documento_recepcion: datos.cedula, // Por ahora la misma cédula
+      documento_recepcion: '', 
     });
-    
+
     // 3. Relacionar Acta con cada GeneracionResiduo
     for (let i = 0; i < generacionResiduosIds.length; i++) {
       await crearActaGeneracionResiduo({
@@ -129,14 +128,14 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
         peso_reportado: datos.residuos[i].peso,
       });
     }
-    
-    // Retornar el número de acta generado
+
+    // 4. Retornar resultado
     return {
       success: true,
       numeroActa: acta.numero_acta,
       actaId: acta.id,
     };
-    
+
   } catch (error) {
     console.error('Error al crear acta completa:', error);
     throw error;

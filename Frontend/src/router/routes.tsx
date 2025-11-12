@@ -3,8 +3,10 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import Layout from "../Layout";
 import { LayoutOperario } from "../components/LayoutOperario";
 import { LayoutGestor } from "../components/LayoutGestor";
-import { LayoutAdmin } from "../components/LayoutAdmin";
 
+
+// Sub area 
+import NuevaActa from "../pages/subarea/NuevaActa";
 
 // 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
@@ -14,7 +16,7 @@ import { ActasConciliadas } from "../pages/puntoVerde/ActasConciliadas";
 // 🔹 Gestor Normal
 import { Dashboard } from "../pages/gestor/Dashboard";
 import ActasPageGestor from "../pages/gestor/ActasPage";
-import { NuevaActa } from "../pages/gestor/NuevaActa";
+//import { NuevaActa } from "../pages/gestor/NuevaActa";
 import { EditarActa } from "../pages/gestor/EditarActa";
 import { Reportes } from "../pages/gestor/Reportes";
 
@@ -26,13 +28,12 @@ import { EditarActaPV } from "../pages/gestorPuntoVerde/EditarActa";
 import { ActasConciliadasGestorPuntoVerde } from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 
 // 🔹 Admin
-//import { LayoutAdmin } from "../components/LayoutAdmin";
+import { LayoutAdmin } from "../components/LayoutAdmin";
 import { Usuarios } from "../pages/admin/Usuarios";
 import { NuevoUsuario } from "../pages/admin/NuevoUsuario";
 import { EditarUsuario } from "../pages/admin/EditarUsuario";
 import { Configuraciones } from "../pages/admin/Configuraciones";
 import { GestionarSedes } from "../pages/admin/configuraciones/GestionarSedes";
-
 
 import { LoginPage } from "../pages/LoginPage";
 
@@ -43,7 +44,6 @@ export const router = createBrowserRouter([
     path: "/",
     element: <Layout />,
     children: [
-     
 
       // Operario Punto Verde
       {
@@ -54,6 +54,15 @@ export const router = createBrowserRouter([
           { path: "conciliar/:id", element: <ConciliarActa /> },
           { path: "conciliadas", element: <ActasConciliadas /> },
         ],
+      },
+
+      //Sub Area
+      {
+        path: "sub-area",
+        element: <LayoutOperario />,
+        children: [
+          { path: "formulario", element: <NuevaActa /> }
+        ]
       },
 
       // Gestor normal
@@ -93,8 +102,6 @@ export const router = createBrowserRouter([
           { path: "usuarios/editar/:id", element: <EditarUsuario /> },
           { path: "configuraciones", element: <Configuraciones /> },
           { path: "configuraciones/sedes", element: <GestionarSedes /> },
-      
-          
         ],
       },
     ],

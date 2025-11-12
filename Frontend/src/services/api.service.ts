@@ -26,20 +26,48 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
     config.body = JSON.stringify(body);
   }
 
+  console.log(`=== ${method} ${API_BASE_URL}${endpoint} ===`);
+  console.log('Body:', body);
+
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`);
-    }
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
 
-    // Si es DELETE, no hay contenido en la respuesta
-    if (method === 'DELETE') {
+    // Si es DELETE exitoso, no hay contenido
+    if (method === 'DELETE' && response.ok) {
       return {} as T;
     }
 
-    return await response.json();
+    // Intentar leer la respuesta UNA SOLA VEZ
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+
+    // Si la respuesta no es OK, lanzar error
+    if (!response.ok) {
+      let errorMessage = `Error ${response.status}`;
+      
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage += `: ${JSON.stringify(errorData, null, 2)}`;
+      } catch {
+        errorMessage += `: ${responseText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Si es OK, parsear el JSON
+    try {
+      const data = JSON.parse(responseText);
+      console.log('Response data:', data);
+      return data;
+    } catch {
+      // Si no es JSON válido pero la respuesta fue exitosa
+      return {} as T;
+    }
+
   } catch (error) {
     console.error('Error en la petición:', error);
     throw error;
