@@ -1,4 +1,9 @@
 import { apiRequest } from './api.service';
+import { obtenerOperarios } from './operarios.service';
+import { 
+  obtenerResiduosEspecificos, 
+  obtenerCategoriasResiduos 
+} from './catalogo.service';
 
 // ===== TIPOS =====
 
@@ -110,7 +115,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       generacionResiduosIds.push(generacionResiduo.id);
     }
 
-    // 2. Crear el Acta (documento_recepcion vacío por ahora)
+    // 2. Crear el Acta
     const acta = await crearActa({
       numero_acta: numeroActa,
       fecha_acta: fechaActual,
@@ -143,7 +148,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
 }
 
 /**
- * Obtener todas las actas (para MisActas)
+ * Obtener todas las actas
  */
 async function obtenerActas() {
   return apiRequest<any[]>('/actas/', {
@@ -151,4 +156,56 @@ async function obtenerActas() {
   });
 }
 
-export { crearActaCompleta, obtenerActas };
+/**
+ * Obtener todas las actas con datos combinados (operarios, residuos, categorías)
+ */
+async function obtenerActasCompletas() {
+  const [actas, operarios, residuosEspecificos, categorias] = await Promise.all([
+    obtenerActas(),
+    obtenerOperarios(),
+    obtenerResiduosEspecificos(),
+    obtenerCategoriasResiduos(),
+  ]);
+
+  // Traer las relaciones y las generaciones
+  const actasGeneracionResiduos = await apiRequest<any[]>('/actas-generacion-residuo/');
+  const generaciones = await apiRequest<any[]>('/generacion-residuo/');
+
+  return actas.map((acta: any) => {
+    const operario = operarios.find((o) => o.documento === acta.documento_entrega);
+
+    // Filtrar relaciones de la acta
+    const relaciones = actasGeneracionResiduos.filter(rel => rel.acta_id === acta.id);
+
+    const residuos = relaciones.map(rel => {
+      const gen = generaciones.find(g => g.id === rel.generacion_residuo_id);
+      if (!gen) return null;
+
+      const resEsp = residuosEspecificos.find(r => r.id === gen.residuo_id);
+      const cat = categorias.find(c => c.id === resEsp?.categoria_id);
+
+      return {
+        residuo_id: gen.residuo_id,
+        residuo_nombre: resEsp?.nombre || 'Sin nombre',
+        categoria_nombre: cat?.nombre || 'Sin categoría',
+        motivo: gen.motivo,
+        motivo_otro: gen.motivo_otro,
+        peso_reportado: rel.peso_reportado,
+        fecha: gen.fecha,
+      };
+    }).filter(Boolean);
+
+    return {
+      ...acta,
+      operario_nombre: operario ? `${operario.nombre} ${operario.apellido || ''}`.trim() : 'Desconocido',
+      operario_documento: operario?.documento || acta.documento_entrega,
+      residuos,
+    };
+  });
+}
+
+export { 
+  crearActaCompleta, 
+  obtenerActas, 
+  obtenerActasCompletas 
+};

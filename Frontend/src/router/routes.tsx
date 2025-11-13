@@ -7,6 +7,7 @@ import { LayoutGestor } from "../components/LayoutGestor";
 
 // Sub area 
 import NuevaActa from "../pages/subarea/NuevaActa";
+import  MisActas  from "../pages/subarea/MisActas";
 
 // 🔹 Operario Punto Verde
 import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
@@ -61,7 +62,8 @@ export const router = createBrowserRouter([
         path: "sub-area",
         element: <LayoutOperario />,
         children: [
-          { path: "formulario", element: <NuevaActa /> }
+          { path: "formulario", element: <NuevaActa /> },
+          { path: "mis-actas", element: <MisActas /> }
         ]
       },
 

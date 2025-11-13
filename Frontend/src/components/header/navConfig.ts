@@ -5,8 +5,8 @@ export const navItems: Record<
 > = {
   operario: {
     normal: [
-      { label: "Nuevo Acta", path: "/operario/formulario" },
-      { label: "Mis Actas", path: "/operario/actas" },
+      { label: "Nuevo Acta", path: "/sub-area/formulario" },
+      { label: "Mis Actas", path: "/sub-area/mis-actas" },
     ],
     "punto-verde": [
       { label: "Actas", path: "/operario-punto-verde/actas" },
@@ -32,3 +32,7 @@ export const navItems: Record<
     ],
   },
 };
+
+export type Role =
+  | "operario"
+  | "punto-verde"
