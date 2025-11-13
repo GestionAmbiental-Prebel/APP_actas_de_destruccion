@@ -51,11 +51,12 @@ export default function NuevaActa() {
     { residuo_id: null, categoria_id: null, motivo: '', peso: '' }
   ]);
 
-  // Motivos (hardcoded por ahora, puedes moverlos al backend después)
+  // Motivos 
   const motivos = [
-    'Cambio de equipo',
-    'Mantenimiento',
-    'Desecho programado',
+    'Bloqueado',
+    'Obsoleto',
+    'Rechazado',
+    'Vencido',
     'Otro'
   ];
 
