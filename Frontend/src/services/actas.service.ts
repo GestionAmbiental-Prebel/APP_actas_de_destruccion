@@ -188,6 +188,7 @@ async function obtenerActasCompletas() {
       const cat = categorias.find(c => c.id === resEsp?.categoria_id);
 
       return {
+        acta_generacion_residuo_id: rel.id,
         residuo_id: gen.residuo_id,
         residuo_nombre: resEsp?.nombre || 'Sin nombre',
         categoria_nombre: cat?.nombre || 'Sin categoría',
@@ -200,15 +201,92 @@ async function obtenerActasCompletas() {
 
     return {
       ...acta,
-      operario_nombre: operario ? `${operario.nombre} ${operario.apellido || ''}`.trim() : 'Desconocido',
-      operario_documento: operario?.documento || acta.documento_entrega,
-      residuos,
+  // Datos de quien entregó
+  operario_nombre: operario ? `${operario.nombre} ${operario.apellido || ''}`.trim() : 'Desconocido',
+  operario_documento: operario?.documento || acta.documento_entrega,
+
+  // Datos de quien recibió / conciliador
+  documento_recepcion: acta.documento_recepcion,
+
+  residuos,
     };
   });
+}
+
+/**
+ * Obtener actas que ya fueron conciliadas
+ */
+async function obtenerActasConciliadas() {
+  const [actas, operarios, residuosEspecificos, categorias] = await Promise.all([
+    obtenerActas(),
+    obtenerOperarios(),
+    obtenerResiduosEspecificos(),
+    obtenerCategoriasResiduos(),
+  ]);
+
+  const actasGeneracionResiduos = await apiRequest<any[]>('/actas-generacion-residuo/');
+  const generaciones = await apiRequest<any[]>('/generacion-residuo/');
+
+  // Filtrar solo actas que tengan residuos conciliados
+return actas
+  .map((acta: any) => {
+    const operario = operarios.find((o) => o.documento === acta.documento_entrega);
+
+    const relaciones = actasGeneracionResiduos.filter(rel => rel.acta_id === acta.id);
+
+    const residuos = relaciones
+      .map((rel) => {
+        const gen = generaciones.find((g) => g.id === rel.generacion_residuo_id);
+        if (!gen) return null;
+
+        const resEsp = residuosEspecificos.find((r) => r.id === gen.residuo_id);
+        const cat = categorias.find((c) => c.id === resEsp?.categoria_id);
+
+        return {
+          acta_generacion_residuo_id: rel.id,
+          residuo_id: gen.residuo_id,
+          residuo_nombre: resEsp?.nombre ?? 'Sin nombre',
+          categoria_nombre: cat?.nombre ?? 'Sin categoría',
+          motivo: gen.motivo,
+          motivo_otro: gen.motivo_otro ?? null,
+          peso_reportado: rel.peso_reportado,
+          peso_conciliado: rel.peso_conciliado ?? null,
+          fecha: gen.fecha,
+        };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null); // <-- evita warning de null
+
+    // Solo devolver actas que tengan al menos un residuo conciliado
+    if (residuos.some((r) => r.peso_conciliado != null)) {
+      const peso_total_reportado = residuos.reduce(
+        (sum, r) => sum + parseFloat(r.peso_reportado ?? '0'),
+        0
+      );
+      const peso_total_conciliado = residuos.reduce(
+        (sum, r) => sum + parseFloat(r.peso_conciliado ?? '0'),
+        0
+      );
+
+      return {
+        ...acta,
+        operario_nombre: operario
+          ? `${operario.nombre} ${operario.apellido ?? ''}`.trim()
+          : 'Desconocido',
+        operario_documento: operario?.documento ?? acta.documento_entrega,
+        residuos,
+        peso_total_reportado,
+        peso_total_conciliado,
+      };
+    }
+
+    return null;
+  })
+  .filter((acta): acta is NonNullable<typeof acta> => acta !== null); 
 }
 
 export { 
   crearActaCompleta, 
   obtenerActas, 
-  obtenerActasCompletas 
+  obtenerActasCompletas,
+  obtenerActasConciliadas
 };
