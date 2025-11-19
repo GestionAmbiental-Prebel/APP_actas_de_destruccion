@@ -1,7 +1,6 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { obtenerActasCompletas } from '../../services/actas.service';
 import Button from '../../components/common/Button';
-import SectionTitle from '../../components/common/SectionTitle';
 
 type Residuo = {
   residuo_id: number;
