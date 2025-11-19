@@ -1,5 +1,7 @@
 import Input from '../common/Input';
 import SectionTitle from '../common/SectionTitle';
+import { normalizarNombre } from '../../utils/normalizarNombre';
+
 
 type SeccionIdentificacionProps = {
   cedula: string;
@@ -23,6 +25,7 @@ export default function SeccionIdentificacion({
   apellido,
   setApellido,
   onCedulaBlur
+
 }: SeccionIdentificacionProps) {
   return (
     <div>
@@ -46,6 +49,7 @@ export default function SeccionIdentificacion({
           value={nombre}
           onChange={setNombre}
           validation={validarNombre}
+          onBlur={() => setNombre(normalizarNombre(nombre))}
           maxLength={50}
           required
         />
@@ -55,6 +59,7 @@ export default function SeccionIdentificacion({
           value={apellido}
           onChange={setApellido}
           validation={validarNombre}
+          onBlur={() => setApellido(normalizarNombre(apellido))}
           maxLength={50}
           required
         />

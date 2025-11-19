@@ -7,12 +7,18 @@ import useCatalogos from '../../hooks/useCatalogos';
 import useOperario from '../../hooks/use.Operario';
 import { crearActaCompleta } from '../../services/actas.service';
 import { obtenerOCrearOperario } from '../../services/operarios.service';
+import { normalizarNombre } from '../../utils/normalizarNombre';
+
+
+
+
 
 type Residuo = {
   residuo_id: number | null;
   categoria_id: number | null;
   motivo: string;
   motivo_otro?: string;
+  residuo_otro?: string;
   peso: string;
 };
 
@@ -65,6 +71,21 @@ export default function NuevaActa() {
   const [mostrarExito, setMostrarExito] = useState(false);
   const [numeroActaGenerado, setNumeroActaGenerado] = useState('');
 
+useEffect(() => {
+  if (!loading && residuosEspecificos.length > 0) {
+    console.log('=== DEPURACIÓN RESIDUOS ===');
+    console.log('Total residuos cargados:', residuosEspecificos.length);
+    
+    const residuosOtro = residuosEspecificos.filter(r => r.nombre === 'Otro');
+    console.log('Residuos "Otro" encontrados:', residuosOtro.length);
+    console.log('IDs de residuos "Otro":', residuosOtro.map(r => r.id));
+    
+    const categoriasOtro = categoriasResiduos.filter(c => c.nombre === 'Otro');
+    console.log('Categorías "Otro" encontradas:', categoriasOtro.length);
+    console.log('IDs de categorías "Otro":', categoriasOtro.map(c => c.id));
+  }
+}, [loading, residuosEspecificos, categoriasResiduos]);
+  
   // ===== EFECTOS =====
 
   // Autocompletar nombre y apellido cuando se encuentra el operario
@@ -219,20 +240,28 @@ export default function NuevaActa() {
       return;
     }
 
-    const residuosParaEnviar = residuosValidos.map(r => ({
-      residuo_id: r.residuo_id!,
-      peso: r.peso,
-      motivo: r.motivo,
-      motivo_otro: r.motivo === 'Otro' ? r.motivo_otro || '' : null, 
-    }));
+  
+  const residuosFiltradosDisponibles = obtenerResiduosFiltrados();
+
+ const residuosParaEnviar = residuosValidos.map(r => {
+  const residuoEspecifico = residuosFiltradosDisponibles.find(res => res.id === r.residuo_id);
+  return {
+    residuo_id: r.residuo_id!,
+    peso: r.peso,
+    motivo: r.motivo,
+    motivo_otro: r.motivo === 'Otro' ? r.motivo_otro || null : null,
+    residuo_otro: residuoEspecifico?.nombre === 'Otro' ? r.residuo_otro || null : null,
+  };
+});
+
     console.log('Residuos a enviar:', residuosParaEnviar);
 
     // 3. Crear el acta completa
     console.log('3. Creando acta completa...');
     const resultado = await crearActaCompleta({
       cedula,
-      nombre,
-      apellido,
+      nombre : normalizarNombre(nombre),
+      apellido : normalizarNombre(apellido),
       subarea_id: subAreaId,
       centro_costo_id: centroCostoId,
       residuos: residuosParaEnviar,

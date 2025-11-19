@@ -8,7 +8,8 @@ type Residuo = {
   residuo_id: number | null;
   categoria_id: number | null;
   motivo: string;
-  motivo_otro?: string; // Nuevo campo
+  motivo_otro?: string;
+  residuo_otro?: string;
   peso: string;
 };
 
@@ -41,7 +42,7 @@ export default function SeccionResiduos({
   const agregarResiduo = () => {
     setResiduos([
       ...residuos,
-      { residuo_id: null, categoria_id: null, motivo: '', motivo_otro: '', peso: '' }
+      { residuo_id: null, categoria_id: null, motivo: '', motivo_otro: '', residuo_otro: '', peso: '' }
     ]);
   };
 
@@ -49,10 +50,26 @@ export default function SeccionResiduos({
     setResiduos(residuos.filter((_, idx) => idx !== index));
   };
 
-  const residuosOptions = residuosDisponibles.map(r => ({
+  // Función auxiliar para verificar si un residuo es "Otro"
+ const esResiduoOtro = (residuoId: number | null): boolean => {
+  if (!residuoId) return false;
+  const residuo = residuosDisponibles.find(r => r.id === residuoId);
+  return residuo?.nombre === 'Otro' ||
+         residuo?.nombre === 'Otro ME - Sin marca' ||
+         residuo?.nombre === 'Otro ME - Con marca';
+};
+
+
+ const residuosOptions = residuosDisponibles.map(r => {
+  const categoria = categoriasDisponibles.find(c => c.id === r.categoria_id);
+
+  return {
     value: String(r.id),
-    label: r.nombre
-  }));
+    label: r.nombre === "Otro" 
+      ? `Otro (${categoria?.nombre})`
+      : r.nombre
+  };
+});
 
   const categoriasOptions = categoriasDisponibles.map(c => ({
     value: String(c.id),
@@ -91,6 +108,29 @@ export default function SeccionResiduos({
               placeholder="Seleccione categoría"
             />
 
+            {/* Campo adicional cuando el residuo es "Otro" */}
+            {esResiduoOtro(item.residuo_id) && (
+              <div className="md:col-span-2">
+                <Input
+                  label="Especifique el residuo (máx. 150 caracteres)"
+                  value={item.residuo_otro || ''}
+                  onChange={(value) => {
+                    if (value.length <= 150) {
+                      handleChange(index, 'residuo_otro', value);
+                    }
+                  }}
+                  type="text"
+                  required
+                  disabled={disabled}
+                  maxLength={150}
+                  placeholder="Escriba el nombre del residuo"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                  {item.residuo_otro?.length || 0}/150
+                </p>
+              </div>
+            )}
+
             {/* Motivo */}
             <div className="md:col-span-2">
               <Select
@@ -119,8 +159,9 @@ export default function SeccionResiduos({
                   required
                   disabled={disabled}
                   maxLength={150}
+                  placeholder="Escriba el motivo"
                 />
-                <p className="text-xs text-gray-500 mt-1 text-right">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
                   {item.motivo_otro?.length || 0}/150
                 </p>
               </div>
@@ -135,6 +176,10 @@ export default function SeccionResiduos({
                 type="number"
                 required
                 disabled={disabled}
+                placeholder="0.00"
+                min={0.01}
+                max={17000}
+                step={0.01}
               />
             </div>
           </div>
@@ -153,7 +198,7 @@ export default function SeccionResiduos({
       {/* Botón agregar */}
       {!disabled && (
         <Button onClick={agregarResiduo}>
-          + Agregar residuo
+          ➕ Agregar residuo
         </Button>
       )}
     </div>

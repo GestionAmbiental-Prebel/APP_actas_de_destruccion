@@ -14,6 +14,7 @@ type GeneracionResiduoPayload = {
   operario_id: number;
   motivo: string;
   motivo_otro?: string | null;
+  residuo_otro?: string | null;
 };
 
 type ActaPayload = {
@@ -49,6 +50,7 @@ type CrearActaCompleta = {
     peso: string;
     motivo: string;
     motivo_otro?: string | null;
+    residuo_otro?: string | null;
   }>;
 };
 
@@ -110,6 +112,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
         operario_id: datos.operario_id,
         motivo: residuo.motivo,
         motivo_otro: residuo.motivo === 'Otro' ? (residuo.motivo_otro || '') : null,
+        residuo_otro: residuo.residuo_otro ?? null
       });
 
       generacionResiduosIds.push(generacionResiduo.id);
