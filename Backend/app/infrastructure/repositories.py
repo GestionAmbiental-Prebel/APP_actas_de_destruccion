@@ -203,6 +203,8 @@ class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
                 residuo_id=g.residuo_id,
                 operario_id=g.operario_id,
                 motivo=g.motivo,
+                motivo_otro=g.motivo_otro,
+                residuo_otro=g.residuo_otro,  
             )
             for g in queryset
         ]
@@ -216,18 +218,24 @@ class GeneracionResiduoRepositoryImpl(GeneracionResiduoRepository):
             residuo_id=g.residuo_id,
             operario_id=g.operario_id,
             motivo=g.motivo,
+            motivo_otro=g.motivo_otro,
+            residuo_otro=g.residuo_otro,  
         )
 
     def create(self, data: GeneracionResiduo) -> GeneracionResiduo:
-        obj = GeneracionResiduoModel.objects.create(**data.__dict__)
+        # Excluimos campos nulos que puedan romper el create
+        data_dict = {k: v for k, v in data.__dict__.items() if v is not None}
+        obj = GeneracionResiduoModel.objects.create(**data_dict)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: GeneracionResiduo) -> GeneracionResiduo:
-        GeneracionResiduoModel.objects.filter(id=id).update(**data.__dict__)
+        data_dict = {k: v for k, v in data.__dict__.items() if v is not None}
+        GeneracionResiduoModel.objects.filter(id=id).update(**data_dict)
         return self.get_by_id(id)
 
     def delete(self, id: int) -> None:
         GeneracionResiduoModel.objects.filter(id=id).delete()
+
 
 
 # ---------- AREA ----------

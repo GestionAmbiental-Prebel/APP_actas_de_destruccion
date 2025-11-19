@@ -36,6 +36,7 @@ class GeneracionResiduoSerializer(serializers.Serializer):
     operario_id = serializers.IntegerField(required=True)
     motivo = serializers.CharField(max_length=255, required=True)
     motivo_otro = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
+    residuo_otro = serializers.CharField(max_length=150, required=False, allow_blank=True, allow_null=True)
 
 
 class AreaSerializer(serializers.Serializer):
@@ -106,3 +107,14 @@ class NovedadConciliacionSerializer(serializers.Serializer):
             raise ValueError("El servicio no fue inyectado en el contexto del serializer")
 
         return service.update(instance.id, validated_data)
+
+class ConciliacionSerializer(serializers.Serializer):
+    documento_recepcion = serializers.CharField(required=True, max_length=100)
+    residuos = serializers.ListField(child=serializers.DictField(), required=True)
+
+    def create(self, validated_data):
+        service = self.context.get("service")
+        acta_id = self.context.get("acta_id")  # viene del viewset
+        if not service or not acta_id:
+            raise ValueError("No se inyectó el service o acta_id en el serializer.")
+        return service.conciliar_acta(acta_id, **validated_data)

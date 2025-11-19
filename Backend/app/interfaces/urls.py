@@ -28,6 +28,7 @@ router.register(r'actas-generacion-residuo', ActaGeneracionResiduoViewSet, basen
 router.register(r'generacion-residuo', GeneracionResiduoViewSet, basename='generacion-residuo')
 router.register(r'sub-area', SubAreaViewSet, basename='sub-area')
 router.register(r'novedad-conciliacion', NovedadConciliacionViewSet, basename='novedad-conciliacion')
+router.register(r'conciliacion', ConciliarActaViewSet, basename='conciliacion')
 
 
 
@@ -36,3 +37,4 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
+ 

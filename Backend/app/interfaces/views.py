@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.decorators import action
+
 
 from app.application.services import (
     SedeService,
@@ -17,6 +19,7 @@ from app.application.services import (
     OperarioService,
     SubAreaService,
     NovedadConciliacionService,
+    ConciliacionService,
 )
 
 from app.infrastructure.repositories import (
@@ -49,6 +52,7 @@ from app.infrastructure.serializers import (
     OperarioSerializer,
     SubAreaSerializer,
     NovedadConciliacionSerializer,
+    ConciliacionSerializer,
 )
 
 
@@ -206,3 +210,36 @@ NovedadConciliacionViewSet = generate_viewset(
     NovedadConciliacionSerializer,
     "NovedadConciliacion",
 )
+
+class ConciliarActaViewSet(viewsets.ViewSet):
+
+    @action(detail=True, methods=["post"])
+    def conciliar(self, request, pk=None):
+        print("=== INICIO ConciliarActaViewSet.conciliar ===")
+        print("Acta ID (pk):", pk)
+        print("Datos recibidos:", request.data)
+
+        service = ConciliacionService()  # <--- Cambiado aquí
+
+        try:
+            # pk será el acta_id
+            serializer = ConciliacionSerializer(
+                data=request.data,
+                context={"service": service, "acta_id": pk}
+            )
+            if not serializer.is_valid():
+                print("Errores de validación:", serializer.errors)
+            serializer.is_valid(raise_exception=True)
+
+            result = serializer.save()
+            print("Conciliación exitosa:", result)
+            return Response(result, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            import traceback
+            print("ERROR en ConciliarActaViewSet.conciliar:")
+            traceback.print_exc()
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

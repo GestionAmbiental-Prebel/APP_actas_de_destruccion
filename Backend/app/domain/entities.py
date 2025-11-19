@@ -76,6 +76,7 @@ class GeneracionResiduo:
     operario_id: int
     motivo: str
     motivo_otro: Optional [str] = None
+    residuo_otro: Optional [str] = None
     id: Optional [int] = None
 
 
