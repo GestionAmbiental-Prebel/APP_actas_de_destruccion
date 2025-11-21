@@ -284,9 +284,12 @@ return actas
   .filter((acta): acta is NonNullable<typeof acta> => acta !== null); 
 }
 
+
 export { 
   crearActaCompleta, 
   obtenerActas, 
   obtenerActasCompletas,
   obtenerActasConciliadas,
+  
+  
 };

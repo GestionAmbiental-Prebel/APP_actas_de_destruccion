@@ -10,9 +10,9 @@ import NuevaActa from "../pages/subarea/NuevaActa";
 import  MisActas  from "../pages/subarea/MisActas";
 
 // 🔹 Operario Punto Verde
-import { ActasOperarioPuntoVerde } from "../pages/puntoVerde/ActasOperarioPuntoVerde";
-import { ConciliarActa } from "../pages/puntoVerde/ConciliarActa";
-import { ActasConciliadas } from "../pages/puntoVerde/ActasConciliadas";
+import  ActasOperarioPuntoVerde  from "../pages/puntoVerde/ActasOperarioPuntoVerde";
+import  ConciliarActa  from "../pages/puntoVerde/ConciliarActa";
+import  ActasConciliadas  from "../pages/puntoVerde/ActasConciliadas";
 
 // 🔹 Gestor Normal
 import { Dashboard } from "../pages/gestor/Dashboard";
