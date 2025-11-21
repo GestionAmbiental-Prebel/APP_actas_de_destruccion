@@ -55,16 +55,16 @@ export default function useCatalogos(): UseCatalogosReturn {
           subAreasData,
           residuosData,
           categoriasData,
-          procedenciasData,  // ✅ Agregado
-          sedesData  // ✅ Agregado
+          procedenciasData,  
+          sedesData  
         ] = await Promise.all([
           obtenerAreas(),
           obtenerCentrosCosto(),
           obtenerSubAreas(),
           obtenerResiduosEspecificos(),
           obtenerCategoriasResiduos(),
-          obtenerProcedencias(),  // ✅ Agregado
-          obtenerSedes()  // ✅ Agregado
+          obtenerProcedencias(),  
+          obtenerSedes()  
         ]);
 
         setAreas(areasData);
@@ -72,8 +72,8 @@ export default function useCatalogos(): UseCatalogosReturn {
         setSubAreas(subAreasData);
         setResiduosEspecificos(residuosData);
         setCategoriasResiduos(categoriasData);
-        setProcedencias(procedenciasData);  // ✅ Agregado
-        setSedes(sedesData);  // ✅ Agregado
+        setProcedencias(procedenciasData);  
+        setSedes(sedesData);  
       } catch (err) {
         console.error('Error al cargar catálogos:', err);
         setError('Error al cargar los datos. Por favor, recarga la página.');
@@ -91,8 +91,8 @@ export default function useCatalogos(): UseCatalogosReturn {
     subAreas,
     residuosEspecificos,
     categoriasResiduos,
-    procedencias,  // ✅ Agregado
-    sedes,  // ✅ Agregado
+    procedencias,  
+    sedes,  
     loading,
     error
   };
