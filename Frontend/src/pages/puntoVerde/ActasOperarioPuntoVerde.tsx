@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obtenerActasCompletas } from '../../services/actas.service';
 import Button from '../../components/common/Button';
+import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
+import FilteredDateActas from '../../components/common/FilteredDateActas';
 
 type Residuo = {
   residuo_id: number;
@@ -22,17 +24,26 @@ type Acta = {
   operario_documento: string;
   centro_costo_id: number;
   residuos: Residuo[];
+  documento_recepcion?: string; // para filtrar pendientes
 };
 
 export default function ActasOperarioPuntoVerde() {
   const [actas, setActas] = useState<Acta[]>([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [fechaInicio, setFechaInicio] = useState('');
-  const [fechaFin, setFechaFin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
   const navigate = useNavigate();
+
+  const { 
+  busqueda, setBusqueda, 
+  fechaInicio, setFechaInicio, 
+  fechaFin, setFechaFin, 
+  filtrar, limpiarFiltros 
+} = useFiltroActas<Acta>(actas, [
+  "numero_acta",
+  "operario_nombre",
+  "operario_documento"
+]);
+
 
   useEffect(() => {
     cargarActas();
@@ -42,7 +53,8 @@ export default function ActasOperarioPuntoVerde() {
     try {
       setLoading(true);
       const data = await obtenerActasCompletas();
-      setActas(data);
+      const pendientes = data.filter(a => !a.documento_recepcion); // solo pendientes
+      setActas(pendientes);
       setError('');
     } catch (err) {
       console.error('Error cargando actas:', err);
@@ -52,29 +64,11 @@ export default function ActasOperarioPuntoVerde() {
     }
   };
 
-  const filtrarActas = (): Acta[] => {
-    return actas.filter((a) => {
-      const coincideNumero = !busqueda || 
-        a.numero_acta.toLowerCase().includes(busqueda.toLowerCase()) ||
-        a.operario_nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        a.operario_documento.includes(busqueda);
-
-      const cumpleFecha =
-        (!fechaInicio || new Date(a.fecha_acta) >= new Date(fechaInicio)) &&
-        (!fechaFin || new Date(a.fecha_acta) <= new Date(fechaFin));
-
-      return coincideNumero && cumpleFecha;
-    });
-  };
-
   const calcularPesoTotal = (residuos: Residuo[]): number => {
-    return residuos.reduce((total, r) => {
-      const peso = parseFloat(r.peso_reportado) || 0;
-      return total + peso;
-    }, 0);
+    return residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);
   };
 
-  const actasFiltradas = filtrarActas();
+  const actasFiltradas = filtrar();
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -82,57 +76,18 @@ export default function ActasOperarioPuntoVerde() {
         Actas para Conciliar - Punto Verde
       </h1>
 
-      {/* Filtros */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex flex-col flex-1 min-w-[250px]">
-            <label className="font-medium mb-1">Buscar</label>
-            <input
-              type="text"
-              placeholder="N° acta, nombre o cédula..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2
-                         bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                         focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <label className="font-medium mb-1">Fecha inicio</label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => setFechaInicio(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2
-                         bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                         focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <label className="font-medium mb-1">Fecha fin</label>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => setFechaFin(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2
-                         bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                         focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
-            />
-          </div>
-
-          <Button onClick={cargarActas} disabled={loading}>
-            {loading ? 'Actualizando...' : '🔄 Refrescar'}
-          </Button>
-        </div>
-
-        {!loading && actasFiltradas.length > 0 && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-            Mostrando {actasFiltradas.length} de {actas.length} acta(s)
-          </p>
-        )}
-      </div>
+      {/* Filtros reutilizables */}
+      <FilteredDateActas
+        busqueda={busqueda}
+        setBusqueda={setBusqueda}
+        fechaInicio={fechaInicio}
+        setFechaInicio={setFechaInicio}
+        fechaFin={fechaFin}
+        setFechaFin={setFechaFin}
+        limpiarFiltros={limpiarFiltros}
+        onRefrescar={cargarActas}
+        loading={loading}
+      />
 
       {/* Listado */}
       {error ? (
@@ -159,10 +114,7 @@ export default function ActasOperarioPuntoVerde() {
             const pesoTotal = calcularPesoTotal(acta.residuos);
 
             return (
-              <div
-                key={acta.id}
-                className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-              >
+              <div key={acta.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                   <div>
@@ -170,20 +122,13 @@ export default function ActasOperarioPuntoVerde() {
                       {acta.numero_acta}
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      📅 {new Date(acta.fecha_acta).toLocaleDateString('es-CO', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                      📅 {new Date(acta.fecha_acta).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </p>
                   </div>
-
                   <div className="text-right">
                     <div className="bg-skyBlue/10 dark:bg-lightBlue/10 px-4 py-2 rounded-lg">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Residuos</p>
-                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
-                        {acta.residuos.length}
-                      </p>
+                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">{acta.residuos.length}</p>
                     </div>
                   </div>
                 </div>
@@ -228,9 +173,7 @@ export default function ActasOperarioPuntoVerde() {
                         {acta.residuos.map((r, i) => (
                           <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                             <td className="p-3 border border-gray-300 dark:border-gray-600">
-                              {r.residuo_nombre === 'Otro' && r.residuo_otro
-                                ? `Otro: ${r.residuo_otro}`
-                                : r.residuo_nombre}
+                              {r.residuo_nombre === 'Otro' && r.residuo_otro ? `Otro: ${r.residuo_otro}` : r.residuo_nombre}
                             </td>
                             <td className="p-3 border border-gray-300 dark:border-gray-600">
                               <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm">
@@ -238,9 +181,7 @@ export default function ActasOperarioPuntoVerde() {
                               </span>
                             </td>
                             <td className="p-3 border border-gray-300 dark:border-gray-600">
-                              {r.motivo === 'Otro' && r.motivo_otro
-                                ? `Otro: ${r.motivo_otro}`
-                                : r.motivo}
+                              {r.motivo === 'Otro' && r.motivo_otro ? `Otro: ${r.motivo_otro}` : r.motivo}
                             </td>
                             <td className="p-3 border border-gray-300 dark:border-gray-600 text-right font-semibold">
                               {parseFloat(r.peso_reportado).toFixed(2)}
@@ -254,10 +195,7 @@ export default function ActasOperarioPuntoVerde() {
 
                 {/* Botón Conciliar */}
                 <div className="flex justify-end">
-                  <Button
-                    onClick={() => navigate(`/operario-punto-verde/conciliar/${acta.id}`)}
-                    variant="primary"
-                  >
+                  <Button onClick={() => navigate(`/operario-punto-verde/conciliar/${acta.id}`)} variant="primary">
                     ✓ Conciliar Acta
                   </Button>
                 </div>

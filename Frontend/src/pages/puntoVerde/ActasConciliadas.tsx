@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { obtenerActasConciliadas } from '../../services/actas.service';
 import SectionTitle from '../../components/common/SectionTitle';
 import Button from '../../components/common/Button';
+import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
+import FilteredDateActas from '../../components/common/FilteredDateActas';
 
 type ResiduoConciliado = {
   residuo_nombre: string;
@@ -18,6 +20,7 @@ type ActaConciliada = {
   id: number;
   numero_acta: string;
   fecha_acta: string;
+  fecha_conciliacion?: string;
   operario_nombre: string;
   operario_documento: string;
   documento_recepcion: string;
@@ -31,6 +34,19 @@ export default function ActasConciliadas() {
   const [loading, setLoading] = useState(true);
   const [modalActa, setModalActa] = useState<ActaConciliada | null>(null);
 
+ 
+  const {
+    busqueda, setBusqueda,
+    fechaInicio, setFechaInicio,
+    fechaFin, setFechaFin,
+    filtrar,
+    limpiarFiltros,
+  } = useFiltroActas(actas, [
+    "numero_acta",
+    "operario_nombre",
+    "operario_documento",
+  ]);
+
   useEffect(() => {
     cargarActas();
   }, []);
@@ -40,7 +56,6 @@ export default function ActasConciliadas() {
       setLoading(true);
       const data = await obtenerActasConciliadas();
 
-      // Convertir los pesos a número
       const actasConPesosNumericos = data.map((acta: any) => ({
         ...acta,
         peso_total_reportado: Number(acta.peso_total_reportado),
@@ -86,8 +101,19 @@ export default function ActasConciliadas() {
         Actas Conciliadas
       </h1>
 
+      
+      <FilteredDateActas
+        busqueda={busqueda}
+        setBusqueda={setBusqueda}
+        fechaInicio={fechaInicio}
+        setFechaInicio={setFechaInicio}
+        fechaFin={fechaFin}
+        setFechaFin={setFechaFin}
+        limpiarFiltros={limpiarFiltros}
+      />
+
       <div className="space-y-4">
-        {actas.map((acta) => {
+        {filtrar().map((acta) => {
           const diferencia = acta.peso_total_conciliado - acta.peso_total_reportado;
           return (
             <div
@@ -146,57 +172,56 @@ export default function ActasConciliadas() {
         })}
       </div>
 
-  {/* Modal de detalles */}
-{modalActa && (
-  <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex justify-center items-center z-50">
-    <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6">
-      <h2 className="text-xl font-bold mb-2">{modalActa.numero_acta} - Detalles</h2>
+      {/* Modal de detalles */}
+      {modalActa && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6">
+            <h2 className="text-xl font-bold mb-2">{modalActa.numero_acta} - Detalles</h2>
 
-      {/* Fecha y hora de conciliación */}
-      <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-        Fecha y hora de conciliación:{' '}
-        {modalActa.residuos.length > 0 && modalActa.residuos[0].fecha
-          ? new Date(modalActa.residuos[0].fecha).toLocaleString('es-CO')
-          : 'No disponible'}
-      </p>
+           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+              Fecha y hora de conciliación:{' '}
+              {modalActa.fecha_conciliacion
+                ? new Date(modalActa.fecha_conciliacion).toLocaleString('es-CO')
+                : 'No disponible'}
+            </p>
 
-      <p className="mb-2">Entregado por: {modalActa.operario_nombre} ({modalActa.operario_documento})</p>
-      <p className="mb-2">Recibido por: {modalActa.documento_recepcion}</p>
 
-      <div className="overflow-y-auto max-h-96">
-        <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
-          <thead>
-            <tr className="bg-gray-100 dark:bg-gray-700">
-              <th className="border px-2 py-1">Residuo</th>
-              <th className="border px-2 py-1">Categoría</th>
-              <th className="border px-2 py-1">Motivo</th>
-              <th className="border px-2 py-1">Peso Reportado</th>
-              <th className="border px-2 py-1">Peso Conciliado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {modalActa.residuos.map((r, idx) => (
-              <tr key={idx} className="text-center">
-                <td className="border px-2 py-1">{r.residuo_nombre}</td>
-                <td className="border px-2 py-1">{r.categoria_nombre}</td>
-                <td className="border px-2 py-1">{r.motivo}{r.motivo_otro ? ` (${r.motivo_otro})` : ''}</td>
-                <td className="border px-2 py-1">{r.peso_reportado.toFixed(2)}</td>
-                <td className="border px-2 py-1">{r.peso_conciliado?.toFixed(2) ?? '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            <p className="mb-2">Entregado por: {modalActa.operario_nombre} ({modalActa.operario_documento})</p>
+            <p className="mb-2">Recibido por: {modalActa.documento_recepcion}</p>
 
-      <div className="mt-4 flex justify-end">
-        <Button variant="secondary" onClick={() => setModalActa(null)}>
-          Cerrar
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
+            <div className="overflow-y-auto max-h-96">
+              <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
+                <thead>
+                  <tr className="bg-gray-100 dark:bg-gray-700">
+                    <th className="border px-2 py-1">Residuo</th>
+                    <th className="border px-2 py-1">Categoría</th>
+                    <th className="border px-2 py-1">Motivo</th>
+                    <th className="border px-2 py-1">Peso Reportado</th>
+                    <th className="border px-2 py-1">Peso Conciliado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {modalActa.residuos.map((r, idx) => (
+                    <tr key={idx} className="text-center">
+                      <td className="border px-2 py-1">{r.residuo_nombre}</td>
+                      <td className="border px-2 py-1">{r.categoria_nombre}</td>
+                      <td className="border px-2 py-1">{r.motivo}{r.motivo_otro ? ` (${r.motivo_otro})` : ''}</td>
+                      <td className="border px-2 py-1">{r.peso_reportado.toFixed(2)}</td>
+                      <td className="border px-2 py-1">{r.peso_conciliado?.toFixed(2) ?? '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
+            <div className="mt-4 flex justify-end">
+              <Button variant="secondary" onClick={() => setModalActa(null)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
