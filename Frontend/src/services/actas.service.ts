@@ -288,5 +288,5 @@ export {
   crearActaCompleta, 
   obtenerActas, 
   obtenerActasCompletas,
-  obtenerActasConciliadas
+  obtenerActasConciliadas,
 };
