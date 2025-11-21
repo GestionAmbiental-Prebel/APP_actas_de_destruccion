@@ -1,6 +1,8 @@
 """
 Registrar los servicios de la aplicación (ver manual de arquitectura)
 """
+from django.db import transaction
+from django.utils import timezone
 from typing import List, Optional
 from app.domain.entities import (
     Sede,
@@ -346,64 +348,53 @@ class NovedadConciliacionService:
             raise ValueError(f"Error al eliminar la novedad con id {id}: {str(e)}")
         
 class ConciliacionService:
-    """
-    Servicio para conciliar un acta.
-    """
+   
 
     def conciliar_acta(self, acta_id: int, documento_recepcion: str, residuos: list):
         import traceback
+        from django.utils import timezone
+
         print("=== INICIO ConciliacionService.conciliar_acta ===")
-        print(f"Acta ID: {acta_id}")
-        print(f"Documento recepcion: {documento_recepcion}")
-        print(f"Residuos recibidos: {residuos}")
 
         try:
-            # 1️⃣ Obtener acta
             from app.models import Acta, ActaGeneracionResiduo, NovedadConciliacion
 
+            # 1️⃣ Obtener acta
             acta = Acta.objects.get(id=acta_id)
-            print(f"Acta encontrada: {acta}")
 
-            # 2️⃣ Actualizar documento de recepción
+            # 2️⃣ Actualizar documento de recepción y fecha de conciliación
             acta.documento_recepcion = documento_recepcion
+            acta.fecha_conciliacion = timezone.now()  
             acta.save()
-            print("Documento de recepción actualizado.")
 
             # 3️⃣ Conciliar residuos
-            for idx, r in enumerate(residuos):
+            for r in residuos:
                 residuo_id = r.get("id")
                 peso_conciliado = r.get("peso_conciliado")
                 descripcion_novedad = r.get("descripcion_novedad")
 
-                if residuo_id is None:
-                    print(f"⚠️ Residuo en posición {idx} no tiene 'id', se omite")
+                if not residuo_id:
                     continue
 
                 agr = ActaGeneracionResiduo.objects.get(id=residuo_id)
-                print(f"Actualizando residuo {residuo_id}: peso_conciliado={peso_conciliado}")
-
                 agr.peso_conciliado = peso_conciliado
                 agr.save()
 
                 if descripcion_novedad:
                     NovedadConciliacion.objects.create(
                         acta_generacion_residuo=agr,
-                        descripcion=descripcion_novedad
+                        descripcion=descripcion_novedad,
+                        fecha=timezone.now(),  # RECOMENDADO para registrar cuándo se creó
                     )
-                    print(f"Novedad registrada: {descripcion_novedad}")
 
-            print("=== Conciliación finalizada con éxito ===")
-            return {"success": True, "acta_id": acta_id}
-
-        except Acta.DoesNotExist:
-            print("❌ Acta no encontrada")
-            return {"success": False, "error": f"Acta con ID {acta_id} no encontrada"}
-
-        except ActaGeneracionResiduo.DoesNotExist as e:
-            print(f"❌ Residuo no encontrado: {str(e)}")
-            return {"success": False, "error": str(e)}
+            return {
+                "success": True,
+                "acta_id": acta_id,
+                "fecha_conciliacion": acta.fecha_conciliacion,
+            }
 
         except Exception as e:
-            print("=== EXCEPCIÓN EN ConciliacionService.conciliar_acta ===")
+            print("=== ERROR en conciliación ===")
             traceback.print_exc()
             return {"success": False, "error": str(e)}
+

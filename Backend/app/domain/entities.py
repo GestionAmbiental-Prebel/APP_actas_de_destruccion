@@ -88,6 +88,7 @@ class Acta:
     centro_costo_id: int
     documento_entrega: str
     documento_recepcion: str = ''
+    fecha_conciliacion: Optional[datetime] = None
     id: Optional[int] = None
 
   

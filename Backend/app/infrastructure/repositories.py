@@ -125,6 +125,7 @@ class ActaRepositoryImpl(ActaRepository):
                 centro_costo_id=a.centro_costo_id,
                 documento_entrega=a.documento_entrega,
                 documento_recepcion=a.documento_recepcion,
+                fecha_conciliacion=a.fecha_conciliacion,
             )
             for a in queryset
         ]
@@ -139,6 +140,7 @@ class ActaRepositoryImpl(ActaRepository):
             centro_costo_id=a.centro_costo_id,
             documento_entrega=a.documento_entrega,
             documento_recepcion=a.documento_recepcion,
+            fecha_conciliacion=a.fecha_conciliacion,
         )
 
     def create(self, data: Acta) -> Acta:
@@ -148,6 +150,7 @@ class ActaRepositoryImpl(ActaRepository):
     def update(self, id: int, data: Acta) -> Acta:
         ActaModel.objects.filter(id=id).update(**data.__dict__)
         return self.get_by_id(id)
+    
 
     def delete(self, id: int) -> None:
         ActaModel.objects.filter(id=id).delete()

@@ -109,6 +109,7 @@ class Acta(models.Model):
     centro_costo = models.ForeignKey(CentroCosto, on_delete=models.PROTECT)
     documento_entrega = models.CharField(max_length=20)
     documento_recepcion = models.CharField(max_length=20)
+    fecha_conciliacion = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = 'Acta'
