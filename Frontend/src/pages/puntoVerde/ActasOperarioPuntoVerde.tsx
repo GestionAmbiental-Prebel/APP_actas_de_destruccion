@@ -4,6 +4,8 @@ import { obtenerActasCompletas } from '../../services/actas.service';
 import Button from '../../components/common/Button';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
+import { sortByDateDesc } from "../../utils/sortByDate";
+ 
 
 type Residuo = {
   residuo_id: number;
@@ -50,19 +52,25 @@ export default function ActasOperarioPuntoVerde() {
   }, []);
 
   const cargarActas = async () => {
-    try {
-      setLoading(true);
-      const data = await obtenerActasCompletas();
-      const pendientes = data.filter(a => !a.documento_recepcion); // solo pendientes
-      setActas(pendientes);
-      setError('');
-    } catch (err) {
-      console.error('Error cargando actas:', err);
-      setError('No se pudieron cargar las actas.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    const data = await obtenerActasCompletas();
+
+    // Solo actas pendientes
+    const pendientes = data.filter(a => !a.documento_recepcion);
+
+    // ORDENARLAS POR FECHA
+    const ordenadas = sortByDateDesc(pendientes, "fecha_acta");
+
+    setActas(ordenadas);
+    setError('');
+  } catch (err) {
+    console.error('Error cargando actas:', err);
+    setError('No se pudieron cargar las actas.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const calcularPesoTotal = (residuos: Residuo[]): number => {
     return residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);

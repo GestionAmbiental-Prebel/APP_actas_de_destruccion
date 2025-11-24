@@ -4,6 +4,8 @@ import SectionTitle from '../../components/common/SectionTitle';
 import Button from '../../components/common/Button';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
+import { sortByDateDesc } from "../../utils/sortByDate";
+
 
 type ResiduoConciliado = {
   residuo_nombre: string;
@@ -32,9 +34,7 @@ type ActaConciliada = {
 export default function ActasConciliadas() {
   const [actas, setActas] = useState<ActaConciliada[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalActa, setModalActa] = useState<ActaConciliada | null>(null);
 
- 
   const {
     busqueda, setBusqueda,
     fechaInicio, setFechaInicio,
@@ -66,8 +66,10 @@ export default function ActasConciliadas() {
           peso_conciliado: Number(r.peso_conciliado),
         })),
       }));
+      const actasOrdenadas = sortByDateDesc(actasConPesosNumericos, 'fecha_acta');
 
-      setActas(actasConPesosNumericos);
+      
+      setActas(actasOrdenadas);
     } catch (error) {
       console.error('Error cargando actas conciliadas:', error);
       alert('Error al cargar las actas conciliadas');
@@ -101,7 +103,6 @@ export default function ActasConciliadas() {
         Actas Conciliadas
       </h1>
 
-      
       <FilteredDateActas
         busqueda={busqueda}
         setBusqueda={setBusqueda}
@@ -112,17 +113,19 @@ export default function ActasConciliadas() {
         limpiarFiltros={limpiarFiltros}
       />
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {filtrar().map((acta) => {
           const diferencia = acta.peso_total_conciliado - acta.peso_total_reportado;
+
           return (
             <div
               key={acta.id}
-              className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-300 dark:border-gray-600"
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-600"
             >
+              {/* ENCABEZADO */}
               <div className="flex justify-between items-center mb-2">
-                <h2 className="font-bold text-lg text-gray-800 dark:text-gray-200">
-                  {acta.numero_acta}
+                <h2 className="font-bold text-xl text-gray-800 dark:text-gray-200">
+                  Acta {acta.numero_acta}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
@@ -132,17 +135,25 @@ export default function ActasConciliadas() {
               <p className="text-gray-700 dark:text-gray-300">
                 Entregado por: {acta.operario_nombre} ({acta.operario_documento})
               </p>
-              
+
               <p className="text-gray-700 dark:text-gray-300">
                 Recibido por: {acta.documento_recepcion}
               </p>
 
-              <div className="flex gap-4 mt-2">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Fecha conciliación:{' '}
+                {acta.fecha_conciliacion
+                  ? new Date(acta.fecha_conciliacion).toLocaleString('es-CO')
+                  : 'No disponible'}
+              </p>
+
+              {/* PESOS */}
+              <div className="flex gap-6 mt-3">
                 <p className="font-semibold text-blue-600 dark:text-blue-400">
-                  Peso Reportado: {acta.peso_total_reportado.toFixed(2)} kg
+                  Reportado: {acta.peso_total_reportado.toFixed(2)} kg
                 </p>
                 <p className="font-semibold text-green-600 dark:text-green-400">
-                  Peso Conciliado: {acta.peso_total_conciliado.toFixed(2)} kg
+                  Conciliado: {acta.peso_total_conciliado.toFixed(2)} kg
                 </p>
               </div>
 
@@ -159,70 +170,39 @@ export default function ActasConciliadas() {
                 </div>
               )}
 
-              <div className="mt-3 flex justify-end">
-                <Button
-                  variant="primary"
-                  onClick={() => setModalActa(acta)}
-                >
-                  Ver Detalles
-                </Button>
+              {/* TABLA DE RESIDUOS (ANTES ESTABA EN EL MODAL) */}
+              <div className="overflow-x-auto mt-4">
+                <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
+                  <thead>
+                    <tr className="bg-gray-100 dark:bg-gray-700">
+                      <th className="border px-2 py-1">Residuo</th>
+                      <th className="border px-2 py-1">Categoría</th>
+                      <th className="border px-2 py-1">Motivo</th>
+                      <th className="border px-2 py-1">Peso Reportado</th>
+                      <th className="border px-2 py-1">Peso Conciliado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {acta.residuos.map((r, idx) => (
+                      <tr key={idx} className="text-center">
+                        <td className="border px-2 py-1">{r.residuo_nombre}</td>
+                        <td className="border px-2 py-1">{r.categoria_nombre}</td>
+                        <td className="border px-2 py-1">
+                          {r.motivo}
+                          {r.motivo_otro ? ` (${r.motivo_otro})` : ''}
+                        </td>
+                        <td className="border px-2 py-1">{r.peso_reportado.toFixed(2)}</td>
+                        <td className="border px-2 py-1">{r.peso_conciliado.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
             </div>
           );
         })}
       </div>
-
-      {/* Modal de detalles */}
-      {modalActa && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-xl font-bold mb-2">{modalActa.numero_acta} - Detalles</h2>
-
-           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-              Fecha y hora de conciliación:{' '}
-              {modalActa.fecha_conciliacion
-                ? new Date(modalActa.fecha_conciliacion).toLocaleString('es-CO')
-                : 'No disponible'}
-            </p>
-
-
-            <p className="mb-2">Entregado por: {modalActa.operario_nombre} ({modalActa.operario_documento})</p>
-            <p className="mb-2">Recibido por: {modalActa.documento_recepcion}</p>
-
-            <div className="overflow-y-auto max-h-96">
-              <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
-                <thead>
-                  <tr className="bg-gray-100 dark:bg-gray-700">
-                    <th className="border px-2 py-1">Residuo</th>
-                    <th className="border px-2 py-1">Categoría</th>
-                    <th className="border px-2 py-1">Motivo</th>
-                    <th className="border px-2 py-1">Peso Reportado</th>
-                    <th className="border px-2 py-1">Peso Conciliado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modalActa.residuos.map((r, idx) => (
-                    <tr key={idx} className="text-center">
-                      <td className="border px-2 py-1">{r.residuo_nombre}</td>
-                      <td className="border px-2 py-1">{r.categoria_nombre}</td>
-                      <td className="border px-2 py-1">{r.motivo}{r.motivo_otro ? ` (${r.motivo_otro})` : ''}</td>
-                      <td className="border px-2 py-1">{r.peso_reportado.toFixed(2)}</td>
-                      <td className="border px-2 py-1">{r.peso_conciliado?.toFixed(2) ?? '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <Button variant="secondary" onClick={() => setModalActa(null)}>
-                Cerrar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
