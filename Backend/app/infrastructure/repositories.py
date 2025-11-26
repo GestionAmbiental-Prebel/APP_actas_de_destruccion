@@ -114,6 +114,7 @@ class ProcedenciaRepositoryImpl(ProcedenciaRepository):
 
 # ---------- ACTA ----------
 class ActaRepositoryImpl(ActaRepository):
+
     def list_all(self, filtros: dict = {}) -> list[Acta]:
         queryset = ActaModel.objects.filter(**filtros)
         return [
@@ -126,6 +127,8 @@ class ActaRepositoryImpl(ActaRepository):
                 documento_entrega=a.documento_entrega,
                 documento_recepcion=a.documento_recepcion,
                 fecha_conciliacion=a.fecha_conciliacion,
+                numero_inventario=a.numero_inventario,
+                consecutivo=a.consecutivo,
             )
             for a in queryset
         ]
@@ -141,16 +144,26 @@ class ActaRepositoryImpl(ActaRepository):
             documento_entrega=a.documento_entrega,
             documento_recepcion=a.documento_recepcion,
             fecha_conciliacion=a.fecha_conciliacion,
+            numero_inventario=a.numero_inventario,
+            consecutivo=a.consecutivo,
         )
 
     def create(self, data: Acta) -> Acta:
-        obj = ActaModel.objects.create(**data.__dict__)
+        data_dict = data.__dict__.copy()
+
+        data_dict.pop("id", None)
+
+        obj = ActaModel.objects.create(**data_dict)
         return self.get_by_id(obj.id)
 
     def update(self, id: int, data: Acta) -> Acta:
-        ActaModel.objects.filter(id=id).update(**data.__dict__)
+        data_dict = data.__dict__.copy()
+
+        data_dict.pop("id", None)
+        data_dict = {k: v for k, v in data_dict.items() if v is not None}
+
+        ActaModel.objects.filter(id=id).update(**data_dict)
         return self.get_by_id(id)
-    
 
     def delete(self, id: int) -> None:
         ActaModel.objects.filter(id=id).delete()

@@ -89,6 +89,8 @@ class Acta:
     documento_entrega: str
     documento_recepcion: str = ''
     fecha_conciliacion: Optional[datetime] = None
+    consecutivo: Optional[int] = None
+    numero_inventario: Optional[int] = None
     id: Optional[int] = None
 
   

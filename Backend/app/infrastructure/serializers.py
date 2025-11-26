@@ -19,6 +19,8 @@ class ActaSerializer(serializers.Serializer):
     documento_entrega = serializers.CharField(max_length=100)
     documento_recepcion = serializers.CharField(max_length=100,required=False, allow_blank=True, allow_null=True)
     fecha_conciliacion = serializers.DateTimeField(required=False, allow_null=True)
+    consecutivo = serializers.IntegerField(required=False, allow_null=True)
+    numero_inventario =serializers.IntegerField( required=False, allow_null=True)
 
 
 class ActaGeneracionResiduoSerializer(serializers.Serializer):

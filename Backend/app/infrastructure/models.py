@@ -110,6 +110,8 @@ class Acta(models.Model):
     documento_entrega = models.CharField(max_length=20)
     documento_recepcion = models.CharField(max_length=20)
     fecha_conciliacion = models.DateTimeField(blank=True, null=True)
+    consecutivo = models.IntegerField(blank=True, null=True)
+    numero_inventario = models.IntegerField(blank=True, null=True)
 
     class Meta:
         db_table = 'Acta'
