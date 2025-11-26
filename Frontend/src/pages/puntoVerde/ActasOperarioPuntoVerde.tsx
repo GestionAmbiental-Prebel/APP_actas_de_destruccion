@@ -6,7 +6,6 @@ import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
 import { sortByDateDesc } from "../../utils/sortByDate";
  
-
 type Residuo = {
   residuo_id: number;
   residuo_nombre: string;
@@ -21,12 +20,14 @@ type Residuo = {
 type Acta = {
   id: number;
   numero_acta: string;
+  numero_inventario?: string;
+  consecutivo?: string;
   fecha_acta: string;
   operario_nombre: string;
   operario_documento: string;
   centro_costo_id: number;
   residuos: Residuo[];
-  documento_recepcion?: string; // para filtrar pendientes
+  documento_recepcion?: string;
 };
 
 export default function ActasOperarioPuntoVerde() {
@@ -36,41 +37,39 @@ export default function ActasOperarioPuntoVerde() {
   const navigate = useNavigate();
 
   const { 
-  busqueda, setBusqueda, 
-  fechaInicio, setFechaInicio, 
-  fechaFin, setFechaFin, 
-  filtrar, limpiarFiltros 
-} = useFiltroActas<Acta>(actas, [
-  "numero_acta",
-  "operario_nombre",
-  "operario_documento"
-]);
-
+    busqueda, setBusqueda, 
+    fechaInicio, setFechaInicio, 
+    fechaFin, setFechaFin, 
+    filtrar, limpiarFiltros 
+  } = useFiltroActas<Acta>(actas, [
+    "numero_acta",
+    "operario_nombre",
+    "operario_documento",
+    "numero_inventario",
+    "consecutivo",
+  ]);
 
   useEffect(() => {
     cargarActas();
   }, []);
 
   const cargarActas = async () => {
-  try {
-    setLoading(true);
-    const data = await obtenerActasCompletas();
+    try {
+      setLoading(true);
+      const data = await obtenerActasCompletas();
 
-    // Solo actas pendientes
-    const pendientes = data.filter(a => !a.documento_recepcion);
+      const pendientes = data.filter(a => !a.documento_recepcion);
+      const ordenadas = sortByDateDesc(pendientes, "fecha_acta");
 
-    // ORDENARLAS POR FECHA
-    const ordenadas = sortByDateDesc(pendientes, "fecha_acta");
-
-    setActas(ordenadas);
-    setError('');
-  } catch (err) {
-    console.error('Error cargando actas:', err);
-    setError('No se pudieron cargar las actas.');
-  } finally {
-    setLoading(false);
-  }
-};
+      setActas(ordenadas);
+      setError('');
+    } catch (err) {
+      console.error('Error cargando actas:', err);
+      setError('No se pudieron cargar las actas.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calcularPesoTotal = (residuos: Residuo[]): number => {
     return residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);
@@ -84,7 +83,7 @@ export default function ActasOperarioPuntoVerde() {
         Actas para Conciliar - Punto Verde
       </h1>
 
-      {/* Filtros reutilizables */}
+      {/* Filtros */}
       <FilteredDateActas
         busqueda={busqueda}
         setBusqueda={setBusqueda}
@@ -97,7 +96,6 @@ export default function ActasOperarioPuntoVerde() {
         loading={loading}
       />
 
-      {/* Listado */}
       {error ? (
         <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded">
           <p className="font-bold">Error</p>
@@ -118,30 +116,59 @@ export default function ActasOperarioPuntoVerde() {
         </div>
       ) : (
         <div className="space-y-6">
+
           {actasFiltradas.map((acta) => {
             const pesoTotal = calcularPesoTotal(acta.residuos);
 
             return (
               <div key={acta.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow">
-                {/* Header */}
+
+                {/* HEADER */}
                 <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                   <div>
                     <h2 className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
                       {acta.numero_acta}
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      📅 {new Date(acta.fecha_acta).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })}
+                      📅 {new Date(acta.fecha_acta).toLocaleDateString('es-CO', { 
+                        day: '2-digit', month: 'long', year: 'numeric' 
+                      })}
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="bg-skyBlue/10 dark:bg-lightBlue/10 px-4 py-2 rounded-lg">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Residuos</p>
-                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">{acta.residuos.length}</p>
+                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
+                        {acta.residuos.length}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Datos del operario */}
+                {/* 🔵 CONSECU & INVENTARIO — AGREGADO */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 space-y-1 mb-6">
+
+                    {acta.consecutivo && (
+                      <p>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Consecutivo:</span>{" "}
+                        {acta.consecutivo}
+                      </p>
+                    )}
+
+                    {acta.numero_inventario && (
+                      <p>
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">Número de Inventario:</span>{" "}
+                        {acta.numero_inventario}
+                      </p>
+                    )}
+
+                  </div>
+
+                </div>
+
+                {/* OPERARIO */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300">
                     👤 Operario que entrega
@@ -158,7 +185,7 @@ export default function ActasOperarioPuntoVerde() {
                   </div>
                 </div>
 
-                {/* Residuos */}
+                {/* RESIDUOS */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300 flex items-center justify-between">
                     <span>♻️ Residuos Reportados</span>
@@ -171,27 +198,20 @@ export default function ActasOperarioPuntoVerde() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-gray-100 dark:bg-gray-700">
-                          <th className="p-3 border border-gray-300 dark:border-gray-600">Residuo</th>
-                          <th className="p-3 border border-gray-300 dark:border-gray-600">Categoría</th>
-                          <th className="p-3 border border-gray-300 dark:border-gray-600">Motivo</th>
-                          <th className="p-3 border border-gray-300 dark:border-gray-600 text-right">Peso (kg)</th>
+                          <th className="p-3 border">Residuo</th>
+                          
+                          <th className="p-3 border">Motivo</th>
+                          <th className="p-3 border text-right">Peso (kg)</th>
                         </tr>
                       </thead>
                       <tbody>
                         {acta.residuos.map((r, i) => (
                           <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="p-3 border border-gray-300 dark:border-gray-600">
-                              {r.residuo_nombre === 'Otro' && r.residuo_otro ? `Otro: ${r.residuo_otro}` : r.residuo_nombre}
-                            </td>
-                            <td className="p-3 border border-gray-300 dark:border-gray-600">
-                              <span className="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm">
-                                {r.categoria_nombre}
-                              </span>
-                            </td>
-                            <td className="p-3 border border-gray-300 dark:border-gray-600">
+                            <td className="p-3 border">{r.residuo_nombre}</td>
+                            <td className="p-3 border">
                               {r.motivo === 'Otro' && r.motivo_otro ? `Otro: ${r.motivo_otro}` : r.motivo}
                             </td>
-                            <td className="p-3 border border-gray-300 dark:border-gray-600 text-right font-semibold">
+                            <td className="p-3 border text-right font-semibold">
                               {parseFloat(r.peso_reportado).toFixed(2)}
                             </td>
                           </tr>
@@ -201,15 +221,17 @@ export default function ActasOperarioPuntoVerde() {
                   </div>
                 </div>
 
-                {/* Botón Conciliar */}
+                {/* BOTÓN */}
                 <div className="flex justify-end">
                   <Button onClick={() => navigate(`/operario-punto-verde/conciliar/${acta.id}`)} variant="primary">
                     ✓ Conciliar Acta
                   </Button>
                 </div>
+
               </div>
             );
           })}
+
         </div>
       )}
     </div>

@@ -7,7 +7,11 @@ const MAX_BUSQUEDA = 50;
 
 export function useFiltroActas<T extends { fecha_acta: string }>(
   items: T[],
-  camposBusqueda: CampoBusqueda[] = ["numero_acta"] // por defecto busca por numero_acta
+  camposBusqueda: CampoBusqueda[] = [
+    "numero_acta",
+    "numero_inventario",
+    "consecutivo"
+  ] // ahora busca también por inventario y consecutivo
 ) {
   const [busqueda, setBusquedaState] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");

@@ -154,9 +154,9 @@ export default function ConciliarActa() {
     });
 
     setMostrarExito(true);
-    //setTimeout(() => {
-      //navigate('/punto-verde/actas-conciliadas');
-    //}, 2000);
+    setTimeout(() => {
+      navigate('/operario-punto-verde/conciliadas');
+    }, 2000);
 
   } catch (error: any) {
     console.error('❌ Error conciliando:', error);
@@ -237,6 +237,19 @@ export default function ConciliarActa() {
               <p className="text-gray-500 dark:text-gray-400">Cédula</p>
               <p className="font-semibold">{acta.operario_documento}</p>
             </div>
+            {acta.consecutivo && (
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Consecutivo</p>
+                <p className="font-semibold">{acta.consecutivo}</p>
+              </div>
+            )}
+
+            {acta.numero_inventario && (
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Número de Inventario</p>
+                <p className="font-semibold">{acta.numero_inventario}</p>
+              </div>
+            )}
             <div>
               <p className="text-gray-500 dark:text-gray-400">Peso Reportado</p>
               <p className="font-bold text-blue-600 dark:text-blue-400">
@@ -377,7 +390,7 @@ export default function ConciliarActa() {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => navigate('/punto-verde/actas')}
+            onClick={() => navigate('/operario-punto-verde/actas')}
             disabled={enviando}
           >
             Cancelar
@@ -386,8 +399,10 @@ export default function ConciliarActa() {
             type="submit"
             variant="primary"
             disabled={enviando}
+            
           >
             {enviando ? 'Guardando...' : '✓ Guardar Conciliación'}
+            
           </Button>
         </div>
       </form>

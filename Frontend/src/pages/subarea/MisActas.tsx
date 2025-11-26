@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { obtenerActasCompletas } from '../../services/actas.service';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
+import { sortByDateDesc } from "../../utils/sortByDate";
 import FilteredDateActas from '../../components/common/FilteredDateActas';
 
 type Residuo = {
@@ -20,6 +21,8 @@ type Acta = {
   operario_nombre: string;
   operario_documento: string;
   centro_costo_id: number;
+  consecutivo?: string;
+  numero_inventario?: string;
   residuos: Residuo[];
 };
 
@@ -28,20 +31,22 @@ export default function MisActas() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-const {
-  busqueda,
-  setBusqueda,
-  fechaInicio,
-  setFechaInicio,
-  fechaFin,
-  setFechaFin,
-  filtrar,
-  limpiarFiltros
-} = useFiltroActas<Acta>(actas, [
-  "numero_acta",
-  "operario_nombre",
-  "operario_documento"
-]);
+  const {
+    busqueda,
+    setBusqueda,
+    fechaInicio,
+    setFechaInicio,
+    fechaFin,
+    setFechaFin,
+    filtrar,
+    limpiarFiltros
+  } = useFiltroActas<Acta>(actas, [
+    "numero_acta",
+    "operario_nombre",
+    "operario_documento",
+    "numero_inventario",
+    "consecutivo"
+  ]);
 
   useEffect(() => {
     cargarActas();
@@ -51,7 +56,7 @@ const {
     try {
       setLoading(true);
       const data = await obtenerActasCompletas();
-      setActas(data);
+      setActas(sortByDateDesc(data,"fecha_acta"));
       setError('');
     } catch (err) {
       console.error('Error cargando actas:', err);
@@ -64,7 +69,7 @@ const {
   const calcularPesoTotal = (residuos: Residuo[]): number =>
     residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);
 
-  const actasFiltradas = filtrar();
+  const actasFiltradas = sortByDateDesc(filtrar(), "fecha_acta");
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -82,9 +87,7 @@ const {
         limpiarFiltros={limpiarFiltros}
         onRefrescar={cargarActas}
         loading={loading}
-  
-        
-        />
+      />
 
       {/* === LISTADO === */}
       {error ? (
@@ -121,26 +124,28 @@ const {
                     <h2 className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
                       {acta.numero_acta}
                     </h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      📅 Creada el{' '}
-                      {new Date(acta.fecha_acta).toLocaleDateString('es-CO', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
+
+                    {/* Mostrar consecutivo y número de inventario si existen */}
+                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 space-y-1">
+                      {acta.consecutivo && <p>Consecutivo: {acta.consecutivo}</p>}
+                      {acta.numero_inventario && <p>Número de Inventario: {acta.numero_inventario}</p>}
+                      <p>
+                        📅 Creada el{' '}
+                        {new Date(acta.fecha_acta).toLocaleDateString('es-CO', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="text-right">
                     <div className="bg-skyBlue/10 dark:bg-lightBlue/10 px-4 py-2 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Cantidad de residuos
-                      </p>
-                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
-                        {acta.residuos.length}
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Cantidad de residuos</p>
+                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">{acta.residuos.length}</p>
                     </div>
                   </div>
                 </div>
@@ -176,7 +181,7 @@ const {
                       <thead>
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <th className="p-3 border">Residuo</th>
-                          <th className="p-3 border">Categoría</th>
+                          {/* <th className="p-3 border">Categoría</th> Ocultada */}
                           <th className="p-3 border">Motivo</th>
                           <th className="p-3 border text-right">Peso (kg)</th>
                           <th className="p-3 border">Fecha</th>
@@ -186,20 +191,14 @@ const {
                         {acta.residuos.map((r, i) => (
                           <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
                             <td className="p-3 border">{r.residuo_nombre}</td>
-                            <td className="p-3 border">
-                              <span className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-sm">
-                                {r.categoria_nombre}
-                              </span>
-                            </td>
+                            {/* <td className="p-3 border">{r.categoria_nombre}</td> Ocultada */}
                             <td className="p-3 border">
                               {r.motivo === 'Otra' && r.motivo_otro ? `Otro: ${r.motivo_otro}` : r.motivo}
                             </td>
                             <td className="p-3 border text-right font-semibold">
                               {parseFloat(r.peso_reportado).toFixed(2)}
                             </td>
-                            <td className="p-3 border">
-                              {new Date(r.fecha).toLocaleDateString('es-CO')}
-                            </td>
+                            <td className="p-3 border">{new Date(r.fecha).toLocaleDateString('es-CO')}</td>
                           </tr>
                         ))}
                       </tbody>

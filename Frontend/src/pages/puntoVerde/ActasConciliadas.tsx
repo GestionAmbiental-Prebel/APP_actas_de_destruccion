@@ -1,11 +1,9 @@
+// Código actualizado con consecutivo y número de inventario añadido
 import { useState, useEffect } from 'react';
 import { obtenerActasConciliadas } from '../../services/actas.service';
-import SectionTitle from '../../components/common/SectionTitle';
-import Button from '../../components/common/Button';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
 import { sortByDateDesc } from "../../utils/sortByDate";
-
 
 type ResiduoConciliado = {
   residuo_nombre: string;
@@ -21,6 +19,8 @@ type ResiduoConciliado = {
 type ActaConciliada = {
   id: number;
   numero_acta: string;
+  numero_inventario?: string;
+  consecutivo?: string;
   fecha_acta: string;
   fecha_conciliacion?: string;
   operario_nombre: string;
@@ -45,6 +45,8 @@ export default function ActasConciliadas() {
     "numero_acta",
     "operario_nombre",
     "operario_documento",
+    "numero_inventario",
+    "consecutivo"
   ]);
 
   useEffect(() => {
@@ -68,7 +70,6 @@ export default function ActasConciliadas() {
       }));
       const actasOrdenadas = sortByDateDesc(actasConPesosNumericos, 'fecha_acta');
 
-      
       setActas(actasOrdenadas);
     } catch (error) {
       console.error('Error cargando actas conciliadas:', error);
@@ -132,7 +133,21 @@ export default function ActasConciliadas() {
                 </p>
               </div>
 
-              <p className="text-gray-700 dark:text-gray-300">
+              {/* 🔵 CONSECU & INVENTARIO — NUEVO */}
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 space-y-1">
+                {acta.consecutivo && (
+                  <p>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Consecutivo:</span> {acta.consecutivo}
+                  </p>
+                )}
+                {acta.numero_inventario && (
+                  <p>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Número de Inventario:</span> {acta.numero_inventario}
+                  </p>
+                )}
+              </div>
+
+              <p className="text-gray-700 dark:text-gray-300 mt-2">
                 Entregado por: {acta.operario_nombre} ({acta.operario_documento})
               </p>
 
@@ -170,13 +185,12 @@ export default function ActasConciliadas() {
                 </div>
               )}
 
-              {/* TABLA DE RESIDUOS (ANTES ESTABA EN EL MODAL) */}
+              {/* TABLA DE RESIDUOS */}
               <div className="overflow-x-auto mt-4">
                 <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-700">
                       <th className="border px-2 py-1">Residuo</th>
-                      <th className="border px-2 py-1">Categoría</th>
                       <th className="border px-2 py-1">Motivo</th>
                       <th className="border px-2 py-1">Peso Reportado</th>
                       <th className="border px-2 py-1">Peso Conciliado</th>
@@ -186,7 +200,6 @@ export default function ActasConciliadas() {
                     {acta.residuos.map((r, idx) => (
                       <tr key={idx} className="text-center">
                         <td className="border px-2 py-1">{r.residuo_nombre}</td>
-                        <td className="border px-2 py-1">{r.categoria_nombre}</td>
                         <td className="border px-2 py-1">
                           {r.motivo}
                           {r.motivo_otro ? ` (${r.motivo_otro})` : ''}
