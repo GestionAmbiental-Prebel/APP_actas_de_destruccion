@@ -9,7 +9,7 @@ import {
 
 type GeneracionResiduoPayload = {
   fecha: string;
-  peso: string; // siempre string
+  peso: string;
   residuo_id: number;
   operario_id: number;
   motivo: string;
@@ -18,20 +18,20 @@ type GeneracionResiduoPayload = {
 };
 
 type ActaPayload = {
-  numero_acta: string;
+  // numero_acta ya NO se envía - lo genera el backend automáticamente
   fecha_acta: string;
   subarea_id: number;
   centro_costo_id: number;
   documento_entrega: string;
   documento_recepcion: string;
-  consecutivo?: string | null; // string | null
-  numero_inventario?: string | null; // string | null
+  consecutivo?: number | null;
+  numero_inventario?: number | null;
 };
 
 type ActaGeneracionResiduoPayload = {
   acta_id: number;
   generacion_residuo_id: number;
-  peso_reportado: string; // string
+  peso_reportado: string;
   peso_conciliado?: string | null;
 };
 
@@ -42,27 +42,18 @@ type CrearActaCompleta = {
   operario_id: number;  
   subarea_id: number;
   centro_costo_id: number;
-  consecutivo?: string | null;
-  numero_inventario?: string | null;
+  consecutivo?: string;
+  numero_inventario?: string;
   residuos: Array<{
     residuo_id: number;
     peso: string;
     motivo: string;
     motivo_otro?: string | null;
     residuo_otro?: string | null;
-    consecutivo?: string | null;        
-    numero_inventario?: string | null;  
   }>;
 };
 
 // ===== FUNCIONES =====
-
-function generarNumeroActa(): string {
-  const fecha = new Date();
-  const year = fecha.getFullYear();
-  const timestamp = Date.now();
-  return `ACT-${year}-${timestamp}`;
-}
 
 async function crearGeneracionResiduo(data: GeneracionResiduoPayload) {
   return apiRequest<{ id: number }>('/generacion-residuo/', {
@@ -90,10 +81,10 @@ async function crearActaGeneracionResiduo(data: ActaGeneracionResiduoPayload) {
 async function crearActaCompleta(datos: CrearActaCompleta) {
   try {
     const fechaActual = new Date().toISOString();
-    const numeroActa = generarNumeroActa();
 
     const generacionResiduosIds: number[] = [];
 
+    // Crear generaciones de residuo
     for (const residuo of datos.residuos) {
       const generacionResiduo = await crearGeneracionResiduo({
         fecha: fechaActual,
@@ -108,18 +99,36 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       generacionResiduosIds.push(generacionResiduo.id);
     }
 
-    const acta = await crearActa({
-      numero_acta: numeroActa,
+    // Preparar payload del acta con conversión correcta
+    const actaPayload: ActaPayload = {
+      // numero_acta ya NO se envía - el backend lo genera automáticamente
       fecha_acta: fechaActual,
       subarea_id: datos.subarea_id,
       centro_costo_id: datos.centro_costo_id,
       documento_entrega: datos.cedula,
       documento_recepcion: '',
-      consecutivo: datos.consecutivo != null ? String(datos.consecutivo) : null,
-      numero_inventario: datos.numero_inventario != null ? String(datos.numero_inventario) : null,
+    };
 
-    });
+    // Convertir consecutivo a número si existe y no está vacío
+    if (datos.consecutivo && datos.consecutivo.trim() !== '') {
+      const consecutivoNum = parseInt(datos.consecutivo, 10);
+      if (!isNaN(consecutivoNum)) {
+        actaPayload.consecutivo = consecutivoNum;
+      }
+    }
 
+    // Convertir numero_inventario a número si existe y no está vacío
+    if (datos.numero_inventario && datos.numero_inventario.trim() !== '') {
+      const inventarioNum = parseInt(datos.numero_inventario, 10);
+      if (!isNaN(inventarioNum)) {
+        actaPayload.numero_inventario = inventarioNum;
+      }
+    }
+
+    // Crear acta (el backend genera el numero_acta automáticamente)
+    const acta = await crearActa(actaPayload);
+
+    // Crear relaciones acta-generacion
     for (let i = 0; i < generacionResiduosIds.length; i++) {
       await crearActaGeneracionResiduo({
         acta_id: acta.id,
@@ -130,7 +139,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
 
     return {
       success: true,
-      numeroActa: acta.numero_acta,
+      numeroActa: acta.numero_acta, // El backend retorna el número generado
       actaId: acta.id,
     };
 
@@ -185,6 +194,8 @@ async function obtenerActasCompletas() {
       operario_nombre: operario ? `${operario.nombre} ${operario.apellido ?? ''}`.trim() : 'Desconocido',
       operario_documento: operario?.documento ?? acta.documento_entrega,
       documento_recepcion: acta.documento_recepcion,
+      consecutivo: acta.consecutivo ?? null,
+      numero_inventario: acta.numero_inventario ?? null,
       residuos,
     };
   });
@@ -234,6 +245,8 @@ async function obtenerActasConciliadas() {
           ...acta,
           operario_nombre: operario ? `${operario.nombre} ${operario.apellido ?? ''}`.trim() : 'Desconocido',
           operario_documento: operario?.documento ?? acta.documento_entrega,
+          consecutivo: acta.consecutivo ?? null,
+          numero_inventario: acta.numero_inventario ?? null,
           residuos,
           peso_total_reportado,
           peso_total_conciliado,

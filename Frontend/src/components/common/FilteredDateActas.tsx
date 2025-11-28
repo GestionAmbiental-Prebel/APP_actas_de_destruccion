@@ -32,7 +32,7 @@ export default function FiltrosActas({
   loading = false,
 
   labelBusqueda = "Buscar por número, nombre o cédula",
-  placeholderBusqueda = "Ej: ACT-2025 / Juan / 12345678",
+  placeholderBusqueda = "Ej: 0001 / Juan Perez / 12345678",
   MAX_BUSQUEDA = 50,
 }: FiltrosActasProps) {
   return (

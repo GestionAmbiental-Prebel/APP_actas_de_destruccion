@@ -11,7 +11,7 @@ export function useFiltroActas<T extends { fecha_acta: string }>(
     "numero_acta",
     "numero_inventario",
     "consecutivo"
-  ] // ahora busca también por inventario y consecutivo
+  ] 
 ) {
   const [busqueda, setBusquedaState] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");

@@ -131,7 +131,11 @@ export default function ActasOperarioPuntoVerde() {
                     </h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       📅 {new Date(acta.fecha_acta).toLocaleDateString('es-CO', { 
-                        day: '2-digit', month: 'long', year: 'numeric' 
+                         day: '2-digit',
+                         month: 'long',
+                         year: 'numeric',
+                         hour: '2-digit',
+                         minute: '2-digit' 
                       })}
                     </p>
                   </div>

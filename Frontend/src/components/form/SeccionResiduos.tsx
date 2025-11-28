@@ -2,6 +2,7 @@ import Select from '../common/Select';
 import Input from '../common/Input';
 import SectionTitle from '../common/SectionTitle';
 import Button from '../common/Button';
+import { normalizarNombre } from '../../utils/normalizarNombre';
 import type { ResiduoEspecifico, CategoriaResiduo } from '../../services/catalogo.service';
 
 export type Residuo = { 
@@ -178,18 +179,23 @@ export default function SeccionResiduos({
                 placeholder="Seleccione motivo"
               />
             </div>
-
             {/* Motivo Otro */}
             {item.motivo === 'Otro' && (
               <div className="md:col-span-2">
                 <Input
                   label="Especifique el motivo"
                   value={item.motivo_otro || ''}
-                  onChange={(value) => handleChange(index, 'motivo_otro', value)}
+                  onChange={(value) =>
+                    handleChange(index, 'motivo_otro', value) // escribir libremente
+                  }
+                  onBlur={() =>
+                    handleChange(index, 'motivo_otro', normalizarNombre(item.motivo_otro || ''))
+                  } // normalizar al salir
                   required
                   disabled={disabled}
                   maxLength={150}
                 />
+
                 {/* Contador de caracteres */}
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
                   {`${(item.motivo_otro || '').length}/150`}
