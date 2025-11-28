@@ -20,6 +20,7 @@ from app.application.services import (
     SubAreaService,
     NovedadConciliacionService,
     ConciliacionService,
+    NumeracionActasService,
 )
 
 from app.infrastructure.repositories import (
@@ -36,6 +37,7 @@ from app.infrastructure.repositories import (
     OperarioRepositoryImpl,
     SubAreaRepositoryImpl,
     NovedadConciliacionRepositoryImpl,
+    NumeracionActasRepositoryImpl,
 )
 
 from app.infrastructure.serializers import (
@@ -53,6 +55,7 @@ from app.infrastructure.serializers import (
     SubAreaSerializer,
     NovedadConciliacionSerializer,
     ConciliacionSerializer,
+    NumeracionActasSerializer,
 )
 
 
@@ -60,7 +63,7 @@ from app.infrastructure.serializers import (
 # GENERADOR GENÉRICO DE VIEWSETS
 # ====================================================
 
-def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name):
+def generate_viewset(service_cls, repository_classes, serializer_cls, tag_name):
     """
     Genera un ViewSet genérico para operaciones CRUD.
     service_cls: Clase de servicio (lógica de negocio)
@@ -68,6 +71,13 @@ def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name):
     serializer_cls: Clase del serializador (validación)
     tag_name: Nombre descriptivo para Swagger
     """
+
+   # Normalizar a lista
+    if not isinstance(repository_classes, (list, tuple)):
+        repository_classes = [repository_classes]
+
+    # Instanciar repos dinámicamente
+    repositories = [repo() for repo in repository_classes]
 
     @extend_schema_view(
         list=extend_schema(summary=f"Listar {tag_name}"),
@@ -78,43 +88,36 @@ def generate_viewset(service_cls, repository_cls, serializer_cls, tag_name):
     )
     class GenericViewSet(viewsets.ViewSet):
         permission_classes = [AllowAny]
-        service = service_cls(repository_cls())
+        service = service_cls(*repositories)
 
         def list(self, request):
-            """GET /api/<modelo>/"""
             data = self.service.list_all()
             serializer = serializer_cls(data, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.data)
 
         def retrieve(self, request, pk=None):
-            """GET /api/<modelo>/{id}/"""
             item = self.service.get_by_id(int(pk))
             if not item:
-                return Response({"detail": f"{tag_name} no encontrado."}, status=status.HTTP_404_NOT_FOUND)
-            serializer = serializer_cls(item)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response({"detail": f"{tag_name} no encontrado."}, status=404)
+            return Response(serializer_cls(item).data)
 
         def create(self, request):
-            """POST /api/<modelo>/"""
             serializer = serializer_cls(data=request.data)
             serializer.is_valid(raise_exception=True)
             created = self.service.create(serializer.validated_data)
-            return Response(serializer_cls(created).data, status=status.HTTP_201_CREATED)
+            return Response(serializer_cls(created).data, status=201)
 
         def update(self, request, pk=None):
-            """PUT /api/<modelo>/{id}/"""
             serializer = serializer_cls(data=request.data)
             serializer.is_valid(raise_exception=True)
             updated = self.service.update(int(pk), serializer.validated_data)
-            return Response(serializer_cls(updated).data, status=status.HTTP_200_OK)
+            return Response(serializer_cls(updated).data)
 
         def destroy(self, request, pk=None):
-            """DELETE /api/<modelo>/{id}/"""
             self.service.delete(int(pk))
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=204)
 
     return GenericViewSet
-
 
 # ====================================================
 # REGISTRO DE VIEWSETS ESPECÍFICOS
@@ -136,7 +139,7 @@ ProcedenciaViewSet = generate_viewset(
 
 ActasViewSet = generate_viewset(
     ActaService,
-    ActaRepositoryImpl,
+    [ActaRepositoryImpl, NumeracionActasRepositoryImpl],
     ActaSerializer,
     "Acta",
 )
@@ -239,6 +242,117 @@ class ConciliarActaViewSet(viewsets.ViewSet):
             import traceback
             print("ERROR en ConciliarActaViewSet.conciliar:")
             traceback.print_exc()
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+@extend_schema_view(
+    list=extend_schema(summary="Listar numeración de actas por año"),
+    retrieve=extend_schema(summary="Obtener numeración de un año específico")
+)
+class NumeracionActasViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+    service = NumeracionActasService(NumeracionActasRepositoryImpl())
+
+    def list(self, request):
+        """
+        GET /api/numeracion-actas/
+        
+        Retorna una lista con todos los años registrados.
+        En la práctica, este endpoint puede no ser muy útil,
+        ya que normalmente solo consultas un año específico.
+        """
+        # Nota: El repositorio actual no tiene un list_all(),
+        # pero podrías implementarlo si lo necesitas
+        return Response(
+            {"message": "Use el endpoint /api/numeracion-actas/{year}/ para consultar un año específico"},
+            status=status.HTTP_200_OK
+        )
+
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/numeracion-actas/{year}/
+        
+        Obtiene la numeración actual para un año específico.
+        Si el año no existe, lo crea automáticamente con ultimo_numero=0.
+        """
+        try:
+            year = int(pk)
+            numeracion = self.service.get_or_create_year(year)
+            serializer = NumeracionActasSerializer(numeracion)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response(
+                {"error": "El año debe ser un número entero válido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=["post"], url_path="siguiente")
+    def siguiente_numero(self, request, pk=None):
+        """
+        POST /api/numeracion-actas/{year}/siguiente/
+        
+        Incrementa y retorna el siguiente número de acta para el año especificado.
+        
+        Este endpoint es útil si necesitas obtener el próximo número
+        sin crear una acta completa (por ejemplo, para preview).
+        
+        IMPORTANTE: Normalmente NO necesitas usar este endpoint,
+        ya que ActaService.create() maneja la numeración automáticamente.
+        """
+        try:
+            year = int(pk)
+            siguiente = self.service.increment_and_get(year)
+            return Response(
+                {
+                    "year": year,
+                    "numero_acta": siguiente,
+                    "numero_acta_formateado": f"{siguiente:04d}"
+                },
+                status=status.HTTP_200_OK
+            )
+        except ValueError:
+            return Response(
+                {"error": "El año debe ser un número entero válido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=["get"], url_path="actual")
+    def numero_actual(self, request, pk=None):
+        """
+        GET /api/numeracion-actas/{year}/actual/
+        
+        Obtiene el último número asignado para un año específico
+        SIN incrementarlo.
+        """
+        try:
+            year = int(pk)
+            numero_actual = self.service.get_current_number(year)
+            return Response(
+                {
+                    "year": year,
+                    "ultimo_numero": numero_actual,
+                    "ultimo_numero_formateado": f"{numero_actual:04d}"
+                },
+                status=status.HTTP_200_OK
+            )
+        except ValueError:
+            return Response(
+                {"error": "El año debe ser un número entero válido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

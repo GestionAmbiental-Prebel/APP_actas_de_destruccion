@@ -109,5 +109,10 @@ class NovedadConciliacion:
     descripcion: str
     fecha: datetime
 
+@dataclass
+class NumeracionActas:
+    year: int
+    ultimo_numero: int
+    id: Optional[int] = None
 
 

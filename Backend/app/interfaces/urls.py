@@ -29,6 +29,7 @@ router.register(r'generacion-residuo', GeneracionResiduoViewSet, basename='gener
 router.register(r'sub-area', SubAreaViewSet, basename='sub-area')
 router.register(r'novedad-conciliacion', NovedadConciliacionViewSet, basename='novedad-conciliacion')
 router.register(r'conciliacion', ConciliarActaViewSet, basename='conciliacion')
+router.register(r'numeracion-actas', NumeracionActasViewSet, basename='numeracionactas')
 
 
 

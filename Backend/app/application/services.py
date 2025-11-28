@@ -4,6 +4,7 @@ Registrar los servicios de la aplicación (ver manual de arquitectura)
 from django.db import transaction
 from django.utils import timezone
 from typing import List, Optional
+from datetime import datetime
 from app.domain.entities import (
     Sede,
     Procedencia,
@@ -18,6 +19,7 @@ from app.domain.entities import (
     Operario,
     SubArea,
     NovedadConciliacion,
+    NumeracionActas,
 )
 from app.domain.repositories import (
     SedeRepository,
@@ -33,6 +35,7 @@ from app.domain.repositories import (
     OperarioRepository,
     SubAreaRepository,
     NovedadConciliacionRepository,
+    NumeracionActasRepository,
 )
 
 # =======================================
@@ -79,8 +82,9 @@ class ProcedenciaService:
 
 
 class ActaService:
-    def __init__(self, repository):
+    def __init__(self, repository: ActaRepository, numeracion_repository: NumeracionActasRepository):
         self.repository = repository
+        self.numeracion_repository = numeracion_repository
 
     def list_all(self) -> list[Acta]:
         return self.repository.list_all()
@@ -88,12 +92,26 @@ class ActaService:
     def get_by_id(self, id: int) -> Acta:
         return self.repository.get_by_id(id)
 
+    @transaction.atomic
     def create(self, data: dict) -> Acta:
-        data.pop('id', None)  # Django asigna id automáticamente
-        
-        data['documento_recepcion'] = ''  
+        data = data.copy()
+        data.pop('id', None)
 
-        return self.repository.create(Acta(**data))
+        # Siempre vacío en creación
+        data['documento_recepcion'] = ''
+
+        # === GENERAR NÚMERO DE ACTA ===
+        year = datetime.now().year
+        nuevo_numero = self.numeracion_repository.increment_and_get(year)
+
+        # Convertirlo a 4 dígitos
+        numero_acta_formateado = f"{nuevo_numero:04d}"
+
+        data["numero_acta"] = numero_acta_formateado
+
+        # Crear entity y guardar
+        acta_entity = Acta(**data)
+        return self.repository.create(acta_entity)
 
     def update(self, id: int, data: dict) -> Acta:
         return self.repository.update(id, Acta(**data))
@@ -359,15 +377,15 @@ class ConciliacionService:
         try:
             from app.models import Acta, ActaGeneracionResiduo, NovedadConciliacion
 
-            # 1️⃣ Obtener acta
+            # Obtener acta
             acta = Acta.objects.get(id=acta_id)
 
-            # 2️⃣ Actualizar documento de recepción y fecha de conciliación
+            # Actualizar documento de recepción y fecha de conciliación
             acta.documento_recepcion = documento_recepcion
             acta.fecha_conciliacion = timezone.now()  
             acta.save()
 
-            # 3️⃣ Conciliar residuos
+            # Conciliar residuos
             for r in residuos:
                 residuo_id = r.get("id")
                 peso_conciliado = r.get("peso_conciliado")
@@ -398,3 +416,24 @@ class ConciliacionService:
             traceback.print_exc()
             return {"success": False, "error": str(e)}
 
+class NumeracionActasService:
+    def __init__(self, repository: NumeracionActasRepository):
+        self.repository = repository
+
+    def get_or_create_year(self, year: int) -> NumeracionActas:
+      
+        return self.repository.get_or_create_year(year)
+
+    def increment_and_get(self, year: int) -> int:
+        """
+        Incrementa el número de acta para el año dado y devuelve el nuevo valor.
+        Este método garantiza atomicidad para evitar condiciones de carrera.
+        """
+        return self.repository.increment_and_get(year)
+
+    def get_current_number(self, year: int) -> int:
+        """
+        Obtiene el último número asignado para un año específico.
+        """
+        numeracion = self.repository.get_or_create_year(year)
+        return numeracion.ultimo_numero

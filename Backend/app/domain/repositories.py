@@ -14,6 +14,7 @@ from app.domain.entities import (
     ActaGeneracionResiduo,
     NovedadConciliacion,
     Sede,
+    NumeracionActas,
     
 )
 
@@ -182,3 +183,10 @@ class NovedadConciliacionRepository(ABC):
     def update(self, id: int, entity: NovedadConciliacion) -> NovedadConciliacion: ...
     @abstractmethod
     def delete(self, id: int) -> None: ...
+
+class NumeracionActasRepository(ABC):
+    @abstractmethod
+    def get_or_create_year(self, year: int): ...
+    
+    @abstractmethod
+    def increment_and_get(self, year: int) -> int: ...

@@ -1,4 +1,6 @@
 from typing import List
+from django.db import transaction
+
 
 from app.domain.entities import (
     Sede,
@@ -14,6 +16,7 @@ from app.domain.entities import (
     RolAdministrativo,
     Operario,
     NovedadConciliacion,
+    NumeracionActas,
 )
 
 from app.domain.repositories import (
@@ -30,6 +33,7 @@ from app.domain.repositories import (
     OperarioRepository,
     SubAreaRepository,
     NovedadConciliacionRepository,
+    NumeracionActasRepository,
 )
 
 from app.infrastructure.models import (
@@ -46,6 +50,7 @@ from app.infrastructure.models import (
     ActaGeneracionResiduo as ActaGeneracionResiduoModel,
     SubArea as SubAreaModel,
     NovedadConciliacion as NovedadConciliacionModel,
+    NumeracionActas as NumeracionActasModel,
 )
 
 from django.forms.models import model_to_dict
@@ -155,7 +160,7 @@ class ActaRepositoryImpl(ActaRepository):
 
         obj = ActaModel.objects.create(**data_dict)
         return self.get_by_id(obj.id)
-
+    
     def update(self, id: int, data: Acta) -> Acta:
         data_dict = data.__dict__.copy()
 
@@ -510,3 +515,35 @@ class NovedadConciliacionRepositoryImpl(NovedadConciliacionRepository):
 
     def delete(self, id: int) -> None:
         NovedadConciliacionModel.objects.filter(id=id).delete()
+    
+# ---------- NUMERACION ACTAS ----------
+class NumeracionActasRepositoryImpl(NumeracionActasRepository):
+
+    def get_or_create_year(self, year: int) -> NumeracionActas:
+        obj, created = NumeracionActasModel.objects.get_or_create(
+            year=year,
+            defaults={"ultimo_numero": 0},
+        )
+
+        return NumeracionActas(
+            id=obj.id,
+            year=obj.year,
+            ultimo_numero=obj.ultimo_numero
+        )
+
+    @transaction.atomic
+    def increment_and_get(self, year: int) -> int:
+        """
+        Incrementa el número de acta para el año dado y devuelve el nuevo valor.
+        Garantiza atomicidad para evitar condiciones de carrera entre múltiples usuarios.
+        """
+
+        obj, created = NumeracionActasModel.objects.select_for_update().get_or_create(
+            year=year,
+            defaults={"ultimo_numero": 0},
+        )
+
+        obj.ultimo_numero += 1
+        obj.save()
+
+        return obj.ultimo_numero

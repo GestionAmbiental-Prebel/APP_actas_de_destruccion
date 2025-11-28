@@ -12,15 +12,25 @@ class ProcedenciaSerializer(serializers.Serializer):
 
 class ActaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    numero_acta = serializers.CharField(max_length=50)
+
+    # Ahora lo genera el backend → solo lectura
+    numero_acta = serializers.CharField(read_only=True)
+
     fecha_acta = serializers.DateTimeField()
     subarea_id = serializers.IntegerField()
     centro_costo_id = serializers.IntegerField()
     documento_entrega = serializers.CharField(max_length=100)
-    documento_recepcion = serializers.CharField(max_length=100,required=False, allow_blank=True, allow_null=True)
+
+    # Esto lo sigue llenando el backend
+    documento_recepcion = serializers.CharField(
+        max_length=100,
+        required=False, allow_blank=True, allow_null=True
+    )
     fecha_conciliacion = serializers.DateTimeField(required=False, allow_null=True)
+
+    # Estos campos siguen opcionales
     consecutivo = serializers.IntegerField(required=False, allow_null=True)
-    numero_inventario =serializers.IntegerField( required=False, allow_null=True)
+    numero_inventario = serializers.IntegerField(required=False, allow_null=True)
 
 
 class ActaGeneracionResiduoSerializer(serializers.Serializer):
@@ -121,3 +131,22 @@ class ConciliacionSerializer(serializers.Serializer):
         if not service or not acta_id:
             raise ValueError("No se inyectó el service o acta_id en el serializer.")
         return service.conciliar_acta(acta_id, **validated_data)
+
+class NumeracionActasSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    year = serializers.IntegerField(required=True)
+    ultimo_numero = serializers.IntegerField(required=True)
+
+    def create(self, validated_data):
+        """
+        No se usa directamente, ya que la creación se maneja
+        a través del repositorio con get_or_create_year.
+        """
+        raise NotImplementedError("Use el servicio para crear registros de numeración")
+
+    def update(self, instance, validated_data):
+        """
+        No se permite actualización manual, ya que el incremento
+        se maneja automáticamente a través de increment_and_get.
+        """
+        raise NotImplementedError("La numeración se actualiza automáticamente")

@@ -165,3 +165,14 @@ class NovedadConciliacion(models.Model):
 
     def __str__(self):
         return f"Novedad en {self.acta_generacion_residuo.id}: {self.descripcion[:40]}"
+
+
+class NumeracionActas(models.Model):
+    year = models.IntegerField(unique=True)
+    ultimo_numero = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'NumeracionActas'
+
+    def __str__(self):
+        return f"{self.year} - {self.ultimo_numero}"
