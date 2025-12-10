@@ -1,23 +1,16 @@
 import Input from '../../components/common/Input';
-import Select from '../../components/common/Select';
 import SectionTitle from '../../components/common/SectionTitle';
+import Combobox from '../../components/common/Combobox';
 import type { CentroCosto } from '../../services/catalogo.service';
 
 type SeccionUbicacionProps = {
-  // Valores actuales
   centroCostoId: number | null;
   subAreaNombre: string;
   areaNombre: string;
   procedenciaNombre: string;
   sedeNombre: string;
-  
-  // Handlers
   onCentroCostoChange: (centroCostoId: number) => void;
-  
-  // Catálogos desde el backend
   centrosCosto: CentroCosto[];
-  
-  // Disabled state
   disabled?: boolean;
 };
 
@@ -32,7 +25,6 @@ export default function SeccionUbicacion({
   disabled = false
 }: SeccionUbicacionProps) {
   
-  // Preparar opciones de centros de costo
   const centrosOptions = centrosCosto.map(cc => ({
     value: String(cc.id),
     label: `${cc.codigo}${cc.nombre ? ` - ${cc.nombre}` : ''}`
@@ -44,17 +36,16 @@ export default function SeccionUbicacion({
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Centro de Costos */}
-        <Select
+        <Combobox
           label="Centro de Costos"
-          value={centroCostoId ? String(centroCostoId) : ''}
-          onChange={(value) => onCentroCostoChange(parseInt(value))}
+          value={centroCostoId ? String(centroCostoId) : ""}
+          onChange={(v) => onCentroCostoChange(parseInt(v))}
           options={centrosOptions}
-          required
           disabled={disabled}
           placeholder="Seleccione centro de costos"
         />
 
-        {/* Sub Área (autocompletado) */}
+        {/* Sub Área */}
         <Input
           label="Sub Área"
           value={subAreaNombre}
@@ -62,7 +53,7 @@ export default function SeccionUbicacion({
           disabled
         />
 
-        {/* Área (autocompletado) */}
+        {/* Área */}
         <Input
           label="Área"
           value={areaNombre}
@@ -70,7 +61,7 @@ export default function SeccionUbicacion({
           disabled
         />
 
-        {/* Procedencia (autocompletado) */}
+        {/* Procedencia */}
         <Input
           label="Procedencia"
           value={procedenciaNombre}
@@ -78,7 +69,7 @@ export default function SeccionUbicacion({
           disabled
         />
 
-        {/* Sede (autocompletado) */}
+        {/* Sede */}
         <Input
           label="Sede"
           value={sedeNombre}

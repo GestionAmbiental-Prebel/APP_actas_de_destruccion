@@ -1,4 +1,4 @@
-// src/components/operario/ListaActas.tsx
+// src/components/list/ActaList.tsx
 import { useState } from "react";
 
 // 🔹 Tipos

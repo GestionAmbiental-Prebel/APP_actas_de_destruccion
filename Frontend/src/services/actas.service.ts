@@ -1,8 +1,10 @@
 import { apiRequest } from './api.service';
 import { obtenerOperarios } from './operarios.service';
 import { 
-  obtenerResiduosEspecificos, 
-  obtenerCategoriasResiduos 
+  obtenerSubAreas, 
+  obtenerCentrosCosto, 
+  obtenerResiduosEspecificos,
+  obtenerCategoriasResiduos
 } from './catalogo.service';
 
 // ===== TIPOS =====
@@ -18,7 +20,6 @@ type GeneracionResiduoPayload = {
 };
 
 type ActaPayload = {
-  // numero_acta ya NO se envía - lo genera el backend automáticamente
   fecha_acta: string;
   subarea_id: number;
   centro_costo_id: number;
@@ -84,7 +85,6 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
 
     const generacionResiduosIds: number[] = [];
 
-    // Crear generaciones de residuo
     for (const residuo of datos.residuos) {
       const generacionResiduo = await crearGeneracionResiduo({
         fecha: fechaActual,
@@ -99,9 +99,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       generacionResiduosIds.push(generacionResiduo.id);
     }
 
-    // Preparar payload del acta con conversión correcta
     const actaPayload: ActaPayload = {
-      // numero_acta ya NO se envía - el backend lo genera automáticamente
       fecha_acta: fechaActual,
       subarea_id: datos.subarea_id,
       centro_costo_id: datos.centro_costo_id,
@@ -109,7 +107,6 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       documento_recepcion: '',
     };
 
-    // Convertir consecutivo a número si existe y no está vacío
     if (datos.consecutivo && datos.consecutivo.trim() !== '') {
       const consecutivoNum = parseInt(datos.consecutivo, 10);
       if (!isNaN(consecutivoNum)) {
@@ -117,7 +114,6 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       }
     }
 
-    // Convertir numero_inventario a número si existe y no está vacío
     if (datos.numero_inventario && datos.numero_inventario.trim() !== '') {
       const inventarioNum = parseInt(datos.numero_inventario, 10);
       if (!isNaN(inventarioNum)) {
@@ -125,10 +121,8 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
       }
     }
 
-    // Crear acta (el backend genera el numero_acta automáticamente)
     const acta = await crearActa(actaPayload);
 
-    // Crear relaciones acta-generacion
     for (let i = 0; i < generacionResiduosIds.length; i++) {
       await crearActaGeneracionResiduo({
         acta_id: acta.id,
@@ -139,7 +133,7 @@ async function crearActaCompleta(datos: CrearActaCompleta) {
 
     return {
       success: true,
-      numeroActa: acta.numero_acta, // El backend retorna el número generado
+      numeroActa: acta.numero_acta,
       actaId: acta.id,
     };
 
@@ -155,48 +149,120 @@ async function obtenerActas() {
   return apiRequest<any[]>('/actas/', { method: 'GET' });
 }
 
+// ===== 🔥 FUNCIÓN CORREGIDA - Ahora incluye información de conciliación y novedades =====
 async function obtenerActasCompletas() {
-  const [actas, operarios, residuosEspecificos, categorias] = await Promise.all([
+  const [
+    actas,
+    operarios,
+    residuosEspecificos,
+    categorias,
+    subareas,
+    centrosCosto,
+    novedades // 🆕 Traemos las novedades
+  ] = await Promise.all([
     obtenerActas(),
     obtenerOperarios(),
     obtenerResiduosEspecificos(),
     obtenerCategoriasResiduos(),
+    obtenerSubAreas(),        
+    obtenerCentrosCosto(),
+    apiRequest<any[]>('/novedad-conciliacion/', { method: 'GET' }) // 🆕 Endpoint de novedades
   ]);
 
   const actasGeneracionResiduos = await apiRequest<any[]>('/actas-generacion-residuo/');
   const generaciones = await apiRequest<any[]>('/generacion-residuo/');
 
+  // 🆕 Crear mapa de novedades por acta_generacion_residuo_id
+  const novedadesMap = new Map<number, any[]>();
+  novedades.forEach((n) => {
+    const relId = n.acta_generacion_residuo_id;
+    if (!novedadesMap.has(relId)) novedadesMap.set(relId, []);
+    novedadesMap.get(relId)?.push(n);
+  });
+
   return actas.map((acta: any) => {
-    const operario = operarios.find((o) => o.documento === acta.documento_entrega);
-    const relaciones = actasGeneracionResiduos.filter(rel => rel.acta_id === acta.id);
+    const operario = operarios.find((o: any) => o.documento === acta.documento_entrega);
+    const subarea = subareas.find((s: any) => s.id === acta.subarea_id);
+    const centroCosto = centrosCosto.find((cc: any) => cc.id === acta.centro_costo_id);
+    const relaciones = actasGeneracionResiduos.filter((rel: any) => rel.acta_id === acta.id);
 
-    const residuos = relaciones.map(rel => {
-      const gen = generaciones.find(g => g.id === rel.generacion_residuo_id);
-      if (!gen) return null;
+    // 🆕 Variables para calcular estado de conciliación
+    let tieneConciliacion = false;
+    let tieneNovedad = false;
+    let todasConciliadas = true;
 
-      const resEsp = residuosEspecificos.find(r => r.id === gen.residuo_id);
-      const cat = categorias.find(c => c.id === resEsp?.categoria_id);
+    const residuos = relaciones
+      .map((rel: any) => {
+        const gen = generaciones.find((g: any) => g.id === rel.generacion_residuo_id);
+        if (!gen) return null;
 
-      return {
-        acta_generacion_residuo_id: rel.id,
-        residuo_id: gen.residuo_id,
-        residuo_nombre: resEsp?.nombre ?? 'Sin nombre',
-        categoria_nombre: cat?.nombre ?? 'Sin categoría',
-        motivo: gen.motivo,
-        motivo_otro: gen.motivo_otro ?? null,
-        peso_reportado: rel.peso_reportado,
-        fecha: gen.fecha,
-      };
-    }).filter((r): r is NonNullable<typeof r> => r !== null);
+        const resEsp = residuosEspecificos.find((r: any) => r.id === gen.residuo_id);
+        const cat = categorias.find((c: any) => c.id === resEsp?.categoria_id);
+
+        // 🆕 Verificar si este residuo tiene novedad
+        const novedadResiduo = novedadesMap.get(rel.id)?.[0];
+        if (novedadResiduo) {
+          tieneNovedad = true;
+        }
+
+        // 🆕 Verificar estado de conciliación
+        if (rel.peso_conciliado != null) {
+          tieneConciliacion = true;
+        } else {
+          todasConciliadas = false;
+        }
+
+        return {
+          acta_generacion_residuo_id: rel.id,
+          residuo_id: gen.residuo_id,
+          residuo_nombre: resEsp?.nombre ?? "Sin nombre",
+          categoria_nombre: cat?.nombre ?? "Sin categoría",
+          motivo: gen.motivo,
+          motivo_otro: gen.motivo_otro ?? null,
+          residuo_otro: gen.residuo_otro ?? null, // 🆕 Agregado
+          peso_reportado: rel.peso_reportado,
+          peso_conciliado: rel.peso_conciliado ?? null, // 🆕 Incluir peso conciliado
+          fecha: gen.fecha,
+          novedad: novedadResiduo?.descripcion ?? null, // 🆕 Novedad del residuo
+        };
+      })
+      .filter((r: any) => r !== null);
+
+    // 🆕 Determinar estado del acta
+    let estadoConciliacion: 'sin_conciliar' | 'conciliada' | 'con_novedad' | 'parcial' = 'sin_conciliar';
+    
+    if (tieneNovedad) {
+      estadoConciliacion = 'con_novedad';
+    } else if (tieneConciliacion) {
+      estadoConciliacion = todasConciliadas ? 'conciliada' : 'parcial';
+    }
 
     return {
       ...acta,
-      operario_nombre: operario ? `${operario.nombre} ${operario.apellido ?? ''}`.trim() : 'Desconocido',
+
+      operario_nombre: operario
+        ? `${operario.nombre} ${operario.apellido ?? ""}`.trim()
+        : "Desconocido",
+
       operario_documento: operario?.documento ?? acta.documento_entrega,
+
+      subarea: subarea?.nombre ?? "Sin subárea",
+      subarea_id: acta.subarea_id,
+      
+      centro_costo: centroCosto?.nombre ?? "Sin centro de costo",
+      centro_costo_codigo: centroCosto?.codigo ?? null,
+      centro_costo_id: acta.centro_costo_id,
+
       documento_recepcion: acta.documento_recepcion,
       consecutivo: acta.consecutivo ?? null,
       numero_inventario: acta.numero_inventario ?? null,
+
       residuos,
+      
+      // 🆕 Información de conciliación
+      estado_conciliacion: estadoConciliacion,
+      tiene_novedad: tieneNovedad,
+      tiene_conciliacion: tieneConciliacion,
     };
   });
 }

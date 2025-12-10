@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obtenerActasCompletas } from '../../services/actas.service';
+import { obtenerSubAreas } from '../../services/catalogo.service'; 
 import Button from '../../components/common/Button';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
 import { sortByDateDesc } from "../../utils/sortByDate";
- 
+
 type Residuo = {
   residuo_id: number;
   residuo_nombre: string;
@@ -26,13 +27,25 @@ type Acta = {
   operario_nombre: string;
   operario_documento: string;
   centro_costo_id: number;
+  centro_costo_codigo?: string | null;
+  subarea_id?: number | null;
+  subarea?: string | null;
   residuos: Residuo[];
   documento_recepcion?: string;
 };
 
+type Subarea = {
+  id: number;
+  nombre: string;
+  area_id?: number;
+  // otros campos si los hay...
+};
+
 export default function ActasOperarioPuntoVerde() {
   const [actas, setActas] = useState<Acta[]>([]);
+  const [subareasMap, setSubareasMap] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
+  const [loadingSubareas, setLoadingSubareas] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -50,8 +63,26 @@ export default function ActasOperarioPuntoVerde() {
   ]);
 
   useEffect(() => {
+    cargarSubareas(); // cargamos subáreas al montar
     cargarActas();
   }, []);
+
+  const cargarSubareas = async () => {
+    try {
+      setLoadingSubareas(true);
+      const data: Subarea[] = await obtenerSubAreas(); 
+      const map: Record<number, string> = {};
+      data.forEach(s => {
+        if (s?.id != null) map[s.id] = s.nombre ?? `Subárea ${s.id}`;
+      });
+      setSubareasMap(map);
+    } catch (err) {
+      console.error('Error cargando subáreas:', err);
+      // no mostramos error crítico: solo dejamos el mapa vacío y el componente caerá en "Sin subárea"
+    } finally {
+      setLoadingSubareas(false);
+    }
+  };
 
   const cargarActas = async () => {
     try {
@@ -76,6 +107,13 @@ export default function ActasOperarioPuntoVerde() {
   };
 
   const actasFiltradas = filtrar();
+
+  const renderSubarea = (acta: Acta) => {
+    // Prioridad: acta.subarea (nombre) > lookup por subarea_id > fallback
+    if (acta.subarea && acta.subarea.trim() !== '') return acta.subarea;
+    if (acta.subarea_id != null && subareasMap[acta.subarea_id]) return subareasMap[acta.subarea_id];
+    return 'Sin subárea';
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -116,7 +154,6 @@ export default function ActasOperarioPuntoVerde() {
         </div>
       ) : (
         <div className="space-y-6">
-
           {actasFiltradas.map((acta) => {
             const pesoTotal = calcularPesoTotal(acta.residuos);
 
@@ -149,9 +186,8 @@ export default function ActasOperarioPuntoVerde() {
                   </div>
                 </div>
 
-                {/* 🔵 CONSECU & INVENTARIO — AGREGADO */}
+                {/* 🔵 CONSECU, INVENTARIO Y SUBÁREA */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  
                   <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 space-y-1 mb-6">
 
                     {acta.consecutivo && (
@@ -168,8 +204,20 @@ export default function ActasOperarioPuntoVerde() {
                       </p>
                     )}
 
-                  </div>
+                    {/* SHOW SUBAREA */}
+                    <p>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Subárea:</span>{" "}
+                      { renderSubarea(acta) }
+                    </p>
 
+                     {/* CENTRO DE COSTOS (solo código) */}
+                      {acta.centro_costo_codigo && (
+                        <p>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300">Centro de Costo:</span>{" "}
+                          {acta.centro_costo_codigo}
+                        </p>
+                      )}
+                  </div>
                 </div>
 
                 {/* OPERARIO */}
@@ -203,7 +251,6 @@ export default function ActasOperarioPuntoVerde() {
                       <thead>
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <th className="p-3 border">Residuo</th>
-                          
                           <th className="p-3 border">Motivo</th>
                           <th className="p-3 border text-right">Peso (kg)</th>
                         </tr>
@@ -235,7 +282,6 @@ export default function ActasOperarioPuntoVerde() {
               </div>
             );
           })}
-
         </div>
       )}
     </div>

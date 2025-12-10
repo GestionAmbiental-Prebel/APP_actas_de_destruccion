@@ -215,67 +215,85 @@ export default function ConciliarActa() {
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* Información del Acta */}
-        <div className="bg-skyBlue/10 dark:bg-gray-800 p-6 rounded-lg">
-          <SectionTitle>Información del Acta</SectionTitle>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">N° Acta</p>
-              <p className="font-bold text-lg">{acta.numero_acta}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">Fecha</p>
-              <p className="font-semibold">
-                {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">Operario</p>
-              <p className="font-semibold">{acta.operario_nombre}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">Cédula</p>
-              <p className="font-semibold">{acta.operario_documento}</p>
-            </div>
-            {acta.consecutivo && (
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Consecutivo</p>
-                <p className="font-semibold">{acta.consecutivo}</p>
-              </div>
-            )}
+<div className="bg-skyBlue/10 dark:bg-gray-800 p-6 rounded-lg">
+  <SectionTitle>Información del Acta</SectionTitle>
+  
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">N° Acta</p>
+      <p className="font-bold text-lg">{acta.numero_acta}</p>
+    </div>
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">Fecha</p>
+      <p className="font-semibold">
+        {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
+      </p>
+    </div>
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">Operario</p>
+      <p className="font-semibold">{acta.operario_nombre}</p>
+    </div>
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">Cédula</p>
+      <p className="font-semibold">{acta.operario_documento}</p>
+    </div>
+    {acta.consecutivo && (
+      <div>
+        <p className="text-gray-500 dark:text-gray-400">Consecutivo</p>
+        <p className="font-semibold">{acta.consecutivo}</p>
+      </div>
+    )}
 
-            {acta.numero_inventario && (
-              <div>
-                <p className="text-gray-500 dark:text-gray-400">Número de Inventario</p>
-                <p className="font-semibold">{acta.numero_inventario}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">Peso Reportado</p>
-              <p className="font-bold text-blue-600 dark:text-blue-400">
-                {pesoTotalReportado.toFixed(2)} kg
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500 dark:text-gray-400">Peso Conciliado</p>
-              <p className="font-bold text-green-600 dark:text-green-400">
-                {pesoTotalConciliado.toFixed(2)} kg
-              </p>
-            </div>
-          </div>
+    {acta.numero_inventario && (
+      <div>
+        <p className="text-gray-500 dark:text-gray-400">Número de Inventario</p>
+        <p className="font-semibold">{acta.numero_inventario}</p>
+      </div>
+    )}
 
-          {diferenciaPeso !== 0 && (
-            <div className={`mt-4 p-3 rounded ${
-              diferenciaPeso > 0 
-                ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
-                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
-            }`}>
-              <p className="font-semibold">
-                ⚠️ Diferencia: {diferenciaPeso > 0 ? '+' : ''}{diferenciaPeso.toFixed(2)} kg
-              </p>
-            </div>
-          )}
-        </div>
+    {/* NUEVO: Subárea */}
+    {acta.subarea && (
+      <div>
+        <p className="text-gray-500 dark:text-gray-400">Subárea</p>
+        <p className="font-semibold">{acta.subarea}</p>
+      </div>
+    )}
+
+    {/* NUEVO: Código del centro de costos */}
+    {acta.centro_costo_codigo && (
+      <div>
+        <p className="text-gray-500 dark:text-gray-400">Centro de Costo</p>
+        <p className="font-semibold">{acta.centro_costo_codigo}</p>
+      </div>
+    )}
+
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">Peso Reportado</p>
+      <p className="font-bold text-blue-600 dark:text-blue-400">
+        {pesoTotalReportado.toFixed(2)} kg
+      </p>
+    </div>
+    <div>
+      <p className="text-gray-500 dark:text-gray-400">Peso Conciliado</p>
+      <p className="font-bold text-green-600 dark:text-green-400">
+        {pesoTotalConciliado.toFixed(2)} kg
+      </p>
+    </div>
+  </div>
+
+  {diferenciaPeso !== 0 && (
+    <div className={`mt-4 p-3 rounded ${
+      diferenciaPeso > 0 
+        ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
+        : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+    }`}>
+      <p className="font-semibold">
+        ⚠️ Diferencia: {diferenciaPeso > 0 ? '+' : ''}{diferenciaPeso.toFixed(2)} kg
+      </p>
+    </div>
+  )}
+</div>
+
 
         {/* Documento del Conciliador */}
         <div>

@@ -86,44 +86,43 @@ export default function SeccionResiduos({
 
   const motivosOptions = motivos.map(m => ({ value: m, label: m }));
 
+  // Índice del primer residuo "Otro" para mostrar solo ese input
+  const firstOtroIndex = residuos.findIndex(r => esResiduoOtro(r.residuo_id));
+
   return (
     <div>
       <SectionTitle>Residuos</SectionTitle>
 
-     {/* Campos a nivel de acta - se muestran una sola vez al inicio */}
-<div className="border p-4 rounded-lg mb-6 bg-blue-50/50 dark:bg-blue-900/20">
-  <h3 className="text-sm font-semibold mb-4 text-gray-700 dark:text-gray-300">
-    Datos Generales del Acta
-  </h3>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <Input
-      label="Consecutivo"
-      value={consecutivo}
-      onChange={(value) => {
-        // Elimina cualquier carácter que no sea número
-        const numericValue = value.replace(/\D/g, "");
-        // Limita a 6 dígitos
-        onConsecutivoChange?.(numericValue.slice(0, 6));
-      }}
-      type="text" // Cambiar a text para poder usar replace
-      disabled={disabled}
-      placeholder="Ingrese consecutivo (opcional)"
-    />
-
-    <Input
-      label="Número de Inventario"
-      value={numeroInventario}
-      onChange={(value) => {
-        const numericValue = value.replace(/\D/g, "");
-        // Limita a 11 dígitos
-        onNumeroInventarioChange?.(numericValue.slice(0, 11));
-      }}
-      type="text"
-      disabled={disabled}
-      placeholder="Ingrese número de inventario (opcional)"
-    />
-  </div>
-</div>
+      {/* Campos a nivel de acta */}
+      <div className="border p-4 rounded-lg mb-6 bg-blue-50/50 dark:bg-blue-900/20">
+        <h3 className="text-sm font-semibold mb-4 text-gray-700 dark:text-gray-300">
+          Datos Generales del Acta
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Input
+            label="Consecutivo"
+            value={consecutivo}
+            onChange={(value) => {
+              const numericValue = value.replace(/\D/g, "");
+              onConsecutivoChange?.(numericValue.slice(0, 6));
+            }}
+            type="text"
+            disabled={disabled}
+            placeholder="Ingrese consecutivo (opcional)"
+          />
+          <Input
+            label="Número de Inventario"
+            value={numeroInventario}
+            onChange={(value) => {
+              const numericValue = value.replace(/\D/g, "");
+              onNumeroInventarioChange?.(numericValue.slice(0, 11));
+            }}
+            type="text"
+            disabled={disabled}
+            placeholder="Ingrese número de inventario (opcional)"
+          />
+        </div>
+      </div>
 
       {/* Lista de residuos */}
       {residuos.map((item, index) => (
@@ -151,8 +150,8 @@ export default function SeccionResiduos({
               placeholder={residuosDisponibles.length === 0 ? 'Seleccione centro de costo primero' : 'Seleccione residuo'}
             />
 
-            {/* Campo cuando residuo = Otro */}
-            {esResiduoOtro(item.residuo_id) && (
+            {/* Campo cuando residuo = Otro - solo el primero */}
+            {esResiduoOtro(item.residuo_id) && index === firstOtroIndex && (
               <div className="md:col-span-2">
                 <Input
                   label="Especifique el residuo (máx. 150 caracteres)"
@@ -179,6 +178,7 @@ export default function SeccionResiduos({
                 placeholder="Seleccione motivo"
               />
             </div>
+
             {/* Motivo Otro */}
             {item.motivo === 'Otro' && (
               <div className="md:col-span-2">
@@ -186,17 +186,15 @@ export default function SeccionResiduos({
                   label="Especifique el motivo"
                   value={item.motivo_otro || ''}
                   onChange={(value) =>
-                    handleChange(index, 'motivo_otro', value) // escribir libremente
+                    handleChange(index, 'motivo_otro', value)
                   }
                   onBlur={() =>
                     handleChange(index, 'motivo_otro', normalizarNombre(item.motivo_otro || ''))
-                  } // normalizar al salir
+                  }
                   required
                   disabled={disabled}
                   maxLength={150}
                 />
-
-                {/* Contador de caracteres */}
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-right mt-1">
                   {`${(item.motivo_otro || '').length}/150`}
                 </p>
@@ -212,9 +210,10 @@ export default function SeccionResiduos({
                 onChange={(value) => handleChange(index, 'peso', value)}
                 required
                 disabled={disabled}
-                min={0.01}
+                min={0.00}
                 max={17000}
                 step={0.01}
+                placeholder="Si no tiene manera de pesarlo ingrese 0"
               />
             </div>
 

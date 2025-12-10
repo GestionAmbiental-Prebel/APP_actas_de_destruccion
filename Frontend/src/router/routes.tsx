@@ -16,17 +16,17 @@ import  ActasConciliadas  from "../pages/puntoVerde/ActasConciliadas";
 
 // 🔹 Gestor Normal
 import { Dashboard } from "../pages/gestor/Dashboard";
-import ActasPageGestor from "../pages/gestor/ActasPage";
+
 //import { NuevaActa } from "../pages/gestor/NuevaActa";
 import { EditarActa } from "../pages/gestor/EditarActa";
-import { Reportes } from "../pages/gestor/Reportes";
+
 
 // 🔹 Gestor Punto Verde
-import { DashboardPuntoVerde } from "../pages/gestorPuntoVerde/DashboardPuntoVerde";
 import ActasPageGestorPV from "../pages/gestorPuntoVerde/ActasPage";
 import { NuevaActaPV } from "../pages/gestorPuntoVerde/NuevaActa";
 import { EditarActaPV } from "../pages/gestorPuntoVerde/EditarActa";
-import { ActasConciliadasGestorPuntoVerde } from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
+import  EditActaPage  from "../pages/gestorPuntoVerde/EditActaPage";
+import ActasConciliadasGestorPuntoVerde  from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 
 // 🔹 Admin
 import { LayoutAdmin } from "../components/LayoutAdmin";
@@ -73,10 +73,9 @@ export const router = createBrowserRouter([
         element: <LayoutGestor />,
         children: [
           { path: "dashboard", element: <Dashboard /> },
-          { path: "actas", element: <ActasPageGestor /> },
           { path: "actas/nueva", element: <NuevaActa /> },
           { path: "actas/editar/:id", element: <EditarActa /> },
-          { path: "reportes", element: <Reportes /> },
+          
         ],
       },
 
@@ -85,12 +84,12 @@ export const router = createBrowserRouter([
         path: "gestor-punto-verde",
         element: <LayoutGestor />,
         children: [
-          { path: "dashboard", element: <DashboardPuntoVerde /> },
+          
           { path: "actas", element: <ActasPageGestorPV /> },
           { path: "actas/nueva", element: <NuevaActaPV /> },
-          { path: "actas/editar/:id", element: <EditarActaPV /> },
+          { path: "actas/editar/:id", element: <EditActaPage/> },
           { path: "actas-conciliadas", element: <ActasConciliadasGestorPuntoVerde /> },
-          { path: "reportes", element: <Reportes /> },
+          
         ],
       },
 
@@ -101,7 +100,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "usuarios", element: <Usuarios /> },
           { path: "usuarios/nuevo", element: <NuevoUsuario /> },
-          { path: "usuarios/editar/:id", element: <EditarUsuario /> },
+          { path: "usuarios/editar/:id", element: <EditActaPage/> },
           { path: "configuraciones", element: <Configuraciones /> },
           { path: "configuraciones/sedes", element: <GestionarSedes /> },
         ],

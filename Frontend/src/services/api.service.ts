@@ -3,7 +3,7 @@
 const API_BASE_URL = 'http://localhost:8000/app/api';
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
   body?: any;
 };
