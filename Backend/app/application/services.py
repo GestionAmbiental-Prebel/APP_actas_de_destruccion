@@ -1,6 +1,3 @@
-"""
-Registrar los servicios de la aplicación (ver manual de arquitectura)
-"""
 from django.db import transaction
 from django.utils import timezone
 from typing import List, Optional
@@ -80,7 +77,6 @@ class ProcedenciaService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
-
 class ActaService:
     def __init__(self, repository: ActaRepository, numeracion_repository: NumeracionActasRepository):
         self.repository = repository
@@ -113,13 +109,39 @@ class ActaService:
         acta_entity = Acta(**data)
         return self.repository.create(acta_entity)
 
-    def update(self, id: int, data: dict) -> Acta:
-        return self.repository.update(id, Acta(**data))
+    def update(self, acta_id: int, data: dict):
+        """
+        Actualiza un acta existente.
+        Soporta actualización parcial (para PATCH).
+        """
+        # Obtener el acta existente
+        acta = self.repository.get_by_id(acta_id)
+        if not acta:
+            raise ValueError(f"Acta con ID {acta_id} no encontrada")
+        
+        # Actualizar la entidad con los nuevos datos
+        # Necesitamos crear una nueva entidad con los datos combinados
+        from app.domain.entities import Acta
+        
+        # Obtener los valores actuales
+        updated_acta = Acta(
+            id=acta.id,
+            numero_acta=data.get('numero_acta', acta.numero_acta),
+            fecha_acta=data.get('fecha_acta', acta.fecha_acta),
+            subarea_id=data.get('subarea_id', acta.subarea_id),
+            centro_costo_id=data.get('centro_costo_id', acta.centro_costo_id),
+            documento_entrega=data.get('documento_entrega', acta.documento_entrega),
+            documento_recepcion=data.get('documento_recepcion', acta.documento_recepcion),
+            fecha_conciliacion=data.get('fecha_conciliacion', acta.fecha_conciliacion),
+            consecutivo=data.get('consecutivo', acta.consecutivo),
+            numero_inventario=data.get('numero_inventario', acta.numero_inventario),
+        )
+        
+        # Llamar al método update del repositorio
+        return self.repository.update(acta_id, updated_acta)
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
-
 
 class ActaGeneracionResiduoService:
     def __init__(self, repository: ActaGeneracionResiduoRepository):
@@ -133,16 +155,35 @@ class ActaGeneracionResiduoService:
 
     def create(self, data: dict) -> ActaGeneracionResiduo:
         data.pop('id', None)  # Django asigna id automáticamente
-        return self.repository.create(ActaGeneracionResiduo(**data))  # <--- CORRECTO
+        return self.repository.create(ActaGeneracionResiduo(**data))
 
-    def update(self, id: int, data: dict) -> ActaGeneracionResiduo:
-        return self.repository.update(id, ActaGeneracionResiduo(**data))
+    def update(self, relation_id: int, data: dict):
+        """
+        Actualiza una relación acta-generación-residuo.
+        Soporta actualización parcial (para PATCH).
+        """
+        # Obtener la relación existente
+        relation = self.repository.get_by_id(relation_id)
+        if not relation:
+            raise ValueError(f"Relación con ID {relation_id} no encontrada")
+        
+        # Actualizar la entidad con los nuevos datos
+        from app.domain.entities import ActaGeneracionResiduo
+        
+        # Obtener los valores actuales y combinar con los nuevos
+        updated_relation = ActaGeneracionResiduo(
+            id=relation.id,
+            acta_id=data.get('acta_id', relation.acta_id),
+            generacion_residuo_id=data.get('generacion_residuo_id', relation.generacion_residuo_id),
+            peso_reportado=data.get('peso_reportado', relation.peso_reportado),
+            peso_conciliado=data.get('peso_conciliado', relation.peso_conciliado),
+        )
+        
+        # Llamar al método update del repositorio
+        return self.repository.update(relation_id, updated_relation)
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
-
-
 
 class GeneracionResiduoService:
     def __init__(self, repository: GeneracionResiduoRepository):
@@ -157,12 +198,35 @@ class GeneracionResiduoService:
     def create(self, data: dict) -> GeneracionResiduo:
         return self.repository.create(GeneracionResiduo(**data))
 
-    def update(self, id: int, data: dict) -> GeneracionResiduo:
-        return self.repository.update(id, GeneracionResiduo(**data))
-
+    def update(self, residuo_id: int, data: dict) -> GeneracionResiduo:
+        """
+        Actualiza una generación de residuo existente.
+        Soporta actualización parcial (para PATCH).
+        """
+        # Obtener el residuo existente
+        residuo = self.repository.get_by_id(residuo_id)
+        if not residuo:
+            raise ValueError(f"GeneraciónResiduo con ID {residuo_id} no encontrada")
+        
+        # Actualizar la entidad con los nuevos datos
+        from app.domain.entities import GeneracionResiduo
+        
+        # Obtener los valores actuales y combinar con los nuevos
+        updated_residuo = GeneracionResiduo(
+            id=residuo.id,
+            fecha=data.get('fecha', residuo.fecha),
+            peso=data.get('peso', residuo.peso),
+            residuo_id=data.get('residuo_id', residuo.residuo_id),
+            operario_id=data.get('operario_id', residuo.operario_id),
+            motivo=data.get('motivo', residuo.motivo),
+            motivo_otro=data.get('motivo_otro', residuo.motivo_otro),
+            residuo_otro=data.get('residuo_otro', residuo.residuo_otro),
+        )
+        
+        # Llamar al método update del repositorio
+        return self.repository.update(residuo_id, updated_residuo)
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
 
 class AreaService:
     def __init__(self, repository: AreaRepository):
@@ -176,7 +240,6 @@ class AreaService:
 
     def create(self, data: dict) -> Area:
         return self.repository.create(Area(**data))
-
 
 class SubAreaService:
     def __init__(self, repository: SubAreaRepository):
@@ -197,7 +260,6 @@ class SubAreaService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
-
 class CategoriaResiduoService:
     def __init__(self, repository: CategoriaResiduoRepository):
         self.repository = repository
@@ -216,7 +278,6 @@ class CategoriaResiduoService:
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
 
 class ResiduoEspecificoService:
     def __init__(self, repository: ResiduoEspecificoRepository):
@@ -237,7 +298,6 @@ class ResiduoEspecificoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
-
 class CentroCostoService:
     def __init__(self, repository: CentroCostoRepository):
         self.repository = repository
@@ -257,7 +317,6 @@ class CentroCostoService:
     def delete(self, id: int) -> None:
         self.repository.delete(id)
 
-
 class RolAdministrativoService:
     def __init__(self, repository: RolAdministrativoRepository):
         self.repository = repository
@@ -276,7 +335,6 @@ class RolAdministrativoService:
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
 
 class OperarioService:
     def __init__(self, repository: OperarioRepository):
@@ -314,7 +372,6 @@ class OperarioService:
 
     def delete(self, id: int) -> None:
         self.repository.delete(id)
-
 
 class NovedadConciliacionService:
     def __init__(self, repository: NovedadConciliacionRepository):
@@ -364,10 +421,8 @@ class NovedadConciliacionService:
             raise e
         except Exception as e:
             raise ValueError(f"Error al eliminar la novedad con id {id}: {str(e)}")
-        
-class ConciliacionService:
-   
 
+class ConciliacionService:
     def conciliar_acta(self, acta_id: int, documento_recepcion: str, residuos: list):
         import traceback
         from django.utils import timezone
@@ -402,7 +457,7 @@ class ConciliacionService:
                     NovedadConciliacion.objects.create(
                         acta_generacion_residuo=agr,
                         descripcion=descripcion_novedad,
-                        fecha=timezone.now(),  # RECOMENDADO para registrar cuándo se creó
+                        fecha=timezone.now(),
                     )
 
             return {
@@ -421,7 +476,6 @@ class NumeracionActasService:
         self.repository = repository
 
     def get_or_create_year(self, year: int) -> NumeracionActas:
-      
         return self.repository.get_or_create_year(year)
 
     def increment_and_get(self, year: int) -> int:

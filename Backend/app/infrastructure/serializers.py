@@ -9,17 +9,16 @@ class ProcedenciaSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100)
     sede_id = serializers.IntegerField()
 
-
 class ActaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
 
     # Ahora lo genera el backend → solo lectura
     numero_acta = serializers.CharField(read_only=True)
 
-    fecha_acta = serializers.DateTimeField()
-    subarea_id = serializers.IntegerField()
-    centro_costo_id = serializers.IntegerField()
-    documento_entrega = serializers.CharField(max_length=100)
+    fecha_acta = serializers.DateTimeField(required=False)  # ✅ Cambiado a required=False para PATCH
+    subarea_id = serializers.IntegerField(required=False)  # ✅ Cambiado a required=False para PATCH
+    centro_costo_id = serializers.IntegerField(required=False)  # ✅ Cambiado a required=False para PATCH
+    documento_entrega = serializers.CharField(max_length=100, required=False)  # ✅ Cambiado
 
     # Esto lo sigue llenando el backend
     documento_recepcion = serializers.CharField(
@@ -32,43 +31,65 @@ class ActaSerializer(serializers.Serializer):
     consecutivo = serializers.IntegerField(required=False, allow_null=True)
     numero_inventario = serializers.IntegerField(required=False, allow_null=True)
 
+    def update(self, instance, validated_data):
+        """
+        Actualiza una instancia existente con los datos validados.
+        Este método es necesario porque usamos Serializer en lugar de ModelSerializer.
+        """
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 class ActaGeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    acta_id = serializers.IntegerField()
-    generacion_residuo_id = serializers.IntegerField()
+    acta_id = serializers.IntegerField(required=False)  # ✅ Cambiado para PATCH
+    generacion_residuo_id = serializers.IntegerField(required=False)  # ✅ Cambiado para PATCH
     peso_reportado = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     peso_conciliado = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
+    def update(self, instance, validated_data):
+        """
+        Actualiza una instancia existente.
+        """
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 class GeneracionResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    fecha = serializers.DateTimeField(required=True)
-    peso = serializers.FloatField(required=True)  
-    residuo_id = serializers.IntegerField(required=True)
-    operario_id = serializers.IntegerField(required=True)
-    motivo = serializers.CharField(max_length=255, required=True)
+    fecha = serializers.DateTimeField(required=False)  # ✅ Cambiado para PATCH
+    peso = serializers.FloatField(required=False)  # ✅ Cambiado para PATCH
+    residuo_id = serializers.IntegerField(required=False)  # ✅ Cambiado para PATCH
+    operario_id = serializers.IntegerField(required=False)  # ✅ Cambiado para PATCH
+    motivo = serializers.CharField(max_length=255, required=False)  # ✅ Cambiado para PATCH
     motivo_otro = serializers.CharField(max_length=255, required=False, allow_blank=True, allow_null=True)
     residuo_otro = serializers.CharField(max_length=150, required=False, allow_blank=True, allow_null=True)
 
+    def update(self, instance, validated_data):
+        """
+        Actualiza una instancia existente.
+        """
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 class AreaSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     procedencia_id = serializers.IntegerField()
 
-
 class CategoriaResiduoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     subarea_id = serializers.IntegerField()
 
-
 class ResiduoEspecificoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
     categoria_id = serializers.IntegerField()
-
 
 class CentroCostoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
@@ -77,11 +98,9 @@ class CentroCostoSerializer(serializers.Serializer):
     clase_movimiento = serializers.IntegerField(required=False, allow_null=True)
     subarea_id = serializers.IntegerField(required=False, allow_null=True)
 
-
 class RolAdministrativoSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     nombre = serializers.CharField(max_length=100)
-
 
 class OperarioSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
