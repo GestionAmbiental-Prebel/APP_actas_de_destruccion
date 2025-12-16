@@ -20,9 +20,10 @@ export const navItems: Record<
       { label: "Reportes", path: "/gestor/reportes" },
     ],
     "punto-verde": [
-      { label: "Dashboard", path: "/gestor-punto-verde/dashboard" },
+      
       { label: "Actas", path: "/gestor-punto-verde/actas" },
       { label: "Conciliadas", path: "/gestor-punto-verde/actas-conciliadas" },
+      { label: "Gestionar Operarios", path: "/gestor-punto-verde/gestion-operarios" },
     ],
   },
   admin: {

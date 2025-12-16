@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import ToggleTheme from "../theme/toggleTheme";
-import HomeIcon from "../../icons/homeIcon";
+
 import { navItems } from "./navConfig";
 
 interface NavbarProps {

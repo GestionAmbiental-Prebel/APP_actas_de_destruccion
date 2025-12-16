@@ -24,9 +24,9 @@ import { EditarActa } from "../pages/gestor/EditarActa";
 // 🔹 Gestor Punto Verde
 import ActasPageGestorPV from "../pages/gestorPuntoVerde/ActasPage";
 import { NuevaActaPV } from "../pages/gestorPuntoVerde/NuevaActa";
-import { EditarActaPV } from "../pages/gestorPuntoVerde/EditarActa";
 import  EditActaPage  from "../pages/gestorPuntoVerde/EditActaPage";
 import ActasConciliadasGestorPuntoVerde  from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
+import GestionOperariosPuntoVerde from "../pages/gestorPuntoVerde/GestionOperariosPuntoVerde";
 
 // 🔹 Admin
 import { LayoutAdmin } from "../components/LayoutAdmin";
@@ -89,6 +89,8 @@ export const router = createBrowserRouter([
           { path: "actas/nueva", element: <NuevaActaPV /> },
           { path: "actas/editar/:id", element: <EditActaPage/> },
           { path: "actas-conciliadas", element: <ActasConciliadasGestorPuntoVerde /> },
+          { path: "gestion-operarios", element: <GestionOperariosPuntoVerde /> },
+          
           
         ],
       },
