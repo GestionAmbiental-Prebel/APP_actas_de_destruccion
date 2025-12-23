@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import ToggleTheme from "../theme/toggleTheme";
 
-import { navItems } from "./navConfig";
+import { navItems, Role, Variant } from "./navConfig";
 
 interface NavbarProps {
-  role: "gestor" | "operario" | "admin";
-  variant?: "normal" | "punto-verde";
+  role: Role;
+  variant?: Variant;
 }
 
 export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
@@ -23,24 +23,12 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
-  const items = navItems[role][variant] || [];
+  // ✅ Acceso seguro a los items
+  const items = navItems[role]?.[variant] ?? [];
 
   return (
     <section className="flex items-center w-full relative">
       <nav className="w-full flex items-center justify-between">
-        {/* Inicio 
-        <div className="flex-shrink-0">
-          <Link
-            to="/"
-            className={`flex gap-1 items-center hover:text-cyan-600 dark:hover:text-cyan-400 ${
-              isActive("/") ? "border-b-2 border-cyan-600" : ""
-            }`}
-          >
-            <HomeIcon className="w-5 h-5 fill-cyan dark:fill-bone" />
-            Inicio
-          </Link>
-        </div>*/}
-
         {/* Items centrados */}
         <ul className="flex gap-6 justify-center flex-1">
           {items.map(({ label, path }) => (

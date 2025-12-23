@@ -20,6 +20,7 @@ type Residuo = {
   residuo_otro?: string;
   operario_id: number;
   esNuevo?: boolean;
+  peso_conciliado?: string | null; // Agregado
 };
 
 export default function EditarActaPage() {
@@ -29,6 +30,7 @@ export default function EditarActaPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [estadoActual, setEstadoActual] = useState<string>(""); // Nuevo estado
 
   // Datos del acta
   const [numeroActa, setNumeroActa] = useState("");
@@ -40,6 +42,7 @@ export default function EditarActaPage() {
   const [operarioDocumento, setOperarioDocumento] = useState("");
   const [operarioNombre, setOperarioNombre] = useState("");
   const [operarioId, setOperarioId] = useState<number>(0);
+  const [documentoRecepcion, setDocumentoRecepcion] = useState(""); // Agregado
 
   // Residuos
   const [residuos, setResiduos] = useState<Residuo[]>([]);
@@ -88,6 +91,8 @@ export default function EditarActaPage() {
       setSubareaId(acta.subarea_id);
       setCentroCostoId(acta.centro_costo_id);
       setOperarioDocumento(acta.documento_entrega);
+      setDocumentoRecepcion(acta.documento_recepcion || ""); // Guardar documento recepción
+      setEstadoActual(acta.estado || ""); // Guardar estado actual
 
       // Buscar operario
       const operario = operariosData.find(
@@ -98,7 +103,7 @@ export default function EditarActaPage() {
         setOperarioId(operario.id);
       }
 
-      // Cargar residuos del acta
+      // Cargar residuos del acta con sus pesos conciliados
       const relaciones = await apiRequest<any[]>("/actas-generacion-residuo/", {
         method: "GET",
       });
@@ -122,6 +127,7 @@ export default function EditarActaPage() {
           residuo_id: gen?.residuo_id || 0,
           residuo_nombre: resEsp?.nombre || "Sin nombre",
           peso_reportado: rel.peso_reportado,
+          peso_conciliado: rel.peso_conciliado, // Guardar peso conciliado
           motivo: gen?.motivo || "Bloqueado",
           motivo_otro: gen?.motivo_otro || "",
           residuo_otro: gen?.residuo_otro || "",
@@ -176,6 +182,7 @@ export default function EditarActaPage() {
       residuo_id: residuosDisponibles[0].id,
       residuo_nombre: residuosDisponibles[0].nombre,
       peso_reportado: "0",
+      peso_conciliado: null, // Nuevo residuo no conciliado
       motivo: "Bloqueado",
       motivo_otro: "",
       residuo_otro: "",
@@ -219,29 +226,35 @@ export default function EditarActaPage() {
 
       if (!subareaId) {
         alert("Debes seleccionar una subárea");
+        setSaving(false);
         return;
       }
       if (!centroCostoId) {
         alert("Debes seleccionar un centro de costo");
+        setSaving(false);
         return;
       }
       if (residuos.length === 0) {
         alert("Debes tener al menos un residuo");
+        setSaving(false);
         return;
       }
 
+      // Validaciones
       for (const residuo of residuos) {
         if (!residuo.peso_reportado || parseFloat(residuo.peso_reportado) <= 0) {
           alert("Todos los residuos deben tener un peso mayor a 0");
+          setSaving(false);
           return;
         }
         if (residuo.motivo === "Otro" && !residuo.motivo_otro?.trim()) {
           alert("Debes especificar el motivo cuando seleccionas 'Otro'");
+          setSaving(false);
           return;
         }
       }
 
-      // 1. Actualizar el acta
+      // 1. Actualizar el acta MANTENIENDO EL ESTADO
       await apiRequest(`/actas/${id}/`, {
         method: "PUT",
         body: {
@@ -250,30 +263,35 @@ export default function EditarActaPage() {
           subarea_id: subareaId,
           centro_costo_id: centroCostoId,
           documento_entrega: operarioDocumento,
-          documento_recepcion: "",
+          documento_recepcion: documentoRecepcion, // Mantener documento recepción
           consecutivo: consecutivo ? parseInt(consecutivo) : null,
           numero_inventario: numeroInventario ? parseInt(numeroInventario) : null,
+          estado: estadoActual, // Mantener el estado actual
         },
       });
 
       // 2. Eliminar residuos marcados
       for (const idRelacion of residuosEliminados) {
-        const relacion = await apiRequest<any>(
-          `/actas-generacion-residuo/${idRelacion}/`,
-          { method: "GET" }
-        );
-
-        await apiRequest(`/actas-generacion-residuo/${idRelacion}/`, {
-          method: "DELETE",
-        });
-
         try {
-          await apiRequest(
-            `/generacion-residuo/${relacion.generacion_residuo_id}/`,
-            { method: "DELETE" }
+          const relacion = await apiRequest<any>(
+            `/actas-generacion-residuo/${idRelacion}/`,
+            { method: "GET" }
           );
+
+          await apiRequest(`/actas-generacion-residuo/${idRelacion}/`, {
+            method: "DELETE",
+          });
+
+          // Eliminar la generación de residuo asociada
+          if (relacion.generacion_residuo_id) {
+            await apiRequest(
+              `/generacion-residuo/${relacion.generacion_residuo_id}/`,
+              { method: "DELETE" }
+            );
+          }
         } catch (err) {
-          console.warn("Error eliminando generación de residuo:", err);
+          console.warn("Error eliminando residuo:", err);
+          // Continuar aunque falle uno
         }
       }
 
@@ -304,46 +322,66 @@ export default function EditarActaPage() {
               acta_id: parseInt(id!),
               generacion_residuo_id: nuevaGeneracion.id,
               peso_reportado: residuo.peso_reportado,
-              peso_conciliado: null,
+              peso_conciliado: null, // Nuevo residuo no conciliado
             },
           });
         } else {
-          // ACTUALIZAR RESIDUO EXISTENTE
-          await apiRequest(`/actas-generacion-residuo/${residuo.id}/`, {
-            method: "PUT",
-            body: {
-              acta_id: parseInt(id!),
-              generacion_residuo_id: residuo.generacion_residuo_id,
-              peso_reportado: residuo.peso_reportado,
-              peso_conciliado: null,
-            },
-          });
+          // IMPORTANTE: Obtener la relación actual para preservar peso_conciliado
+          let pesoConciliadoActual = null;
+          if (residuo.id) {
+            try {
+              const relacionActual = await apiRequest<any>(
+                `/actas-generacion-residuo/${residuo.id}/`,
+                { method: "GET" }
+              );
+              pesoConciliadoActual = relacionActual.peso_conciliado;
+            } catch (err) {
+              console.warn("No se pudo obtener relación actual:", err);
+            }
+          }
 
-          const generacion = await apiRequest<any>(
-            `/generacion-residuo/${residuo.generacion_residuo_id}/`,
-            { method: "GET" }
-          );
-
-          await apiRequest(
-            `/generacion-residuo/${residuo.generacion_residuo_id}/`,
-            {
+          // ACTUALIZAR RESIDUO EXISTENTE - PRESERVAR PESO CONCILIADO
+          if (residuo.id) {
+            await apiRequest(`/actas-generacion-residuo/${residuo.id}/`, {
               method: "PUT",
               body: {
-                ...generacion,
-                residuo_id: residuo.residuo_id,
-                peso: residuo.peso_reportado,
-                motivo: residuo.motivo,
-                motivo_otro:
-                  residuo.motivo === "Otro" ? residuo.motivo_otro : null,
-                residuo_otro: residuo.residuo_otro || null,
+                acta_id: parseInt(id!),
+                generacion_residuo_id: residuo.generacion_residuo_id,
+                peso_reportado: residuo.peso_reportado,
+                peso_conciliado: pesoConciliadoActual, // ¡MANTENER peso_conciliado!
               },
-            }
-          );
+            });
+          }
+
+          // Actualizar generación de residuo
+          if (residuo.generacion_residuo_id) {
+            const generacion = await apiRequest<any>(
+              `/generacion-residuo/${residuo.generacion_residuo_id}/`,
+              { method: "GET" }
+            );
+
+            await apiRequest(
+              `/generacion-residuo/${residuo.generacion_residuo_id}/`,
+              {
+                method: "PUT",
+                body: {
+                  ...generacion,
+                  residuo_id: residuo.residuo_id,
+                  peso: residuo.peso_reportado,
+                  motivo: residuo.motivo,
+                  motivo_otro:
+                    residuo.motivo === "Otro" ? residuo.motivo_otro : null,
+                  residuo_otro: residuo.residuo_otro || null,
+                },
+              }
+            );
+          }
         }
       }
 
       alert("✓ Acta actualizada exitosamente");
-      navigate("/gestor-pv/actas");
+      // Redirigir correctamente a actas conciliadas
+      navigate("/gestor-punto-verde/conciliadas");
     } catch (err: any) {
       console.error("Error guardando:", err);
       setError(`Error al guardar: ${err.message || "Error desconocido"}`);
@@ -355,7 +393,7 @@ export default function EditarActaPage() {
 
   const handleCancelar = () => {
     if (confirm("¿Deseas descartar los cambios?")) {
-      navigate("/gestor-pv/actas");
+      navigate("/gestor-punto-verde/conciliadas");
     }
   };
 
@@ -373,7 +411,7 @@ export default function EditarActaPage() {
     <div className="max-w-5xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-skyBlue dark:text-lightBlue">
-          Editar Acta {numeroActa}
+          Editar Acta {numeroActa} - Estado: {estadoActual}
         </h1>
         <button
           onClick={handleCancelar}
@@ -390,6 +428,19 @@ export default function EditarActaPage() {
       )}
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+        {/* Mostrar estado actual */}
+        {estadoActual && (
+          <div className={`p-3 rounded mb-4 text-center font-bold ${
+            estadoActual === "conciliado" 
+              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+              : estadoActual === "pendiente"
+              ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+              : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+          }`}>
+            Estado actual: {estadoActual.toUpperCase()}
+          </div>
+        )}
+
         {/* Información del Acta */}
         <div>
           <h2 className="text-xl font-bold mb-4">📋 Información del Acta</h2>
@@ -646,6 +697,14 @@ export default function EditarActaPage() {
                     <div className="mt-2">
                       <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                         Nuevo residuo
+                      </span>
+                    </div>
+                  )}
+
+                  {residuo.peso_conciliado && (
+                    <div className="mt-2">
+                      <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                        Peso conciliado: {residuo.peso_conciliado} kg
                       </span>
                     </div>
                   )}

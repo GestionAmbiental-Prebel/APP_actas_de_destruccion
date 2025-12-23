@@ -1,39 +1,44 @@
-// navConfig.ts
+// src/components/header/navConfig.ts
+
+export type Role = "operario" | "gestor" | "admin";
+export type Variant = "normal" | "punto-verde";
+
+export interface NavItem {
+  label: string;
+  path: string;
+}
+
 export const navItems: Record<
-  string,
-  Record<string, { label: string; path: string }[]>
+  Role,
+  Partial<Record<Variant, NavItem[]>>
 > = {
   operario: {
     normal: [
-      { label: "Nuevo Acta", path: "/sub-area/formulario" },
-      { label: "Mis Actas", path: "/sub-area/mis-actas" },
+      { label: "Nuevo Acta", path: "/subarea" },
+      { label: "Mis Actas", path: "/subarea/mis-actas" },
     ],
     "punto-verde": [
-      { label: "Actas", path: "/operario-punto-verde/actas" },
-      { label: "Conciliadas", path: "/operario-punto-verde/conciliadas" },
+      { label: "Actas", path: "/punto-verde" },
+      { label: "Conciliadas", path: "/punto-verde/conciliadas" },
     ],
   },
+
   gestor: {
     normal: [
       { label: "Dashboard", path: "/gestor/dashboard" },
-      { label: "Actas", path: "/gestor/actas" },
-      { label: "Reportes", path: "/gestor/reportes" },
+      { label: "Nueva Acta", path: "/gestor/actas/nueva" },
     ],
     "punto-verde": [
-      
       { label: "Actas", path: "/gestor-punto-verde/actas" },
-      { label: "Conciliadas", path: "/gestor-punto-verde/actas-conciliadas" },
-      { label: "Gestionar Operarios", path: "/gestor-punto-verde/gestion-operarios" },
+      { label: "Estado Actas", path: "/gestor-punto-verde/conciliadas" },
+      { label: "Gestionar Operarios", path: "/gestor-punto-verde/operarios" },
     ],
   },
+
   admin: {
     normal: [
       { label: "Usuarios", path: "/admin/usuarios" },
-      { label: "Configuración", path: "/admin/configuraciones" },
+      { label: "Configuraciones", path: "/admin/configuraciones" },
     ],
   },
 };
-
-export type Role =
-  | "operario"
-  | "punto-verde"

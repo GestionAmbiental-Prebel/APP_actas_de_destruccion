@@ -17,8 +17,6 @@ export type ResiduoActa = {
   descripcion_motivo_otro?: string;
   peso_reportado: string;
   peso_conciliado?: string;
-  
-
 };
 
 export type ConciliacionExtendida = {
@@ -29,11 +27,11 @@ export type ConciliacionExtendida = {
   tipo: "pendiente" | "conciliada" | "con_novedad";
   fecha_conciliacion?: string;
   
-  // 🆕 Información del conciliador
+  // Información del conciliador
   conciliador_nombre?: string;
   conciliador_documento?: string;
   
-  // 🆕 Información del operario
+  // Información del operario
   operario_nombre?: string;
   operario_documento?: string;
   
@@ -108,25 +106,51 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
     novedadesMap.get(relId)?.push(n);
   });
 
-  return actasGeneracionResiduos
-    .map((agr) => {
-      const gen = generacionesMap.get(agr.generacion_residuo_id);
-      if (!gen) return null;
+  // PASO 1: Agrupar residuos por acta_id
+  const actasAgrupadas = new Map<number, ConciliacionExtendida>();
 
-      const res = residuosMap.get(gen.residuo_id);
-      const acta = actasMap.get(agr.acta_id);
-      if (!acta) return null;
+  actasGeneracionResiduos.forEach((agr) => {
+    const gen = generacionesMap.get(agr.generacion_residuo_id);
+    if (!gen) return;
 
-      // Subárea y centro de costo del acta
+    const res = residuosMap.get(gen.residuo_id);
+    const acta = actasMap.get(agr.acta_id);
+    if (!acta) return;
+
+    // Crear el residuo actual
+    const residuo: ResiduoActa = {
+      acta_generacion_residuo_id: agr.id,
+      residuo_nombre: res?.nombre ?? "Sin nombre",
+      motivo: gen.motivo,
+      descripcion_residuo_otro:
+        res?.nombre === "Otro" ? gen.residuo_otro ?? undefined : undefined,
+      descripcion_motivo_otro:
+        gen.motivo === "Otro" ? gen.motivo_otro ?? undefined : undefined,
+      peso_reportado: agr.peso_reportado?.toString() ?? "0",
+      peso_conciliado: agr.peso_conciliado?.toString() ?? undefined,
+    };
+
+    // Verificar si ya existe esta acta en el mapa
+    if (actasAgrupadas.has(agr.acta_id)) {
+      // Ya existe: agregar residuo al array existente
+      const actaExistente = actasAgrupadas.get(agr.acta_id)!;
+      actaExistente.residuos.push(residuo);
+      
+      // Actualizar el tipo si algún residuo tiene novedad
+      const novedad = novedadesMap.get(agr.id)?.[0]?.descripcion;
+      if (novedad && actaExistente.tipo !== "con_novedad") {
+        actaExistente.tipo = "con_novedad";
+        actaExistente.novedad = novedad;
+      }
+    } else {
+      // No existe: crear nueva acta con este residuo
       const subarea = subAreasMap.get(acta.subarea_id ?? -1);
       const centroCosto = centrosMap.get(acta.centro_costo_id ?? -1);
 
-      // 🆕 OPERARIO - El que entregó (documento_entrega)
       const operario = operarios.find(
         (o) => o.documento === acta.documento_entrega
       );
 
-      // CONCILIADOR - El que recibió (documento_recepcion)
       const conciliador = operarios.find(
         (o) => o.documento === acta.documento_recepcion
       );
@@ -137,21 +161,7 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
       if (novedad) tipo = "con_novedad";
       else if (agr.peso_conciliado != null) tipo = "conciliada";
 
-      const residuos: ResiduoActa[] = [
-  {
-    acta_generacion_residuo_id: agr.id, // ← AQUI SE AGREGA
-    residuo_nombre: res?.nombre ?? "Sin nombre",
-    motivo: gen.motivo,
-    descripcion_residuo_otro:
-      res?.nombre === "Otro" ? gen.residuo_otro ?? undefined : undefined,
-    descripcion_motivo_otro:
-      gen.motivo === "Otro" ? gen.motivo_otro ?? undefined : undefined,
-    peso_reportado: agr.peso_reportado?.toString() ?? "0",
-    peso_conciliado: agr.peso_conciliado?.toString() ?? undefined,
-  },
-];
-
-      return {
+      actasAgrupadas.set(agr.acta_id, {
         id: agr.id,
         acta_id: agr.acta_id,
         numero_acta: acta.numero_acta ?? "Sin número",
@@ -159,19 +169,17 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
         tipo,
         fecha_conciliacion: acta.fecha_conciliacion ?? undefined,
         
-        // 🆕 Información del OPERARIO
         operario_nombre: operario
           ? `${operario.nombre} ${operario.apellido ?? ""}`.trim()
           : undefined,
         operario_documento: operario?.documento ?? acta.documento_entrega,
         
-        // Información del CONCILIADOR
         conciliador_nombre: conciliador
           ? `${conciliador.nombre} ${conciliador.apellido ?? ""}`.trim()
           : undefined,
-        conciliador_documento: conciliador?.documento,
+        conciliador_documento: conciliador?.documento ?? undefined,
         
-        residuos,
+        residuos: [residuo], // Primer residuo
         novedad,
 
         consecutivo: acta.consecutivo,
@@ -181,10 +189,12 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
         subarea_nombre: subarea?.nombre ?? "Sin subárea",
 
         centro_costo_id: acta.centro_costo_id,
-        centro_costo_codigo: centroCosto?.codigo ?? null,
+        centro_costo_codigo: centroCosto?.codigo ?? undefined,
         centro_costo_nombre: centroCosto?.nombre ?? "",
-      
-      };
-    })
-    .filter((c) => c !== null) as ConciliacionExtendida[];
+      });
+    }
+  });
+
+  // PASO 2: Convertir el Map a array
+  return Array.from(actasAgrupadas.values());
 }
