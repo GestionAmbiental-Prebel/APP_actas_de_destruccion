@@ -274,7 +274,7 @@ export default function ActasOperarioPuntoVerde() {
 
                 {/* BOTÓN */}
                 <div className="flex justify-end">
-                  <Button onClick={() => navigate(`/operario-punto-verde/conciliar/${acta.id}`)} variant="primary">
+                  <Button onClick={() => navigate(`/punto-verde/conciliar/${acta.id}`)} variant="primary">
                     ✓ Conciliar Acta
                   </Button>
                 </div>

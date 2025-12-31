@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { obtenerActasConciliadas } from '../../services/actas.service';
+import { useLocation } from 'react-router-dom';
+import { obtenerActasConciliadas } from '../../services/actasConciliadas.service';
 import { obtenerSubAreas, obtenerCentrosCosto } from '../../services/catalogo.service';
+import { obtenerOperarios } from '../../services/operarios.service';
 import { useFiltroActas } from '../../hooks/use.FilteredDateActas';
 import FilteredDateActas from '../../components/common/FilteredDateActas';
 import { sortByDateDesc } from "../../utils/sortByDate";
@@ -10,8 +12,11 @@ type ResiduoConciliado = {
   categoria_nombre: string;
   motivo: string;
   motivo_otro?: string | null;
-  peso_reportado: number;
-  peso_conciliado: number;
+  descripcion_motivo_otro?: string;
+  descripcion_residuo_otro?: string;
+  peso_reportado: string | number;
+  peso_conciliado: string | number;
+  descripcion_novedad?: string;
   fecha: string;
   fecha_conciliacion?: string;
 };
@@ -26,21 +31,30 @@ type ActaConciliada = {
   operario_nombre: string;
   operario_documento: string;
   documento_recepcion: string;
+  conciliador_nombre?: string;
+  conciliador_documento?: string;
   peso_total_reportado: number;
   peso_total_conciliado: number;
   subarea?: string;
   subarea_id?: number;
+  subarea_nombre?: string;
   centro_costo_codigo?: string | null;
   centro_costo_id?: number;
+  centro_costo_nombre?: string;
   residuos: ResiduoConciliado[];
+  tipo?: "pendiente" | "conciliada" | "con_novedad";
+  novedad?: string;
 };
 
 export default function ActasConciliadas() {
+  const location = useLocation();
   const [actas, setActas] = useState<ActaConciliada[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [subareasMap, setSubareasMap] = useState<Record<number, string>>({});
   const [centrosCostoMap, setCentrosCostoMap] = useState<Record<number, string>>({});
+  const [operariosMap, setOperariosMap] = useState<Record<string, string>>({});
 
   const { 
     busqueda, setBusqueda, 
@@ -51,21 +65,54 @@ export default function ActasConciliadas() {
     "numero_acta",
     "operario_nombre",
     "operario_documento",
+    "conciliador_nombre",
+    "documento_recepcion",
     "numero_inventario",
-    "consecutivo"
+    "consecutivo",
+    "subarea_nombre"
   ]);
 
   useEffect(() => {
-    cargarSubareas();
-    cargarCentrosCostos();
-    cargarActas();
-  }, []);
+    console.log('🔄 ActasConciliadas - Montando/Actualizando');
+    console.log('📍 Ruta actual:', location.pathname);
+    
+    cargarTodo();
+    
+    return () => {
+      console.log('🧹 ActasConciliadas - Limpiando');
+    };
+  }, [location.pathname]);
+
+  const cargarTodo = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      await Promise.all([
+        cargarSubareas(),
+        cargarCentrosCostos(),
+        cargarOperarios(),
+        cargarActas()
+      ]);
+      
+    } catch (err) {
+      console.error('Error cargando datos:', err);
+      setError('Error al cargar los datos. Por favor, intente nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const cargarSubareas = async () => {
     try {
       const data = await obtenerSubAreas();
       const map: Record<number, string> = {};
-      data.forEach(s => { if (s?.id != null) map[s.id] = s.nombre; });
+      data.forEach(s => { 
+        if (s?.id != null) {
+          const nombre = s.nombre || '';
+          map[s.id] = nombre ? nombre : `Subárea ${s.id}`;
+        }
+      });
       setSubareasMap(map);
     } catch (err) {
       console.error('Error cargando subáreas:', err);
@@ -76,49 +123,147 @@ export default function ActasConciliadas() {
     try {
       const data = await obtenerCentrosCosto();
       const map: Record<number, string> = {};
-      data.forEach(c => { if (c?.id != null) map[c.id] = c.codigo; });
+      data.forEach(c => { 
+        if (c?.id != null) {
+          const nombre = c.nombre || '';
+          const codigo = c.codigo || '';
+          map[c.id] = nombre ? `${codigo} - ${nombre}`.trim() : codigo;
+        }
+      });
       setCentrosCostoMap(map);
     } catch (err) {
       console.error('Error cargando centros de costo:', err);
     }
   };
 
-  const cargarActas = async () => {
+  const cargarOperarios = async () => {
     try {
-      setLoading(true);
-      const data = await obtenerActasConciliadas();
-
-      const actasConPesosNumericos = data.map((acta: any) => ({
-        ...acta,
-        peso_total_reportado: Number(acta.peso_total_reportado),
-        peso_total_conciliado: Number(acta.peso_total_conciliado),
-        residuos: acta.residuos.map((r: any) => ({
-          ...r,
-          peso_reportado: Number(r.peso_reportado),
-          peso_conciliado: Number(r.peso_conciliado),
-        })),
-      }));
-
-      const actasOrdenadas = sortByDateDesc(actasConPesosNumericos, 'fecha_acta');
-      setActas(actasOrdenadas);
-    } catch (error) {
-      console.error('Error cargando actas conciliadas:', error);
-      alert('Error al cargar las actas conciliadas');
-    } finally {
-      setLoading(false);
+      const data = await obtenerOperarios();
+      const map: Record<string, string> = {};
+      data.forEach((op: any) => {
+        const documento = op.documento || '';
+        if (documento) {
+          const nombre = op.nombre || '';
+          const apellido = op.apellido || '';
+          const nombreCompleto = `${nombre} ${apellido}`.trim();
+          if (nombreCompleto) {
+            map[documento] = nombreCompleto;
+          }
+        }
+      });
+      setOperariosMap(map);
+    } catch (err) {
+      console.error('Error cargando operarios:', err);
     }
   };
 
-  const renderSubarea = (subareaId?: number, subareaName?: string) => {
-    if (subareaName && subareaName.trim() !== '') return subareaName;
+  const cargarActas = async () => {
+    try {
+      console.log('📥 Iniciando carga de actas conciliadas...');
+      const data = await obtenerActasConciliadas();
+      console.log('📊 Datos recibidos del servicio:', data);
+
+      if (!data || data.length === 0) {
+        console.log('ℹ️ No hay actas conciliadas');
+        setActas([]);
+        return;
+      }
+
+      const actasProcesadas = data.map((acta: any) => {
+        const pesoTotalReportado = (acta.residuos || []).reduce((sum: number, r: any) => 
+          sum + Number(r.peso_reportado || 0), 0);
+        
+        const pesoTotalConciliado = (acta.residuos || []).reduce((sum: number, r: any) => 
+          sum + Number(r.peso_conciliado || 0), 0);
+
+        const tieneNovedad = Boolean(acta.novedad) || 
+          (acta.residuos || []).some((r: any) => r.descripcion_novedad);
+
+        const residuosProcesados: ResiduoConciliado[] = (acta.residuos || []).map((r: any) => ({
+          ...r,
+          peso_reportado: Number(r.peso_reportado || 0),
+          peso_conciliado: Number(r.peso_conciliado || 0),
+        }));
+
+        return {
+          id: acta.id || 0,
+          acta_id: acta.acta_id || 0,
+          numero_acta: acta.numero_acta || '',
+          fecha_acta: acta.fecha_acta || '',
+          fecha_conciliacion: acta.fecha_conciliacion,
+          operario_nombre: acta.operario_nombre || '',
+          operario_documento: acta.operario_documento || '',
+          conciliador_nombre: acta.conciliador_nombre || '',
+          conciliador_documento: acta.conciliador_documento || '',
+          documento_recepcion: acta.conciliador_documento || acta.documento_recepcion || '',
+          peso_total_reportado: pesoTotalReportado,
+          peso_total_conciliado: pesoTotalConciliado,
+          subarea: acta.subarea_nombre || acta.subarea || '',
+          subarea_id: acta.subarea_id,
+          subarea_nombre: acta.subarea_nombre || '',
+          centro_costo_codigo: acta.centro_costo_codigo || '',
+          centro_costo_id: acta.centro_costo_id,
+          centro_costo_nombre: acta.centro_costo_nombre || '',
+          consecutivo: acta.consecutivo || '',
+          numero_inventario: acta.numero_inventario || '',
+          residuos: residuosProcesados,
+          tipo: acta.tipo || 'conciliada',
+          novedad: acta.novedad || '',
+          tiene_novedad: tieneNovedad,
+        };
+      });
+
+      console.log(`✅ ${actasProcesadas.length} actas procesadas`);
+      const actasOrdenadas = sortByDateDesc(actasProcesadas, 'fecha_acta');
+      setActas(actasOrdenadas);
+      
+    } catch (error) {
+      console.error('❌ Error cargando actas conciliadas:', error);
+      setError('Error al cargar las actas conciliadas. Por favor, intente nuevamente.');
+    }
+  };
+
+  // 🔥 CORRECCIÓN: Manejar null correctamente
+  const renderSubarea = (subareaId?: number | null, subareaName?: string | null) => {
+    const nombre = (subareaName || '').trim();
+    if (nombre !== '') return nombre;
     if (subareaId != null && subareasMap[subareaId]) return subareasMap[subareaId];
     return 'Sin subárea';
   };
 
-  const renderCentroCosto = (centroCostoId?: number, centroCostoCodigo?: string) => {
-    if (centroCostoCodigo && centroCostoCodigo.trim() !== '') return centroCostoCodigo;
+  const renderCentroCosto = (
+    centroCostoId?: number | null, 
+    centroCostoCodigo?: string | null, 
+    centroCostoNombre?: string | null
+  ) => {
+    const nombre = (centroCostoNombre || '').trim();
+    const codigo = (centroCostoCodigo || '').trim();
+    
+    if (nombre !== '' && codigo !== '') {
+      return `${codigo} - ${nombre}`;
+    }
+    if (codigo !== '') return codigo;
     if (centroCostoId != null && centrosCostoMap[centroCostoId]) return centrosCostoMap[centroCostoId];
     return 'Sin centro de costo';
+  };
+
+  const renderOperarioRecepcion = (acta: ActaConciliada) => {
+    const nombre = (acta.conciliador_nombre || '').trim();
+    const documento = (acta.conciliador_documento || '').trim();
+    
+    if (nombre !== '') {
+      return `${nombre} (${documento})`;
+    }
+    
+    if (documento && operariosMap[documento]) {
+      return `${operariosMap[documento]} (${documento})`;
+    }
+    
+    return documento ? `Documento: ${documento}` : 'No especificado';
+  };
+
+  const handleRefrescar = () => {
+    cargarTodo();
   };
 
   if (loading) {
@@ -132,19 +277,51 @@ export default function ActasConciliadas() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <p className="text-xl text-red-500 mb-4">{error}</p>
+          <button
+            onClick={handleRefrescar}
+            className="px-4 py-2 bg-skyBlue text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (actas.length === 0) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-xl text-gray-500">No hay actas conciliadas todavía.</p>
+        <div className="text-center">
+          <p className="text-xl text-gray-500 mb-4">No hay actas conciliadas todavía.</p>
+          <button
+            onClick={handleRefrescar}
+            className="px-4 py-2 bg-skyBlue text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8 text-skyBlue dark:text-lightBlue">
-        Actas Conciliadas
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-skyBlue dark:text-lightBlue">
+          Actas Conciliadas
+        </h1>
+        <button
+          onClick={handleRefrescar}
+          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        >
+          Actualizar
+        </button>
+      </div>
 
       <FilteredDateActas
         busqueda={busqueda}
@@ -156,69 +333,183 @@ export default function ActasConciliadas() {
         limpiarFiltros={limpiarFiltros}
       />
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded">
+          <p className="font-semibold">Error:</p>
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="space-y-6">
         {filtrar().map((acta) => {
           const diferencia = acta.peso_total_conciliado - acta.peso_total_reportado;
+          const tieneNovedad = acta.novedad || 
+            (acta as any).tiene_novedad || 
+            acta.residuos.some(r => (r as any).descripcion_novedad);
 
           return (
-            <div key={acta.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-600">
+            <div key={`${acta.id}-${acta.numero_acta}`} className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm">
 
-              {/* ENCABEZADO */}
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="font-bold text-xl text-gray-800 dark:text-gray-200">Acta {acta.numero_acta}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
-                </p>
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex items-center gap-3">
+                  <h2 className="font-bold text-xl text-gray-800 dark:text-gray-200">Acta {acta.numero_acta}</h2>
+                  {tieneNovedad && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                      ⚠️ Novedad
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
+                  </p>
+                  {acta.fecha_conciliacion && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Conciliado: {new Date(acta.fecha_conciliacion).toLocaleDateString('es-CO')}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              {/* INFO GENERAL */}
               <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 space-y-1">
                 {acta.consecutivo && <p><span className="font-semibold">Consecutivo:</span> {acta.consecutivo}</p>}
                 {acta.numero_inventario && <p><span className="font-semibold">Número de Inventario:</span> {acta.numero_inventario}</p>}
-                <p><span className="font-semibold">Subárea:</span> {renderSubarea(acta.subarea_id, acta.subarea)}</p>
-                <p><span className="font-semibold">Centro de Costo:</span> {renderCentroCosto(acta.centro_costo_id, acta.centro_costo_codigo ?? undefined)}</p>
+                <p><span className="font-semibold">Subárea:</span> {renderSubarea(acta.subarea_id, acta.subarea_nombre || acta.subarea)}</p>
+                <p><span className="font-semibold">Centro de Costo:</span> {renderCentroCosto(acta.centro_costo_id, acta.centro_costo_codigo, acta.centro_costo_nombre)}</p>
               </div>
 
-              <p className="text-gray-700 dark:text-gray-300 mt-2">Entregado por: {acta.operario_nombre} ({acta.operario_documento})</p>
-              <p className="text-gray-700 dark:text-gray-300">Recibido por: {acta.documento_recepcion}</p>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Fecha conciliación: {acta.fecha_conciliacion ? new Date(acta.fecha_conciliacion).toLocaleString('es-CO') : 'No disponible'}
-              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">🚚 Entregado por:</p>
+                  <p className="text-gray-800 dark:text-gray-200 font-medium">
+                    {acta.operario_nombre} ({acta.operario_documento})
+                  </p>
+                </div>
 
-              {/* PESOS */}
-              <div className="flex gap-6 mt-3">
-                <p className="font-semibold text-blue-600 dark:text-blue-400">Reportado: {acta.peso_total_reportado.toFixed(2)} kg</p>
-                <p className="font-semibold text-green-600 dark:text-green-400">Conciliado: {acta.peso_total_conciliado.toFixed(2)} kg</p>
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">📋 Recibido por:</p>
+                  <p className="text-gray-800 dark:text-gray-200 font-medium">
+                    {renderOperarioRecepcion(acta)}
+                  </p>
+                </div>
               </div>
 
-              {diferencia !== 0 && (
-                <div className={`mt-2 p-2 rounded ${diferencia > 0 ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'}`}>
-                  Diferencia: {diferencia > 0 ? '+' : ''}{diferencia.toFixed(2)} kg
+              {acta.novedad && (
+                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm">📝 Novedad:</p>
+                  <p className="text-yellow-700 dark:text-yellow-400 text-sm mt-1">{acta.novedad}</p>
                 </div>
               )}
 
-              {/* TABLA DE RESIDUOS */}
-              <div className="overflow-x-auto mt-4">
-                <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-700">
-                      <th className="border px-2 py-1">Residuo</th>
-                      <th className="border px-2 py-1">Motivo</th>
-                      <th className="border px-2 py-1">Peso Reportado</th>
-                      <th className="border px-2 py-1">Peso Conciliado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {acta.residuos.map((r, idx) => (
-                      <tr key={idx} className="text-center">
-                        <td className="border px-2 py-1">{r.residuo_nombre}</td>
-                        <td className="border px-2 py-1">{r.motivo}{r.motivo_otro ? ` (${r.motivo_otro})` : ''}</td>
-                        <td className="border px-2 py-1">{r.peso_reportado.toFixed(2)}</td>
-                        <td className="border px-2 py-1">{r.peso_conciliado.toFixed(2)}</td>
+              <div className="flex gap-6 mt-4">
+                <div className="text-center">
+                  <p className="font-semibold text-blue-600 dark:text-blue-400">Peso Reportado</p>
+                  <p className="text-2xl font-bold">{acta.peso_total_reportado.toFixed(2)} kg</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-green-600 dark:text-green-400">Peso Conciliado</p>
+                  <p className="text-2xl font-bold">{acta.peso_total_conciliado.toFixed(2)} kg</p>
+                </div>
+              </div>
+
+              {Math.abs(diferencia) > 0.01 && (
+                <div className={`mt-3 p-3 rounded text-center ${
+                  diferencia > 0 
+                    ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' 
+                    : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                }`}>
+                  <p className="font-semibold">
+                    {diferencia > 0 ? '📈 Sobrante:' : '📉 Faltante:'} {Math.abs(diferencia).toFixed(2)} kg
+                    {acta.peso_total_reportado > 0 && (
+                      <span className="text-sm font-normal ml-2">
+                        ({((Math.abs(diferencia) / acta.peso_total_reportado) * 100).toFixed(1)}%)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-300 mb-2">
+                  Detalle de Residuos ({acta.residuos.length})
+                </h3>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
+                    <thead>
+                      <tr className="bg-gray-100 dark:bg-gray-700">
+                        <th className="border px-2 py-2 text-left">Residuo</th>
+                        <th className="border px-2 py-2 text-left">Categoría</th>
+                        <th className="border px-2 py-2 text-left">Motivo</th>
+                        <th className="border px-2 py-2 text-right">Peso Reportado</th>
+                        <th className="border px-2 py-2 text-right">Peso Conciliado</th>
+                        <th className="border px-2 py-2 text-center">Estado</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {acta.residuos.map((r, idx) => {
+                        const pesoReportado = Number(r.peso_reportado || 0);
+                        const pesoConciliado = Number(r.peso_conciliado || 0);
+                        const diferenciaResiduo = pesoConciliado - pesoReportado;
+                        const tieneNovedadRes = (r as any).descripcion_novedad;
+                        
+                        return (
+                          <tr key={idx} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
+                            tieneNovedadRes ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
+                          }`}>
+                            <td className="border px-2 py-2">
+                              {r.residuo_nombre}
+                              {r.descripcion_residuo_otro && (
+                                <span className="text-gray-500 text-sm block">
+                                  ({r.descripcion_residuo_otro})
+                                </span>
+                              )}
+                            </td>
+                            <td className="border px-2 py-2">{r.categoria_nombre || 'Sin categoría'}</td>
+                            <td className="border px-2 py-2">
+                              <div>
+                                <span>{r.motivo}</span>
+                                {(r.motivo_otro || r.descripcion_motivo_otro) && (
+                                  <span className="text-gray-500 text-sm block">
+                                    ({r.motivo_otro || r.descripcion_motivo_otro})
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="border px-2 py-2 text-right font-medium">
+                              {pesoReportado.toFixed(2)} kg
+                            </td>
+                            <td className="border px-2 py-2 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <span className="font-medium">{pesoConciliado.toFixed(2)} kg</span>
+                                {Math.abs(diferenciaResiduo) > 0.01 && (
+                                  <span className={`text-xs px-2 py-0.5 rounded ${
+                                    diferenciaResiduo > 0 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                  }`}>
+                                    {diferenciaResiduo > 0 ? '+' : ''}{diferenciaResiduo.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="border px-2 py-2 text-center">
+                              {tieneNovedadRes ? (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                  ⚠️ Novedad
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  ✓ Conciliado
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
             </div>
