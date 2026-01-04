@@ -8,22 +8,27 @@ export const Header = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  let role: "operario" | "gestor" | "admin" = "operario";
+  // Actualizado: Ahora tenemos 4 roles posibles
+  let role: "operario" | "gestor" | "gestor-ambiental" | "admin" = "operario";
   let variant: "normal" | "punto-verde" = "normal";
 
   if (location.pathname.startsWith("/admin")) {
     role = "admin";
   } else if (location.pathname.startsWith("/gestor-punto-verde")) {
-    role = "gestor";
+    role = "gestor"; // Gestor Punto Verde
     variant = "punto-verde";
-  } else if (location.pathname.startsWith("/gestor")) {
-    role = "gestor";
+  } else if (location.pathname.startsWith("/gestor-ambiental")) {
+    role = "gestor-ambiental"; // Nuevo rol: Gestor Ambiental
+    variant = "normal";
   } else if (location.pathname.startsWith("/punto-verde")) {
     role = "operario";
     variant = "punto-verde";
   } else if (location.pathname.startsWith("/subarea")) {
     role = "operario";
   }
+
+  // Nota: Si alguien accede a "/gestor" (sin "-ambiental"), podría ser ambiguo
+  // Podrías añadir una lógica adicional si es necesario
 
   return (
     <header className="w-full sticky top-0 z-50 bg-lightBlue/20 dark:bg-gray-400/10 backdrop-blur-lg shadow-md">

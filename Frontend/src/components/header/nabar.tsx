@@ -1,3 +1,4 @@
+// src/components/header/nabar.tsx (o donde tengas tu Navbar)
 "use client";
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -5,8 +6,9 @@ import ToggleTheme from "../theme/toggleTheme";
 
 import { navItems, Role, Variant } from "./navConfig";
 
+// Actualiza la interfaz para incluir el nuevo rol
 interface NavbarProps {
-  role: Role;
+  role: "operario" | "gestor" | "gestor-ambiental" | "admin";
   variant?: Variant;
 }
 
@@ -24,7 +26,9 @@ export const Navbar = ({ role, variant = "normal" }: NavbarProps) => {
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   // ✅ Acceso seguro a los items
-  const items = navItems[role]?.[variant] ?? [];
+  // Para "gestor-ambiental" siempre usamos variant="normal"
+  const effectiveVariant = role === "gestor-ambiental" ? "normal" : variant;
+  const items = navItems[role]?.[effectiveVariant] ?? [];
 
   return (
     <section className="flex items-center w-full relative">

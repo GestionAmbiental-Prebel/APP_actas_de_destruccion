@@ -19,17 +19,15 @@ import ActasOperarioPuntoVerde from "../pages/puntoVerde/ActasOperarioPuntoVerde
 import ConciliarActa from "../pages/puntoVerde/ConciliarActa";
 import ActasConciliadas from "../pages/puntoVerde/ActasConciliadas";
 
-// Gestor
-//import Dashboard from "../pages/gestor/Dashboard";
-//import EditarActa from "../pages/gestor/EditarActa";
-//import NuevaActaGestor from "../pages/gestor/NuevaActa";
-
 // Gestor Punto Verde
-import ActasPageGestorPV from "../pages/gestorPuntoVerde/ActasPage";
-import {NuevaActaPV} from "../pages/gestorPuntoVerde/NuevaActa";
 import EditActaPage from "../pages/gestorPuntoVerde/EditActaPage";
 import ActasConciliadasGestorPuntoVerde from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 import GestionOperariosPuntoVerde from "../pages/gestorPuntoVerde/GestionOperariosPuntoVerde";
+
+// Gestor Ambiental
+import ActasPageGestorAmbiental from "../pages/gestorAmbiental/ActasPage";
+import NuevaActaPageGestorAmbiental from "../pages/gestorAmbiental/NuevaActaPage";
+import EditActaPageGestorAmbiental from "../pages/gestorAmbiental/EditActaPage";
 
 // Admin
 import {Usuarios} from "../pages/admin/Usuarios";
@@ -40,13 +38,22 @@ import {GestionarSedes} from "../pages/admin/configuraciones/GestionarSedes";
 
 export const router = createBrowserRouter([
   // 🔓 Público
-  { path: "/login", element: <LoginPage /> },
+  { 
+    path: "/login", 
+    element: <LoginPage /> 
+  },
 
   // 🌐 App
   {
     path: "/",
     element: <Layout />,
     children: [
+      // Ruta raíz del layout redirige al login
+      { 
+        index: true, 
+        element: <Navigate to="/login" replace /> 
+      },
+
       // 🟡 Subárea
       {
         path: "subarea",
@@ -68,27 +75,24 @@ export const router = createBrowserRouter([
         ],
       },
 
-        /*
       // 🔵 Gestor Ambiental
       {
-        path: "gestor",
+        path: "gestor-ambiental",
         element: <LayoutGestor />,
         children: [
-          { index: true, element: <Dashboard /> },            // /gestor
-          { path: "nueva-acta", element: <NuevaActaGestor /> }, // /gestor/nueva-acta
-          { path: "editar-acta/:id", element: <EditarActa /> }, // /gestor/editar-acta/1
+          { index: true, element: <ActasPageGestorAmbiental /> }, // /gestor-ambiental
+          { path: "nueva-acta", element: <NuevaActaPageGestorAmbiental /> }, // /gestor-ambiental/nueva-acta
+          { path: "editar-acta/:id", element: <EditActaPageGestorAmbiental /> }, // /gestor-ambiental/editar-acta/1
         ],
       },
-      */
 
       // 🟣 Gestor Punto Verde
       {
         path: "gestor-punto-verde",
         element: <LayoutGestor />,
         children: [
-          { index: true, element: <ActasPageGestorPV /> },        // /gestor-punto-verde
-          { path: "nueva-acta", element: <NuevaActaPV /> },       // /gestor-punto-verde/nueva-acta
-          { path: "editar-acta/:id", element: <EditActaPage /> },// /gestor-punto-verde/editar-acta/1
+          { index: true, element: <Navigate to="conciliadas" replace /> }, // Redirige a conciliadas
+          { path: "editar-acta/:id", element: <EditActaPage /> },   // /gestor-punto-verde/editar-acta/1
           { path: "conciliadas", element: <ActasConciliadasGestorPuntoVerde /> },
           { path: "operarios", element: <GestionOperariosPuntoVerde /> },
         ],
@@ -111,5 +115,8 @@ export const router = createBrowserRouter([
   },
 
   // ❌ 404
-  { path: "*", element: <Navigate to="/login" replace /> },
+  { 
+    path: "*", 
+    element: <Navigate to="/login" replace /> 
+  },
 ]);

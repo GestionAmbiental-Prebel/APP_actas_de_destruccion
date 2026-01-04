@@ -11,8 +11,8 @@ import { useActasConciliadas } from "../../hooks/use.ActasConciliadas";
 import { useCatalogos } from "../../hooks/use.CatalogosActas";
 import { useModalEliminar } from "../../hooks/use.ModalEliminar";
 import { useModalConciliar } from "../../hooks/use.ModalConciliar";
-import { exportToExcel } from "../../utils/exportExcel";
-import { validarSoloNumeros, validarMaximoDigitos, calcularPesoTotal } from "../../utils/actaValidations";
+import { exportActasDetalladasToExcel } from "../../utils/exportExcel";
+import { validarSoloNumeros, validarMaximoDigitos } from "../../utils/actaValidations";
 import { ConciliacionExtendida } from "../../services/actasConciliadas.service";
 
 export default function ActasConciliadasGestorPuntoVerde() {
@@ -38,13 +38,15 @@ export default function ActasConciliadasGestorPuntoVerde() {
       "residuos.residuo_nombre",
       "residuos.motivo",
       "conciliador_nombre",
+      "sede_nombre",
+      "clase_movimiento",
     ]);
 
   // Modal de eliminación
   const { actaAEliminar, modalEliminarAbierto, eliminando, abrirModal: abrirModalEliminar, cerrarModal: cerrarModalEliminar, eliminarActa } =
     useModalEliminar(cargarActas);
 
-  // Modal de conciliación (hook personalizado - ver siguiente sección)
+  // Modal de conciliación
   const {
     modalConciliarAbierto,
     actaConciliando,
@@ -73,54 +75,45 @@ export default function ActasConciliadasGestorPuntoVerde() {
     return true;
   });
 
-  // Exportar a Excel
+  // Exportar a Excel - EXACTAMENTE IGUAL QUE EL OTRO COMPONENTE
   const exportarAExcel = () => {
     if (actasFiltradas.length === 0) {
       alert("No hay datos para exportar");
       return;
     }
+    
+    // Verificar que los datos tengan las nuevas propiedades
+    console.log("Datos del primer acta:", actasFiltradas[0]);
+    console.log("¿Tiene sede_nombre?:", actasFiltradas[0]?.sede_nombre);
+    console.log("¿Tiene clase_movimiento?:", actasFiltradas[0]?.clase_movimiento);
+    
+    // Preparar los datos según el formato que espera la función
+    const datosParaExportar = actasFiltradas.map((acta) => ({
+      ...acta,
+      // Asegurar que los campos de fecha estén en formato string
+      fecha_acta: acta.fecha_acta ? new Date(acta.fecha_acta).toISOString().split('T')[0] : "",
+      fecha_conciliacion: acta.fecha_conciliacion ? new Date(acta.fecha_conciliacion).toISOString().split('T')[0] : "",
+      // Añadir propiedades necesarias si no existen
+      residuos: acta.residuos || [],
+      tipo: acta.tipo || "conciliada",
+      // Asegurar que las nuevas propiedades existan
+      sede_nombre: acta.sede_nombre || "Sin sede",
+      clase_movimiento: acta.clase_movimiento || "Sin clase",
+    }));
+    
+    console.log("Datos preparados para exportar (primer registro):", datosParaExportar[0]);
+    
+    // Usar la función detallada que separa residuos
+    exportActasDetalladasToExcel(datosParaExportar, `Actas_Punto_Verde_${new Date().toISOString().split("T")[0]}`);
+  };
 
-    const datosParaExcel = actasFiltradas.map((acta) => {
-      const pesoReportado = acta.residuos.reduce((sum, r) => sum + Number(r.peso_reportado ?? 0), 0);
-      const pesoConciliado = calcularPesoTotal(acta.residuos);
-
-      return {
-        "Número de Acta": acta.numero_acta,
-        Fecha: new Date(acta.fecha_acta).toLocaleDateString("es-CO"),
-        Estado:
-          acta.tipo === "conciliada"
-            ? "Conciliada"
-            : acta.tipo === "pendiente"
-            ? "Pendiente"
-            : acta.tipo === "con_novedad"
-            ? "Con Novedad"
-            : "Sin estado",
-        Subárea: acta.subarea_nombre ?? "Sin subárea",
-        "Centro de Costo": acta.centro_costo_codigo
-          ? `${acta.centro_costo_codigo}${acta.centro_costo_nombre ? ` – ${acta.centro_costo_nombre}` : ""}`
-          : "Sin centro de costo",
-        Consecutivo: acta.consecutivo || "",
-        "Número de Inventario": acta.numero_inventario || "",
-        "Operario (Cédula)": acta.operario_documento || "",
-        "Operario (Nombre)": acta.operario_nombre || "",
-        "Conciliador (Cédula)": acta.conciliador_documento || "",
-        "Conciliador (Nombre)": acta.conciliador_nombre || "",
-        "Peso Reportado (kg)": pesoReportado.toFixed(2),
-        "Peso Conciliado (kg)": pesoConciliado.toFixed(2),
-        "Fecha Conciliación": acta.fecha_conciliacion
-          ? new Date(acta.fecha_conciliacion).toLocaleDateString("es-CO")
-          : "",
-        "Número de Residuos": acta.residuos.length,
-        Novedad: acta.novedad || "",
-      };
-    });
-
-    exportToExcel(datosParaExcel, `Actas_Conciliadas_${new Date().toISOString().split("T")[0]}`);
+  const handleNuevaActa = () => {
+    navigate("/gestor-punto-verde/nueva-acta");
   };
 
   const handleEditarActa = (acta: ConciliacionExtendida) => {
-  navigate(`/gestor-punto-verde/editar-acta/${acta.acta_id}`);
-};
+    navigate(`/gestor-punto-verde/editar-acta/${acta.acta_id}`);
+  };
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -128,11 +121,18 @@ export default function ActasConciliadasGestorPuntoVerde() {
         Actas Conciliadas – Punto Verde
       </h1>
 
+      {/* Botones de acción */}
       <div className="flex justify-end mb-4">
-        <Button variant="success" onClick={exportarAExcel} className="flex items-center gap-2">
-          <span className="text-xl">📊</span>
-          Exportar a Excel
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="success" onClick={exportarAExcel} className="flex items-center gap-2">
+            <span className="text-xl">📊</span>
+            Exportar a Excel
+          </Button>
+          <Button variant="success" onClick={handleNuevaActa} className="flex items-center gap-2">
+            <span className="text-xl">➕</span>
+            Nueva Acta
+          </Button>
+        </div>
       </div>
 
       <ActaTabsFilter filtroTab={filtroTab} setFiltroTab={setFiltroTab} />

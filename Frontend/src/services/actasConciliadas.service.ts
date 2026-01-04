@@ -4,6 +4,9 @@ import {
   obtenerCategoriasResiduos,
   obtenerCentrosCosto,
   obtenerSubAreas,
+  obtenerAreas,
+  obtenerProcedencias,
+  obtenerSedes,
 } from "./catalogo.service";
 import { obtenerOperarios } from "./operarios.service";
 
@@ -48,6 +51,10 @@ export type ConciliacionExtendida = {
   centro_costo_id?: number;
   centro_costo_codigo?: string;
   centro_costo_nombre?: string;
+  
+  // NUEVAS PROPIEDADES PARA EL EXCEL
+  sede_nombre?: string;
+  clase_movimiento?: string;
 };
 
 // ===== FUNCIONES INTERNAS =====
@@ -79,6 +86,9 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
     categorias,
     centrosCosto,
     subAreas,
+    areas,
+    procedencias,
+    sedes,
     operarios,
     novedades,
   ] = await Promise.all([
@@ -89,6 +99,9 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
     obtenerCategoriasResiduos(),
     obtenerCentrosCosto(),
     obtenerSubAreas(),
+    obtenerAreas(),
+    obtenerProcedencias(),
+    obtenerSedes(),
     obtenerOperarios(),
     obtenerNovedadesConciliacion(),
   ]);
@@ -98,6 +111,9 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
   const actasMap = new Map(actas.map((a) => [a.id, a]));
   const centrosMap = new Map(centrosCosto.map((c) => [c.id, c]));
   const subAreasMap = new Map(subAreas.map((s) => [s.id, s]));
+  const areasMap = new Map(areas.map((a) => [a.id, a]));
+  const procedenciasMap = new Map(procedencias.map((p) => [p.id, p]));
+  const sedesMap = new Map(sedes.map((s) => [s.id, s]));
 
   const novedadesMap = new Map<number, any[]>();
   novedades.forEach((n) => {
@@ -146,6 +162,19 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
       // No existe: crear nueva acta con este residuo
       const subarea = subAreasMap.get(acta.subarea_id ?? -1);
       const centroCosto = centrosMap.get(acta.centro_costo_id ?? -1);
+      
+      // OBTENER SEDE (nuevo código)
+      let sedeNombre = "Sin sede";
+      if (subarea) {
+        const area = areasMap.get(subarea.area_id);
+        if (area) {
+          const procedencia = procedenciasMap.get(area.procedencia_id);
+          if (procedencia) {
+            const sede = sedesMap.get(procedencia.sede_id);
+            sedeNombre = sede?.nombre || "Sin sede";
+          }
+        }
+      }
 
       const operario = operarios.find(
         (o) => o.documento === acta.documento_entrega
@@ -191,6 +220,10 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
         centro_costo_id: acta.centro_costo_id,
         centro_costo_codigo: centroCosto?.codigo ?? undefined,
         centro_costo_nombre: centroCosto?.nombre ?? "",
+        
+        // NUEVAS PROPIEDADES
+        sede_nombre: sedeNombre,
+        clase_movimiento: centroCosto?.clase_movimiento?.toString() || "Sin clase",
       });
     }
   });

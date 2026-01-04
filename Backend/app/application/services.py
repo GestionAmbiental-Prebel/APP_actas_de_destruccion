@@ -100,10 +100,14 @@ class ActaService:
         year = datetime.now().year
         nuevo_numero = self.numeracion_repository.increment_and_get(year)
 
-        # Convertirlo a 4 dígitos
-        numero_acta_formateado = f"{nuevo_numero:04d}"
+        # Formato: YYYY-NNNN (ej: 2026-0001)
+        numero_acta_formateado = f"{nuevo_numero:04d}-{year}"
 
         data["numero_acta"] = numero_acta_formateado
+
+        # Crear fecha de acta si no viene
+        if 'fecha_acta' not in data:
+            data['fecha_acta'] = timezone.now()
 
         # Crear entity y guardar
         acta_entity = Acta(**data)
@@ -119,14 +123,18 @@ class ActaService:
         if not acta:
             raise ValueError(f"Acta con ID {acta_id} no encontrada")
         
+        # No permitir cambio de número de acta
+        if 'numero_acta' in data and data['numero_acta'] != acta.numero_acta:
+            # Silenciosamente ignoramos el cambio de número
+            del data['numero_acta']
+        
         # Actualizar la entidad con los nuevos datos
-        # Necesitamos crear una nueva entidad con los datos combinados
         from app.domain.entities import Acta
         
         # Obtener los valores actuales
         updated_acta = Acta(
             id=acta.id,
-            numero_acta=data.get('numero_acta', acta.numero_acta),
+            numero_acta=acta.numero_acta,  # Mantener el número original
             fecha_acta=data.get('fecha_acta', acta.fecha_acta),
             subarea_id=data.get('subarea_id', acta.subarea_id),
             centro_costo_id=data.get('centro_costo_id', acta.centro_costo_id),
@@ -201,7 +209,7 @@ class GeneracionResiduoService:
     def update(self, residuo_id: int, data: dict) -> GeneracionResiduo:
         """
         Actualiza una generación de residuo existente.
-        Soporta actualización parcial (para PATCH).
+        Soporta actualización parcial (para PATCH)
         """
         # Obtener el residuo existente
         residuo = self.repository.get_by_id(residuo_id)

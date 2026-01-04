@@ -380,7 +380,7 @@ export default function ActasConciliadas() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">🚚 Entregado por:</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Entregado por:</p>
                   <p className="text-gray-800 dark:text-gray-200 font-medium">
                     {acta.operario_nombre} ({acta.operario_documento})
                   </p>

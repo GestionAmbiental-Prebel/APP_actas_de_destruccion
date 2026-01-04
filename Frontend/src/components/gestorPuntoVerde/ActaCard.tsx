@@ -1,7 +1,7 @@
 import { ConciliacionExtendida } from "../../services/actasConciliadas.service";
 import TableResiduosActa from "../common/TableResiduosActa";
 import { ActaCardHeader } from "./ActaCardHeader";
-import { ActaInfoSection } from "./ActaInfosection";
+import { ActaInfoSection } from "./ActaInfoSection";
 import { ActaOperarioSection } from "./ActaOperarioSection";
 import { ActaConciliadorSection } from "./ActaConciliadorSection";
 import { ActaNovedadSection } from "./ActaNovedadSection";
