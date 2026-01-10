@@ -20,6 +20,8 @@ export type ResiduoActa = {
   descripcion_motivo_otro?: string;
   peso_reportado: string;
   peso_conciliado?: string;
+  residuo_otro?: string;
+  motivo_otro?: string;
 };
 
 export type ConciliacionExtendida = {
@@ -133,18 +135,33 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
     const acta = actasMap.get(agr.acta_id);
     if (!acta) return;
 
-    // Crear el residuo actual
-    const residuo: ResiduoActa = {
-      acta_generacion_residuo_id: agr.id,
-      residuo_nombre: res?.nombre ?? "Sin nombre",
-      motivo: gen.motivo,
-      descripcion_residuo_otro:
-        res?.nombre === "Otro" ? gen.residuo_otro ?? undefined : undefined,
-      descripcion_motivo_otro:
-        gen.motivo === "Otro" ? gen.motivo_otro ?? undefined : undefined,
-      peso_reportado: agr.peso_reportado?.toString() ?? "0",
-      peso_conciliado: agr.peso_conciliado?.toString() ?? undefined,
-    };
+    // Crear el residuo actual 
+const esResiduoOtro = res?.nombre === "Otro" || res?.nombre === "Otro residuo peligroso";
+const esMotivoOtro = gen.motivo === "Otro" || gen.motivo === "N/A";
+
+const residuoOtro = esResiduoOtro ? (gen.residuo_otro || "") : "";
+const motivoOtro = esMotivoOtro ? (gen.motivo_otro || "") : "";
+
+const residuo: ResiduoActa = {
+  acta_generacion_residuo_id: agr.id,
+  residuo_nombre: res?.nombre ?? "Sin nombre",
+  motivo: gen.motivo,
+  // Estos deben venir del backend
+  residuo_otro: gen.residuo_otro || undefined,
+  motivo_otro: gen.motivo_otro || undefined,
+  // Estos pueden ser iguales o vacíos
+  descripcion_residuo_otro: gen.residuo_otro || undefined,
+  descripcion_motivo_otro: gen.motivo_otro || undefined,
+  peso_reportado: agr.peso_reportado?.toString() ?? "0",
+  peso_conciliado: agr.peso_conciliado?.toString() || undefined,
+};
+
+console.log("Residuo creado para acta conciliada:", {
+  nombre: res?.nombre,
+  motivo: gen.motivo,
+  residuo_otro: gen.residuo_otro,
+  motivo_otro: gen.motivo_otro
+});
 
     // Verificar si ya existe esta acta en el mapa
     if (actasAgrupadas.has(agr.acta_id)) {
@@ -163,7 +180,7 @@ export async function obtenerActasConciliadas(): Promise<ConciliacionExtendida[]
       const subarea = subAreasMap.get(acta.subarea_id ?? -1);
       const centroCosto = centrosMap.get(acta.centro_costo_id ?? -1);
       
-      // OBTENER SEDE (nuevo código)
+      // OBTENER SEDE
       let sedeNombre = "Sin sede";
       if (subarea) {
         const area = areasMap.get(subarea.area_id);

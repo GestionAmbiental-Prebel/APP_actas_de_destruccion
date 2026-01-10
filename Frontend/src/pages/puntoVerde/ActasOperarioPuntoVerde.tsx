@@ -1,3 +1,4 @@
+//ActasOperarioPuntoVerde.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { obtenerActasCompletas } from '../../services/actas.service';
@@ -104,6 +105,37 @@ export default function ActasOperarioPuntoVerde() {
 
   const calcularPesoTotal = (residuos: Residuo[]): number => {
     return residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);
+  };
+
+  // Función para obtener la información completa del residuo (MISMA LÓGICA)
+  const obtenerInfoResiduo = (residuo: Residuo) => {
+    const nombreResiduo = residuo.residuo_nombre?.toLowerCase() || '';
+    const esPeligroso = nombreResiduo.includes('peligroso');
+    const esOtroResiduo = nombreResiduo.includes('otro residuo') && !nombreResiduo.includes('peligroso');
+    const esOtroGenerico = nombreResiduo === 'otro';
+    
+    return {
+      nombreBase: residuo.residuo_nombre,
+      especificacion: residuo.residuo_otro,
+      esPeligroso,
+      esOtroResiduo,
+      esOtroGenerico,
+      tieneEspecificacion: !!residuo.residuo_otro && residuo.residuo_otro.trim() !== ''
+    };
+  };
+
+  // Función para formatear la fecha (MISMA LÓGICA)
+  const formatearFecha = (fechaString: string) => {
+    const fecha = new Date(fechaString);
+    const opciones: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    return fecha.toLocaleDateString('es-CO', opciones);
   };
 
   const actasFiltradas = filtrar();
@@ -237,7 +269,7 @@ export default function ActasOperarioPuntoVerde() {
                   </div>
                 </div>
 
-                {/* RESIDUOS */}
+                {/* RESIDUOS - TABLA CON LA MISMA LÓGICA */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300 flex items-center justify-between">
                     <span>♻️ Residuos Reportados</span>
@@ -251,22 +283,79 @@ export default function ActasOperarioPuntoVerde() {
                       <thead>
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <th className="p-3 border">Residuo</th>
+                          <th className="p-3 border">Detalle</th>
                           <th className="p-3 border">Motivo</th>
                           <th className="p-3 border text-right">Peso (kg)</th>
+                          <th className="p-3 border">Fecha</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {acta.residuos.map((r, i) => (
-                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                            <td className="p-3 border">{r.residuo_nombre}</td>
-                            <td className="p-3 border">
-                              {r.motivo === 'Otro' && r.motivo_otro ? `Otro: ${r.motivo_otro}` : r.motivo}
-                            </td>
-                            <td className="p-3 border text-right font-semibold">
-                              {parseFloat(r.peso_reportado).toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
+                        {acta.residuos.map((r, i) => {
+                          const infoResiduo = obtenerInfoResiduo(r);
+                          
+                          return (
+                            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                              {/* RESIDUO - MISMA LÓGICA */}
+                              <td className="p-3 border align-top">
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {infoResiduo.nombreBase}
+                                </div>
+                                {infoResiduo.esPeligroso && (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                      ⚠️ Peligroso
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* DETALLE - MISMA LÓGICA */}
+                              <td className="p-3 border align-top">
+                                {infoResiduo.tieneEspecificacion ? (
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {infoResiduo.especificacion}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-gray-400 dark:text-gray-500 italic text-sm">
+                                    —
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* MOTIVO - MISMA LÓGICA */}
+                              <td className="p-3 border align-top">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {r.motivo === 'Otro' && r.motivo_otro
+                                      ? 'Otro'
+                                      : r.motivo}
+                                  </span>
+                                  {r.motivo === 'Otro' && r.motivo_otro && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {r.motivo_otro}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* PESO - MISMA LÓGICA */}
+                              <td className="p-3 border text-right align-top">
+                                <div className="font-bold text-lg text-gray-900 dark:text-white">
+                                  {parseFloat(r.peso_reportado).toFixed(2)}
+                                </div>
+                              </td>
+
+                              {/* FECHA - MISMA LÓGICA */}
+                              <td className="p-3 border align-top">
+                                <div className="text-gray-900 dark:text-white font-medium">
+                                  {formatearFecha(r.fecha)}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

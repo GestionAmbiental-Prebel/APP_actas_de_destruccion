@@ -1,9 +1,9 @@
+// ConciliarActa.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { obtenerActasCompletas } from '../../services/actas.service';
 import { apiRequest } from "../../services/api.service";
-import { obtenerOperarios } from '../../services/operarios.service'; // ← Añadir
-
+import { obtenerOperarios } from '../../services/operarios.service';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import SectionTitle from '../../components/common/SectionTitle';
@@ -19,10 +19,9 @@ type ResiduoConciliacion = {
   peso_conciliado: string;
   tiene_novedad: boolean;
   descripcion_novedad: string;
-  tipo_novedad?: string; // ← Nuevo campo para tipo de novedad
+  tipo_novedad?: string;
 };
 
-// Tipos de novedad comunes
 const TIPOS_NOVEDAD = [
   { value: 'diferencia_peso', label: 'Diferencia de peso' },
   { value: 'diferencia_material', label: 'Diferencia nombre material' },
@@ -36,42 +35,33 @@ export default function ConciliarActa() {
   const [acta, setActa] = useState<any>(null);
   const [residuos, setResiduos] = useState<ResiduoConciliacion[]>([]);
   const [documentoConciliador, setDocumentoConciliador] = useState('');
-  const [nombreConciliador, setNombreConciliador] = useState(''); // ← Nuevo estado
-  
+  const [nombreConciliador, setNombreConciliador] = useState('');
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [mostrarExito, setMostrarExito] = useState(false);
-  
-  // Estado para operarios (para autocompletar nombre)
   const [operariosMap, setOperariosMap] = useState<Record<string, string>>({});
   const [cargandoOperarios, setCargandoOperarios] = useState(false);
 
   useEffect(() => {
-    cargarOperarios(); // Cargar operarios al montar
+    cargarOperarios();
     cargarActa();
   }, [id]);
 
-  // Cargar lista de operarios para autocompletar
   const cargarOperarios = async () => {
     try {
       setCargandoOperarios(true);
       const data = await obtenerOperarios();
-      
       const map: Record<string, string> = {};
       data.forEach((op: any) => {
         const documento = op.documento || '';
         if (documento) {
-          const nombre = op.nombre || '';
-          const apellido = op.apellido || '';
-          const nombreCompleto = `${nombre} ${apellido}`.trim();
+          const nombreCompleto = `${op.nombre || ''} ${op.apellido || ''}`.trim();
           if (nombreCompleto) {
             map[documento] = nombreCompleto;
           }
         }
       });
-      
       setOperariosMap(map);
-      console.log(`✅ Mapa de operarios creado con ${Object.keys(map).length} registros`);
     } catch (err) {
       console.error('Error cargando operarios:', err);
     } finally {
@@ -79,7 +69,6 @@ export default function ConciliarActa() {
     }
   };
 
-  // Buscar nombre cuando cambie el documento
   useEffect(() => {
     if (documentoConciliador && operariosMap[documentoConciliador]) {
       setNombreConciliador(operariosMap[documentoConciliador]);
@@ -87,6 +76,73 @@ export default function ConciliarActa() {
       setNombreConciliador('');
     }
   }, [documentoConciliador, operariosMap]);
+
+  // Función mejorada para obtener información del residuo
+  const obtenerInfoResiduo = (residuo: ResiduoConciliacion) => {
+    const nombreResiduo = residuo.residuo_nombre?.toLowerCase() || '';
+    const esPeligroso = nombreResiduo.includes('peligroso');
+    const esOtroResiduo = nombreResiduo.includes('otro residuo') && !esPeligroso;
+    const esOtroGenerico = nombreResiduo === 'otro';
+    const esMEConMarca = nombreResiduo.includes('me con marca') || nombreResiduo.includes('me - con marca');
+    const esMESinMarca = nombreResiduo.includes('me sin marca') || nombreResiduo.includes('me - sin marca');
+    
+    // Determinar el tipo específico de residuo
+    let tipoEspecifico = '';
+    if (esPeligroso) {
+      tipoEspecifico = 'Peligroso';
+    } else if (esMEConMarca) {
+      tipoEspecifico = 'ME - Con marca';
+    } else if (esMESinMarca) {
+      tipoEspecifico = 'ME - Sin marca';
+    } else if (esOtroResiduo) {
+      tipoEspecifico = 'Otro residuo';
+    } else if (esOtroGenerico) {
+      tipoEspecifico = 'Otro';
+    }
+    
+    return {
+      nombreBase: residuo.residuo_nombre,
+      especificacion: residuo.residuo_otro,
+      esPeligroso,
+      esOtroResiduo,
+      esOtroGenerico,
+      esMEConMarca,
+      esMESinMarca,
+      tipoEspecifico,
+      tieneEspecificacion: !!residuo.residuo_otro && residuo.residuo_otro.trim() !== '',
+      categoria: residuo.categoria_nombre
+    };
+  };
+
+  // Función para mostrar el nombre completo del residuo
+  const obtenerNombreResiduoCompleto = (residuo: ResiduoConciliacion) => {
+    const info = obtenerInfoResiduo(residuo);
+    
+    // Si tiene especificación, mostrar el tipo específico como subtítulo
+    if (info.tieneEspecificacion) {
+      return `${info.nombreBase}`;
+    }
+    
+    // Para residuos normales
+    return info.nombreBase;
+  };
+
+  // Función para mostrar el detalle del residuo
+  const obtenerDetalleResiduo = (residuo: ResiduoConciliacion) => {
+    const info = obtenerInfoResiduo(residuo);
+    
+    if (info.tieneEspecificacion) {
+      return info.especificacion;
+    }
+    
+    return null;
+  };
+
+  // Función para mostrar el tipo específico del residuo
+  const obtenerTipoResiduo = (residuo: ResiduoConciliacion) => {
+    const info = obtenerInfoResiduo(residuo);
+    return info.tipoEspecifico;
+  };
 
   const cargarActa = async () => {
     try {
@@ -102,13 +158,12 @@ export default function ConciliarActa() {
 
       setActa(actaEncontrada);
 
-      console.log("=== RESIDUOS DEL BACKEND ===", actaEncontrada.residuos);
       const residuosIniciales = actaEncontrada.residuos.map((r: any) => ({
         ...r,
         peso_conciliado: r.peso_reportado,
         tiene_novedad: false,
         descripcion_novedad: '',
-        tipo_novedad: '', // ← Inicializar tipo de novedad
+        tipo_novedad: '',
         acta_generacion_residuo_id: r.acta_generacion_residuo_id,
       }));
 
@@ -126,12 +181,10 @@ export default function ConciliarActa() {
     const nuevosResiduos = [...residuos];
     nuevosResiduos[index] = { ...nuevosResiduos[index], [field]: value };
     
-    // Si el tipo de novedad es "otro", asegurarse de limpiar descripción si ya no es "otro"
     if (field === 'tipo_novedad' && value !== 'otro') {
       nuevosResiduos[index].descripcion_novedad = '';
     }
     
-    // Si se desmarca la novedad, limpiar campos
     if (field === 'tiene_novedad' && value === false) {
       nuevosResiduos[index].tipo_novedad = '';
       nuevosResiduos[index].descripcion_novedad = '';
@@ -140,9 +193,7 @@ export default function ConciliarActa() {
     setResiduos(nuevosResiduos);
   };
 
-  // Manejar cambio de documento con validación
   const handleDocumentoChange = (value: string) => {
-    // Solo permitir números
     const soloNumeros = value.replace(/[^0-9]/g, '');
     setDocumentoConciliador(soloNumeros);
   };
@@ -162,16 +213,10 @@ export default function ConciliarActa() {
       return;
     }
 
-    // Validar residuos con novedad
     const residuosConNovedadSinCompletar = residuos.filter(r => {
       if (!r.tiene_novedad) return false;
-      
-      // Si tiene novedad, debe tener tipo de novedad
       if (!r.tipo_novedad) return true;
-      
-      // Si el tipo es "otro", debe tener descripción
       if (r.tipo_novedad === 'otro' && !r.descripcion_novedad.trim()) return true;
-      
       return false;
     });
 
@@ -183,21 +228,9 @@ export default function ConciliarActa() {
     try {
       setEnviando(true);
 
-      // Construcción del payload con tipo de novedad
       const payload = {
         documento_recepcion: documentoConciliador,
-        residuos: residuos.map((r, index) => {
-          console.log(`⌗ DEBUG RESIDUO ${index}:`);
-          console.log(" - ID enviado:", r.acta_generacion_residuo_id);
-          console.log(" - Peso conciliado:", r.peso_conciliado);
-          console.log(" - Tipo novedad:", r.tipo_novedad);
-          console.log(" - Descripción novedad:", r.descripcion_novedad);
-
-          if (!r.acta_generacion_residuo_id) {
-            console.warn(`⚠️ RESIDUO SIN ID EN POSICIÓN ${index}`);
-          }
-
-          // Construir descripción de novedad combinada
+        residuos: residuos.map((r) => {
           let descripcionCompleta = '';
           if (r.tiene_novedad && r.tipo_novedad) {
             const tipo = TIPOS_NOVEDAD.find(t => t.value === r.tipo_novedad)?.label || r.tipo_novedad;
@@ -218,10 +251,6 @@ export default function ConciliarActa() {
         }),
       };
 
-      console.log("=== PAYLOAD FINAL ===");
-      console.log(JSON.stringify(payload, null, 2));
-
-      // Enviar al backend
       await apiRequest(`/conciliacion/${id}/conciliar/`, {
         method: "POST",
         body: payload,
@@ -270,7 +299,6 @@ export default function ConciliarActa() {
         Conciliar Acta
       </h1>
 
-      {/* Modal de éxito */}
       {mostrarExito && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-md">
@@ -293,7 +321,7 @@ export default function ConciliarActa() {
         <div className="bg-skyBlue/10 dark:bg-gray-800 p-6 rounded-lg">
           <SectionTitle>Información del Acta</SectionTitle>
           
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
               <p className="text-gray-500 dark:text-gray-400">N° Acta</p>
               <p className="font-bold text-lg">{acta.numero_acta}</p>
@@ -312,6 +340,7 @@ export default function ConciliarActa() {
               <p className="text-gray-500 dark:text-gray-400">Cédula</p>
               <p className="font-semibold">{acta.operario_documento}</p>
             </div>
+            
             {acta.consecutivo && (
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Consecutivo</p>
@@ -321,7 +350,7 @@ export default function ConciliarActa() {
 
             {acta.numero_inventario && (
               <div>
-                <p className="text-gray-500 dark:text-gray-400">Número de Inventario</p>
+                <p className="text-gray-500 dark:text-gray-400">N° Inventario</p>
                 <p className="font-semibold">{acta.numero_inventario}</p>
               </div>
             )}
@@ -330,6 +359,13 @@ export default function ConciliarActa() {
               <div>
                 <p className="text-gray-500 dark:text-gray-400">Subárea</p>
                 <p className="font-semibold">{acta.subarea}</p>
+              </div>
+            )}
+
+            {acta.sede && (
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Sede</p>
+                <p className="font-semibold">{acta.sede}</p>
               </div>
             )}
 
@@ -367,7 +403,7 @@ export default function ConciliarActa() {
           )}
         </div>
 
-        {/* Documento del Conciliador - MEJORADO */}
+        {/* Documento del Conciliador */}
         <div>
           <SectionTitle>Datos del Conciliador</SectionTitle>
           <div className="max-w-md space-y-4">
@@ -382,7 +418,6 @@ export default function ConciliarActa() {
               placeholder="Ingrese su cédula"
             />
             
-            {/* Mostrar nombre autocompletado */}
             {nombreConciliador && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
                 <p className="text-sm font-medium text-green-800 dark:text-green-300">
@@ -404,127 +439,166 @@ export default function ConciliarActa() {
           </div>
         </div>
 
-        {/* Residuos a Conciliar - MEJORADO */}
+        {/* Residuos a Conciliar - TABLA MEJORADA */}
         <div>
           <SectionTitle>Conciliación de Residuos</SectionTitle>
 
           <div className="space-y-4">
-            {residuos.map((residuo, index) => (
-              <div 
-                key={index} 
-                className="border border-gray-300 dark:border-gray-600 p-4 rounded-lg bg-white dark:bg-gray-800"
-              >
-                <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">
-                      {residuo.residuo_nombre === 'Otro' && residuo.residuo_otro
-                        ? `Otro: ${residuo.residuo_otro}`
-                        : residuo.residuo_nombre}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {residuo.categoria_nombre} • {residuo.motivo}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Peso reportado</p>
-                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      {parseFloat(residuo.peso_reportado).toFixed(2)} kg
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Input
-                      label="Peso Conciliado (kg)"
-                      value={residuo.peso_conciliado}
-                      onChange={(value) => handleResiduoChange(index, 'peso_conciliado', value)}
-                      type="number"
-                      required
-                      placeholder="0.00"
-                    />
-                  </div>
-
-                  <div className="flex items-center pt-6">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={residuo.tiene_novedad}
-                        onChange={(e) => handleResiduoChange(index, 'tiene_novedad', e.target.checked)}
-                        className="w-5 h-5 text-skyBlue border-gray-300 rounded focus:ring-skyBlue"
-                      />
-                      <span className="ml-2 font-medium text-gray-700 dark:text-gray-300">
-                        ¿Conciliado con novedad?
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* SECCIÓN DE NOVEDAD MEJORADA */}
-                  {residuo.tiene_novedad && (
-                    <div className="md:col-span-2 space-y-3">
-                      <div>
-                        <label className="block font-medium mb-1">
-                          Tipo de novedad *
-                        </label>
-                        <select
-                          value={residuo.tipo_novedad || ''}
-                          onChange={(e) => handleResiduoChange(index, 'tipo_novedad', e.target.value)}
-                          required={residuo.tiene_novedad}
-                          className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                                   bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
-                                   focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
-                        >
-                          <option value="">Seleccione un tipo de novedad</option>
-                          {TIPOS_NOVEDAD.map((tipo) => (
-                            <option key={tipo.value} value={tipo.value}>
-                              {tipo.label}
-                            </option>
-                          ))}
-                        </select>
+            {residuos.map((residuo, index) => {
+              const detalle = obtenerDetalleResiduo(residuo);
+              const tipoResiduo = obtenerTipoResiduo(residuo);
+              const infoResiduo = obtenerInfoResiduo(residuo);
+              
+              return (
+                <div 
+                  key={index} 
+                  className="border border-gray-300 dark:border-gray-600 p-4 rounded-lg bg-white dark:bg-gray-800"
+                >
+                  <div className="flex justify-between items-start mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex-1">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg text-gray-800 dark:text-gray-200">
+                            {obtenerNombreResiduoCompleto(residuo)}
+                          </h3>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1 mt-1">
+                            {/* Tipo específico */}
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                                {residuo.categoria_nombre}
+                              </span>
+                              {tipoResiduo && (
+                                <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                                  {tipoResiduo}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Especificación si existe */}
+                            {detalle && (
+                              <div className="text-gray-700 dark:text-gray-300 font-medium">
+                                Especificación: {detalle}
+                              </div>
+                            )}
+                            
+                            {/* Motivo */}
+                            <div>
+                              Motivo: {residuo.motivo}
+                              {residuo.motivo === 'Otro' && residuo.motivo_otro && ` - ${residuo.motivo_otro}`}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-
-                      {/* Campo de descripción adicional */}
-                      {(residuo.tipo_novedad === 'otro' || 
-                        (residuo.tipo_novedad && residuo.tipo_novedad !== '')) && (
-                        <div>
-                          <label className="block font-medium mb-1">
-                            {residuo.tipo_novedad === 'otro' 
-                              ? 'Descripción de la novedad *' 
-                              : 'Detalles adicionales (opcional)'}
-                          </label>
-                          <textarea
-                            value={residuo.descripcion_novedad}
-                            onChange={(e) => handleResiduoChange(index, 'descripcion_novedad', e.target.value)}
-                            required={residuo.tipo_novedad === 'otro'}
-                            rows={residuo.tipo_novedad === 'otro' ? 3 : 2}
-                            maxLength={200}
-                            placeholder={
-                              residuo.tipo_novedad === 'otro'
-                                ? "Describa la novedad encontrada..."
-                                : "Agregue detalles adicionales..."
-                            }
-                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                                     bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
-                                     focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
-                          />
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
-                            {residuo.descripcion_novedad.length}/200
-                          </p>
+                      
+                      {/* Badge si es peligroso */}
+                      {infoResiduo.esPeligroso && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                            ⚠️ Residuo peligroso
+                          </span>
                         </div>
                       )}
                     </div>
+                    <div className="text-right min-w-[120px]">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Peso reportado</p>
+                      <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        {parseFloat(residuo.peso_reportado).toFixed(2)} kg
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        label="Peso Conciliado (kg)"
+                        value={residuo.peso_conciliado}
+                        onChange={(value) => handleResiduoChange(index, 'peso_conciliado', value)}
+                        type="number"
+                        required
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div className="flex items-center pt-6">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={residuo.tiene_novedad}
+                          onChange={(e) => handleResiduoChange(index, 'tiene_novedad', e.target.checked)}
+                          className="w-5 h-5 text-skyBlue border-gray-300 rounded focus:ring-skyBlue"
+                        />
+                        <span className="ml-2 font-medium text-gray-700 dark:text-gray-300">
+                          ¿Conciliado con novedad?
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* SECCIÓN DE NOVEDAD */}
+                    {residuo.tiene_novedad && (
+                      <div className="md:col-span-2 space-y-3">
+                        <div>
+                          <label className="block font-medium mb-1">
+                            Tipo de novedad *
+                          </label>
+                          <select
+                            value={residuo.tipo_novedad || ''}
+                            onChange={(e) => handleResiduoChange(index, 'tipo_novedad', e.target.value)}
+                            required={residuo.tiene_novedad}
+                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                     bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
+                                     focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
+                          >
+                            <option value="">Seleccione un tipo de novedad</option>
+                            {TIPOS_NOVEDAD.map((tipo) => (
+                              <option key={tipo.value} value={tipo.value}>
+                                {tipo.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {(residuo.tipo_novedad === 'otro' || 
+                          (residuo.tipo_novedad && residuo.tipo_novedad !== '')) && (
+                          <div>
+                            <label className="block font-medium mb-1">
+                              {residuo.tipo_novedad === 'otro' 
+                                ? 'Descripción de la novedad *' 
+                                : 'Detalles adicionales (opcional)'}
+                            </label>
+                            <textarea
+                              value={residuo.descripcion_novedad}
+                              onChange={(e) => handleResiduoChange(index, 'descripcion_novedad', e.target.value)}
+                              required={residuo.tipo_novedad === 'otro'}
+                              rows={residuo.tipo_novedad === 'otro' ? 3 : 2}
+                              maxLength={200}
+                              placeholder={
+                                residuo.tipo_novedad === 'otro'
+                                  ? "Describa la novedad encontrada..."
+                                  : "Agregue detalles adicionales..."
+                              }
+                              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                       bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
+                                       focus:ring-2 focus:ring-skyBlue dark:focus:ring-lightBlue focus:outline-none"
+                            />
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                              {residuo.descripcion_novedad.length}/200
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {parseFloat(residuo.peso_conciliado) !== parseFloat(residuo.peso_reportado) && (
+                    <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-sm">
+                      <p className="text-yellow-800 dark:text-yellow-200">
+                        Diferencia: {(parseFloat(residuo.peso_conciliado) - parseFloat(residuo.peso_reportado)).toFixed(2)} kg
+                      </p>
+                    </div>
                   )}
                 </div>
-
-                {parseFloat(residuo.peso_conciliado) !== parseFloat(residuo.peso_reportado) && (
-                  <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-sm">
-                    <p className="text-yellow-800 dark:text-yellow-200">
-                      Diferencia: {(parseFloat(residuo.peso_conciliado) - parseFloat(residuo.peso_reportado)).toFixed(2)} kg
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

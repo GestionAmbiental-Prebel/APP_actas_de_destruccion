@@ -11,6 +11,8 @@ export type ResiduoEditable = {
   residuo_otro?: string | null;
   categoria_id?: number | null;
   generacion_residuo_id?: number;
+  novedad_residuo?: string | null;
+
 };
 
 export type ActaEditable = {

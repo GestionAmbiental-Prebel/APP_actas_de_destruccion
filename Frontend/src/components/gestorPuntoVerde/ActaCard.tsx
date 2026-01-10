@@ -26,6 +26,46 @@ export const ActaCard = ({ acta, onEditar, onEliminar, onResolverNovedad }: Acta
   const estilos = getEstilosPorEstado(acta.tipo);
   const hoverEstilos = getHoverPorEstado(acta.tipo);
 
+  // DEPURACIÓN: Agrega esto para verificar los datos
+  console.log("ActaCard recibida:", acta);
+  console.log("Residuos en ActaCard:", acta.residuos);
+  
+  // Verificar cada residuo individualmente
+  acta.residuos.forEach((r, i) => {
+    console.log(`Residuo ${i}:`, {
+      nombre: r.residuo_nombre,
+      residuo_otro: r.residuo_otro,
+      descripcion_residuo_otro: r.descripcion_residuo_otro,
+      motivo: r.motivo,
+      motivo_otro: r.motivo_otro,
+      descripcion_motivo_otro: r.descripcion_motivo_otro
+    });
+  });
+
+  // Preparar residuos para TableResiduosActa - FORMATO CORREGIDO
+  const residuosParaTabla = acta.residuos.map((r) => {
+    // CORRECCIÓN: Usar residuo_otro directamente si está disponible
+    const residuoOtro = r.residuo_otro || r.descripcion_residuo_otro || "";
+    const motivoOtro = r.motivo_otro || r.descripcion_motivo_otro || "";
+    
+    const residuoItem = {
+      residuo_nombre: r.residuo_nombre || "",
+      motivo: r.motivo || "",
+      // Para compatibilidad con el TableResiduosActa actualizado
+      descripcion_residuo_otro: residuoOtro,
+      descripcion_motivo_otro: motivoOtro,
+      peso_reportado: r.peso_reportado || "0",
+      peso_conciliado: r.peso_conciliado || null,
+      residuo_otro: residuoOtro,  // MANDATORIO: TableResiduosActa busca aquí primero
+      motivo_otro: motivoOtro     // NUEVO: necesario para el motivo
+    };
+    
+    console.log("Residuo mapeado para tabla:", residuoItem);
+    return residuoItem;
+  });
+
+  console.log("Todos los residuos para tabla:", residuosParaTabla);
+
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition border-l-4 ${estilos.borderColor} ${hoverEstilos}`}
@@ -40,21 +80,11 @@ export const ActaCard = ({ acta, onEditar, onEliminar, onResolverNovedad }: Acta
       <ActaConciliadorSection acta={acta} />
       <ActaNovedadSection acta={acta} onResolverNovedad={onResolverNovedad} />
 
-      <h3 className="text-lg font-bold mb-4">
+      <h3 className="text-lg font-bold mb-4 mt-6">
         ♻️ Residuos {acta.tipo === "conciliada" ? "conciliados" : ""}
       </h3>
 
-      <TableResiduosActa
-        residuos={acta.residuos.map((r) => ({
-          ...r,
-          residuo_nombre:
-            r.residuo_nombre === "Otro"
-              ? `Otro – ${r.descripcion_residuo_otro ?? ""}`
-              : r.residuo_nombre,
-          motivo:
-            r.motivo === "Otro" ? `Otro – ${r.descripcion_motivo_otro ?? ""}` : r.motivo,
-        }))}
-      />
+      <TableResiduosActa residuos={residuosParaTabla} />
 
       {(acta.tipo === "conciliada" || acta.tipo === "pendiente") && (
         <ActaActionButtons onEditar={onEditar} onEliminar={onEliminar} />

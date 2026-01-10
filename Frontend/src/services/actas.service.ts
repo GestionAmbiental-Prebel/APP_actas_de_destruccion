@@ -149,7 +149,7 @@ async function obtenerActas() {
   return apiRequest<any[]>('/actas/', { method: 'GET' });
 }
 
-// ===== 🔥 FUNCIÓN CORREGIDA - Ahora incluye información de conciliación y novedades =====
+// ===== 🔥 FUNCIÓN CORREGIDA - Incluye campos de novedad completos =====
 async function obtenerActasCompletas() {
   const [
     actas,
@@ -158,7 +158,7 @@ async function obtenerActasCompletas() {
     categorias,
     subareas,
     centrosCosto,
-    novedades // 🆕 Traemos las novedades
+    novedades
   ] = await Promise.all([
     obtenerActas(),
     obtenerOperarios(),
@@ -166,13 +166,13 @@ async function obtenerActasCompletas() {
     obtenerCategoriasResiduos(),
     obtenerSubAreas(),        
     obtenerCentrosCosto(),
-    apiRequest<any[]>('/novedad-conciliacion/', { method: 'GET' }) // 🆕 Endpoint de novedades
+    apiRequest<any[]>('/novedad-conciliacion/', { method: 'GET' })
   ]);
 
   const actasGeneracionResiduos = await apiRequest<any[]>('/actas-generacion-residuo/');
   const generaciones = await apiRequest<any[]>('/generacion-residuo/');
 
-  // 🆕 Crear mapa de novedades por acta_generacion_residuo_id
+  // Crear mapa de novedades por acta_generacion_residuo_id
   const novedadesMap = new Map<number, any[]>();
   novedades.forEach((n) => {
     const relId = n.acta_generacion_residuo_id;
@@ -186,7 +186,7 @@ async function obtenerActasCompletas() {
     const centroCosto = centrosCosto.find((cc: any) => cc.id === acta.centro_costo_id);
     const relaciones = actasGeneracionResiduos.filter((rel: any) => rel.acta_id === acta.id);
 
-    // 🆕 Variables para calcular estado de conciliación
+    // Variables para calcular estado de conciliación
     let tieneConciliacion = false;
     let tieneNovedad = false;
     let todasConciliadas = true;
@@ -199,13 +199,28 @@ async function obtenerActasCompletas() {
         const resEsp = residuosEspecificos.find((r: any) => r.id === gen.residuo_id);
         const cat = categorias.find((c: any) => c.id === resEsp?.categoria_id);
 
-        // 🆕 Verificar si este residuo tiene novedad
+        // 🆕 EXTRAER INFORMACIÓN DE NOVEDAD
         const novedadResiduo = novedadesMap.get(rel.id)?.[0];
-        if (novedadResiduo) {
-          tieneNovedad = true;
+        let tieneNovedadResiduo = false;
+        let descripcionNovedad = '';
+        let tipoNovedad = '';
+
+        if (novedadResiduo && novedadResiduo.descripcion) {
+          tieneNovedadResiduo = true;
+          tieneNovedad = true; // Para el acta
+          descripcionNovedad = novedadResiduo.descripcion;
+
+          // 🔥 EXTRAER TIPO DE NOVEDAD DE LA DESCRIPCIÓN
+          if (descripcionNovedad.startsWith('Diferencia de peso')) {
+            tipoNovedad = 'diferencia_peso';
+          } else if (descripcionNovedad.startsWith('Diferencia nombre material')) {
+            tipoNovedad = 'diferencia_material';
+          } else if (descripcionNovedad.startsWith('Otro')) {
+            tipoNovedad = 'otro';
+          }
         }
 
-        // 🆕 Verificar estado de conciliación
+        // Verificar estado de conciliación
         if (rel.peso_conciliado != null) {
           tieneConciliacion = true;
         } else {
@@ -217,18 +232,30 @@ async function obtenerActasCompletas() {
           residuo_id: gen.residuo_id,
           residuo_nombre: resEsp?.nombre ?? "Sin nombre",
           categoria_nombre: cat?.nombre ?? "Sin categoría",
+          categoria_id: cat?.id ?? null, // 🆕 Agregado para el modal
           motivo: gen.motivo,
           motivo_otro: gen.motivo_otro ?? null,
-          residuo_otro: gen.residuo_otro ?? null, // 🆕 Agregado
+          residuo_otro: gen.residuo_otro ?? null,
           peso_reportado: rel.peso_reportado,
-          peso_conciliado: rel.peso_conciliado ?? null, // 🆕 Incluir peso conciliado
+          peso_conciliado: rel.peso_conciliado ?? rel.peso_reportado, // 🆕 Inicializar con reportado
           fecha: gen.fecha,
-          novedad: novedadResiduo?.descripcion ?? null, // 🆕 Novedad del residuo
+          
+          // 🆕🆕🆕 CAMPOS CRÍTICOS PARA EL MODAL
+          tiene_novedad: tieneNovedadResiduo,
+          descripcion_novedad: descripcionNovedad,
+          tipo_novedad: tipoNovedad,
+          
+          // 🆕 Campos adicionales para edición
+          descripcion_residuo_otro: gen.residuo_otro ?? '',
+          descripcion_motivo_otro: gen.motivo_otro ?? '',
+          
+          // Campo legacy para compatibilidad
+          novedad: novedadResiduo?.descripcion ?? null,
         };
       })
       .filter((r: any) => r !== null);
 
-    // 🆕 Determinar estado del acta
+    // Determinar estado del acta
     let estadoConciliacion: 'sin_conciliar' | 'conciliada' | 'con_novedad' | 'parcial' = 'sin_conciliar';
     
     if (tieneNovedad) {
@@ -248,18 +275,21 @@ async function obtenerActasCompletas() {
 
       subarea: subarea?.nombre ?? "Sin subárea",
       subarea_id: acta.subarea_id,
+      subarea_nombre: subarea?.nombre ?? "Sin subárea", // 🆕 Para el modal
       
       centro_costo: centroCosto?.nombre ?? "Sin centro de costo",
       centro_costo_codigo: centroCosto?.codigo ?? null,
       centro_costo_id: acta.centro_costo_id,
+      centro_costo_nombre: centroCosto?.nombre ?? "Sin centro de costo", // 🆕 Para el modal
 
       documento_recepcion: acta.documento_recepcion,
+      conciliador_documento: acta.documento_recepcion, // 🆕 Para el modal
       consecutivo: acta.consecutivo ?? null,
       numero_inventario: acta.numero_inventario ?? null,
 
       residuos,
       
-      // 🆕 Información de conciliación
+      // Información de conciliación
       estado_conciliacion: estadoConciliacion,
       tiene_novedad: tieneNovedad,
       tiene_conciliacion: tieneConciliacion,
@@ -268,15 +298,24 @@ async function obtenerActasCompletas() {
 }
 
 async function obtenerActasConciliadas() {
-  const [actas, operarios, residuosEspecificos, categorias] = await Promise.all([
+  const [actas, operarios, residuosEspecificos, categorias, novedades] = await Promise.all([
     obtenerActas(),
     obtenerOperarios(),
     obtenerResiduosEspecificos(),
     obtenerCategoriasResiduos(),
+    apiRequest<any[]>('/novedad-conciliacion/', { method: 'GET' }) // 🆕 Agregado
   ]);
 
   const actasGeneracionResiduos = await apiRequest<any[]>('/actas-generacion-residuo/');
   const generaciones = await apiRequest<any[]>('/generacion-residuo/');
+
+  // 🆕 Crear mapa de novedades
+  const novedadesMap = new Map<number, any[]>();
+  novedades.forEach((n) => {
+    const relId = n.acta_generacion_residuo_id;
+    if (!novedadesMap.has(relId)) novedadesMap.set(relId, []);
+    novedadesMap.get(relId)?.push(n);
+  });
 
   return actas
     .map((acta: any) => {
@@ -290,16 +329,47 @@ async function obtenerActasConciliadas() {
         const resEsp = residuosEspecificos.find(r => r.id === gen.residuo_id);
         const cat = categorias.find(c => c.id === resEsp?.categoria_id);
 
+        // 🆕 EXTRAER INFORMACIÓN DE NOVEDAD
+        const novedadResiduo = novedadesMap.get(rel.id)?.[0];
+        let tieneNovedadResiduo = false;
+        let descripcionNovedad = '';
+        let tipoNovedad = '';
+
+        if (novedadResiduo && novedadResiduo.descripcion) {
+          tieneNovedadResiduo = true;
+          descripcionNovedad = novedadResiduo.descripcion;
+
+          // Extraer tipo de novedad
+          if (descripcionNovedad.startsWith('Diferencia de peso')) {
+            tipoNovedad = 'diferencia_peso';
+          } else if (descripcionNovedad.startsWith('Diferencia nombre material')) {
+            tipoNovedad = 'diferencia_material';
+          } else if (descripcionNovedad.startsWith('Otro')) {
+            tipoNovedad = 'otro';
+          }
+        }
+
         return {
           acta_generacion_residuo_id: rel.id,
           residuo_id: gen.residuo_id,
           residuo_nombre: resEsp?.nombre ?? 'Sin nombre',
           categoria_nombre: cat?.nombre ?? 'Sin categoría',
+          categoria_id: cat?.id ?? null, // 🆕
           motivo: gen.motivo,
           motivo_otro: gen.motivo_otro ?? null,
+          residuo_otro: gen.residuo_otro ?? null, // 🆕
           peso_reportado: rel.peso_reportado,
           peso_conciliado: rel.peso_conciliado ?? null,
           fecha: gen.fecha,
+          
+          // 🆕 Campos de novedad
+          tiene_novedad: tieneNovedadResiduo,
+          descripcion_novedad: descripcionNovedad,
+          tipo_novedad: tipoNovedad,
+          
+          // 🆕 Campos adicionales
+          descripcion_residuo_otro: gen.residuo_otro ?? '',
+          descripcion_motivo_otro: gen.motivo_otro ?? '',
         };
       }).filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -316,6 +386,9 @@ async function obtenerActasConciliadas() {
           residuos,
           peso_total_reportado,
           peso_total_conciliado,
+          
+          // 🆕 Información de novedades
+          tiene_novedad: residuos.some(r => r.tiene_novedad),
         };
       }
 

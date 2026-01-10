@@ -9,11 +9,12 @@ import { sortByDateDesc } from "../../utils/sortByDate";
 
 type ResiduoConciliado = {
   residuo_nombre: string;
+  residuo_otro?: string | null;
+  descripcion_residuo_otro?: string;
   categoria_nombre: string;
   motivo: string;
   motivo_otro?: string | null;
   descripcion_motivo_otro?: string;
-  descripcion_residuo_otro?: string;
   peso_reportado: string | number;
   peso_conciliado: string | number;
   descripcion_novedad?: string;
@@ -49,6 +50,7 @@ type ActaConciliada = {
 export default function ActasConciliadas() {
   const location = useLocation();
   const [actas, setActas] = useState<ActaConciliada[]>([]);
+  const [actasFiltradas, setActasFiltradas] = useState<ActaConciliada[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,8 +62,9 @@ export default function ActasConciliadas() {
     busqueda, setBusqueda, 
     fechaInicio, setFechaInicio, 
     fechaFin, setFechaFin, 
-    filtrar, limpiarFiltros 
-  } = useFiltroActas(actas, [
+    filtrar: filtrarOriginal, 
+    limpiarFiltros 
+  } = useFiltroActas(actasFiltradas, [
     "numero_acta",
     "operario_nombre",
     "operario_documento",
@@ -71,6 +74,21 @@ export default function ActasConciliadas() {
     "consecutivo",
     "subarea_nombre"
   ]);
+
+  // Filtrar solo actas conciliadas
+  const filtrar = () => {
+    // Primero aplicamos el filtro de búsqueda sobre las actas ya filtradas (solo conciliadas)
+    const resultado = filtrarOriginal();
+    
+    // Aseguramos que todas las actas tengan fecha_conciliacion
+    return resultado.filter(acta => {
+      const estaConciliada = acta.fecha_conciliacion && acta.fecha_conciliacion.trim() !== '';
+      const tienePesoConciliado = acta.peso_total_conciliado > 0;
+      const tieneConciliador = acta.conciliador_nombre || acta.conciliador_documento;
+      
+      return estaConciliada && tienePesoConciliado && tieneConciliador;
+    });
+  };
 
   useEffect(() => {
     console.log('🔄 ActasConciliadas - Montando/Actualizando');
@@ -166,6 +184,7 @@ export default function ActasConciliadas() {
       if (!data || data.length === 0) {
         console.log('ℹ️ No hay actas conciliadas');
         setActas([]);
+        setActasFiltradas([]);
         return;
       }
 
@@ -183,6 +202,10 @@ export default function ActasConciliadas() {
           ...r,
           peso_reportado: Number(r.peso_reportado || 0),
           peso_conciliado: Number(r.peso_conciliado || 0),
+          residuo_otro: r.residuo_otro || r.descripcion_residuo_otro || null,
+          descripcion_residuo_otro: r.descripcion_residuo_otro || r.residuo_otro || '',
+          motivo_otro: r.motivo_otro || r.descripcion_motivo_otro || null,
+          descripcion_motivo_otro: r.descripcion_motivo_otro || r.motivo_otro || '',
         }));
 
         return {
@@ -190,7 +213,7 @@ export default function ActasConciliadas() {
           acta_id: acta.acta_id || 0,
           numero_acta: acta.numero_acta || '',
           fecha_acta: acta.fecha_acta || '',
-          fecha_conciliacion: acta.fecha_conciliacion,
+          fecha_conciliacion: acta.fecha_conciliacion || '',
           operario_nombre: acta.operario_nombre || '',
           operario_documento: acta.operario_documento || '',
           conciliador_nombre: acta.conciliador_nombre || '',
@@ -214,8 +237,22 @@ export default function ActasConciliadas() {
       });
 
       console.log(`✅ ${actasProcesadas.length} actas procesadas`);
-      const actasOrdenadas = sortByDateDesc(actasProcesadas, 'fecha_acta');
+      
+      // Filtrar solo las actas que están conciliadas
+      const actasConciliadas = actasProcesadas.filter(acta => {
+        // Verificar si la acta está conciliada
+        const estaConciliada = acta.fecha_conciliacion && acta.fecha_conciliacion.trim() !== '';
+        const tienePesoConciliado = acta.peso_total_conciliado > 0;
+        const tieneConciliador = acta.conciliador_nombre || acta.conciliador_documento;
+        
+        return estaConciliada && tienePesoConciliado && tieneConciliador;
+      });
+      
+      console.log(`📊 ${actasConciliadas.length} actas conciliadas encontradas`);
+      
+      const actasOrdenadas = sortByDateDesc(actasConciliadas, 'fecha_conciliacion');
       setActas(actasOrdenadas);
+      setActasFiltradas(actasOrdenadas);
       
     } catch (error) {
       console.error('❌ Error cargando actas conciliadas:', error);
@@ -223,7 +260,62 @@ export default function ActasConciliadas() {
     }
   };
 
-  // 🔥 CORRECCIÓN: Manejar null correctamente
+  const obtenerInfoResiduo = (residuo: ResiduoConciliado) => {
+    const nombreResiduo = residuo.residuo_nombre?.toLowerCase() || '';
+    const esPeligroso = nombreResiduo.includes('peligroso');
+    const esOtroResiduo = nombreResiduo.includes('otro residuo') && !esPeligroso;
+    const esOtroGenerico = nombreResiduo === 'otro';
+    const esMEConMarca = nombreResiduo.includes('me con marca') || nombreResiduo.includes('me - con marca');
+    const esMESinMarca = nombreResiduo.includes('me sin marca') || nombreResiduo.includes('me - sin marca');
+    
+    let tipoEspecifico = '';
+    if (esPeligroso) {
+      tipoEspecifico = 'Peligroso';
+    } else if (esMEConMarca) {
+      tipoEspecifico = 'ME - Con marca';
+    } else if (esMESinMarca) {
+      tipoEspecifico = 'ME - Sin marca';
+    } else if (esOtroResiduo) {
+      tipoEspecifico = 'Otro residuo';
+    } else if (esOtroGenerico) {
+      tipoEspecifico = 'Otro';
+    }
+    
+    const especificacion = residuo.residuo_otro || residuo.descripcion_residuo_otro || '';
+    
+    return {
+      nombreBase: residuo.residuo_nombre,
+      especificacion: especificacion,
+      esPeligroso,
+      esOtroResiduo,
+      esOtroGenerico,
+      esMEConMarca,
+      esMESinMarca,
+      tipoEspecifico,
+      tieneEspecificacion: !!especificacion && especificacion.trim() !== '',
+    };
+  };
+
+  const obtenerNombreResiduoCompleto = (residuo: ResiduoConciliado) => {
+    const info = obtenerInfoResiduo(residuo);
+    return info.nombreBase;
+  };
+
+  const obtenerDetalleResiduo = (residuo: ResiduoConciliado) => {
+    const info = obtenerInfoResiduo(residuo);
+    
+    if (info.tieneEspecificacion) {
+      return info.especificacion;
+    }
+    
+    return null;
+  };
+
+  const obtenerTipoResiduo = (residuo: ResiduoConciliado) => {
+    const info = obtenerInfoResiduo(residuo);
+    return info.tipoEspecifico;
+  };
+
   const renderSubarea = (subareaId?: number | null, subareaName?: string | null) => {
     const nombre = (subareaName || '').trim();
     if (nombre !== '') return nombre;
@@ -358,13 +450,16 @@ export default function ActasConciliadas() {
                       ⚠️ Novedad
                     </span>
                   )}
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    ✅ Conciliada
+                  </span>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
+                    Acta: {new Date(acta.fecha_acta).toLocaleDateString('es-CO')}
                   </p>
                   {acta.fecha_conciliacion && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
                       Conciliado: {new Date(acta.fecha_conciliacion).toLocaleDateString('es-CO')}
                     </p>
                   )}
@@ -387,7 +482,7 @@ export default function ActasConciliadas() {
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">📋 Recibido por:</p>
+                  <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">📋 Conciliado por:</p>
                   <p className="text-gray-800 dark:text-gray-200 font-medium">
                     {renderOperarioRecepcion(acta)}
                   </p>
@@ -438,16 +533,19 @@ export default function ActasConciliadas() {
                   <table className="w-full table-auto border-collapse border border-gray-300 dark:border-gray-600">
                     <thead>
                       <tr className="bg-gray-100 dark:bg-gray-700">
-                        <th className="border px-2 py-2 text-left">Residuo</th>
-                        <th className="border px-2 py-2 text-left">Categoría</th>
-                        <th className="border px-2 py-2 text-left">Motivo</th>
-                        <th className="border px-2 py-2 text-right">Peso Reportado</th>
-                        <th className="border px-2 py-2 text-right">Peso Conciliado</th>
-                        <th className="border px-2 py-2 text-center">Estado</th>
+                        <th className="border px-3 py-3 text-left text-sm font-semibold w-1/5">Residuo</th>
+                        <th className="border px-3 py-3 text-left text-sm font-semibold w-1/4">Detalle</th>
+                        <th className="border px-3 py-3 text-left text-sm font-semibold w-1/6">Motivo</th>
+                        <th className="border px-3 py-3 text-right text-sm font-semibold w-1/6">Peso Reportado</th>
+                        <th className="border px-3 py-3 text-right text-sm font-semibold w-1/6">Peso Conciliado</th>
+                        <th className="border px-3 py-3 text-center text-sm font-semibold w-1/6">Estado</th>
                       </tr>
                     </thead>
                     <tbody>
                       {acta.residuos.map((r, idx) => {
+                        const infoResiduo = obtenerInfoResiduo(r);
+                        const detalle = obtenerDetalleResiduo(r);
+                        const tipoResiduo = obtenerTipoResiduo(r);
                         const pesoReportado = Number(r.peso_reportado || 0);
                         const pesoConciliado = Number(r.peso_conciliado || 0);
                         const diferenciaResiduo = pesoConciliado - pesoReportado;
@@ -457,47 +555,88 @@ export default function ActasConciliadas() {
                           <tr key={idx} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
                             tieneNovedadRes ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''
                           }`}>
-                            <td className="border px-2 py-2">
-                              {r.residuo_nombre}
-                              {r.descripcion_residuo_otro && (
-                                <span className="text-gray-500 text-sm block">
-                                  ({r.descripcion_residuo_otro})
-                                </span>
+                            {/* RESIDUO */}
+                            <td className="border px-3 py-3 align-top">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {obtenerNombreResiduoCompleto(r)}
+                              </div>
+                              {infoResiduo.esPeligroso && (
+                                <div className="mt-1">
+                                  <span className="inline-flex items-center px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                    ⚠️ Peligroso
+                                  </span>
+                                </div>
                               )}
                             </td>
-                            <td className="border px-2 py-2">{r.categoria_nombre || 'Sin categoría'}</td>
-                            <td className="border px-2 py-2">
-                              <div>
-                                <span>{r.motivo}</span>
+
+                            {/* ESPECIFICACIÓN */}
+                            <td className="border px-3 py-3 align-top">
+                              {infoResiduo.tieneEspecificacion ? (
+                                <div className="space-y-1">
+                                  <div className="font-medium text-gray-900 dark:text-white">
+                                    {detalle}
+                                  </div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    ({tipoResiduo})
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-gray-400 dark:text-gray-500 italic text-sm">
+                                  —
+                                </div>
+                              )}
+                            </td>
+
+                            {/* MOTIVO */}
+                            <td className="border px-3 py-3 align-top">
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {r.motivo}
+                                </span>
                                 {(r.motivo_otro || r.descripcion_motivo_otro) && (
-                                  <span className="text-gray-500 text-sm block">
-                                    ({r.motivo_otro || r.descripcion_motivo_otro})
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {r.motivo_otro || r.descripcion_motivo_otro}
                                   </span>
                                 )}
                               </div>
                             </td>
-                            <td className="border px-2 py-2 text-right font-medium">
-                              {pesoReportado.toFixed(2)} kg
+
+                            {/* PESO REPORTADO */}
+                            <td className="border px-3 py-3 text-right align-top">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                {pesoReportado.toFixed(2)} kg
+                              </div>
                             </td>
-                            <td className="border px-2 py-2 text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <span className="font-medium">{pesoConciliado.toFixed(2)} kg</span>
+
+                            {/* PESO CONCILIADO */}
+                            <td className="border px-3 py-3 text-right align-top">
+                              <div className="flex flex-col items-end">
+                                <div className="font-bold text-lg text-gray-900 dark:text-white">
+                                  {pesoConciliado.toFixed(2)} kg
+                                </div>
                                 {Math.abs(diferenciaResiduo) > 0.01 && (
-                                  <span className={`text-xs px-2 py-0.5 rounded ${
+                                  <div className={`text-xs px-2 py-0.5 rounded mt-1 ${
                                     diferenciaResiduo > 0 
                                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                                       : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                                   }`}>
-                                    {diferenciaResiduo > 0 ? '+' : ''}{diferenciaResiduo.toFixed(2)}
-                                  </span>
+                                    {diferenciaResiduo > 0 ? '+' : ''}{diferenciaResiduo.toFixed(2)} kg
+                                  </div>
                                 )}
                               </div>
                             </td>
-                            <td className="border px-2 py-2 text-center">
+
+                            {/* ESTADO */}
+                            <td className="border px-3 py-3 text-center align-top">
                               {tieneNovedadRes ? (
-                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                                  ⚠️ Novedad
-                                </span>
+                                <div className="flex flex-col items-center">
+                                  <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                    ⚠️ Novedad
+                                  </span>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center max-w-[120px] truncate" title={tieneNovedadRes}>
+                                    {typeof tieneNovedadRes === 'string' ? tieneNovedadRes.substring(0, 30) + '...' : ''}
+                                  </div>
+                                </div>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                   ✓ Conciliado

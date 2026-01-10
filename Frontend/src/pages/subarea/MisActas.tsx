@@ -10,6 +10,7 @@ type Residuo = {
   categoria_nombre: string;
   motivo: string;
   motivo_otro?: string | null;
+  residuo_otro?: string | null;
   peso_reportado: string;
   fecha: string;
 };
@@ -56,7 +57,7 @@ export default function MisActas() {
     try {
       setLoading(true);
       const data = await obtenerActasCompletas();
-      setActas(sortByDateDesc(data,"fecha_acta"));
+      setActas(sortByDateDesc(data, "fecha_acta"));
       setError('');
     } catch (err) {
       console.error('Error cargando actas:', err);
@@ -68,6 +69,37 @@ export default function MisActas() {
 
   const calcularPesoTotal = (residuos: Residuo[]): number =>
     residuos.reduce((total, r) => total + (parseFloat(r.peso_reportado) || 0), 0);
+
+  // Función para determinar el tipo de residuo
+  const obtenerInfoResiduo = (residuo: Residuo) => {
+    const nombreResiduo = residuo.residuo_nombre?.toLowerCase() || '';
+    const esPeligroso = nombreResiduo.includes('peligroso');
+    const esOtroResiduo = nombreResiduo.includes('otro residuo') && !nombreResiduo.includes('peligroso');
+    const esOtroGenerico = nombreResiduo === 'otro';
+    
+    return {
+      nombreBase: residuo.residuo_nombre,
+      especificacion: residuo.residuo_otro,
+      esPeligroso,
+      esOtroResiduo,
+      esOtroGenerico,
+      tieneEspecificacion: !!residuo.residuo_otro && residuo.residuo_otro.trim() !== ''
+    };
+  };
+
+  // Función para formatear la fecha
+  const formatearFecha = (fechaString: string) => {
+    const fecha = new Date(fechaString);
+    const opciones: Intl.DateTimeFormatOptions = {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    
+    return fecha.toLocaleDateString('es-CO', opciones);
+  };
 
   const actasFiltradas = sortByDateDesc(filtrar(), "fecha_acta");
 
@@ -89,7 +121,6 @@ export default function MisActas() {
         loading={loading}
       />
 
-      {/* === LISTADO === */}
       {error ? (
         <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-200 px-4 py-3 rounded">
           <p className="font-bold">Error</p>
@@ -110,7 +141,7 @@ export default function MisActas() {
         </div>
       ) : (
         <div className="space-y-6">
-          {actasFiltradas.map((acta) => {
+          {actasFiltradas.map((acta: Acta) => {
             const pesoTotal = calcularPesoTotal(acta.residuos);
 
             return (
@@ -118,14 +149,13 @@ export default function MisActas() {
                 key={acta.id}
                 className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
               >
-                {/* Encabezado */}
+                {/* ENCABEZADO */}
                 <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
                   <div>
                     <h2 className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
                       {acta.numero_acta}
                     </h2>
 
-                    {/* Mostrar consecutivo y número de inventario si existen */}
                     <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 space-y-1">
                       {acta.consecutivo && <p>Consecutivo: {acta.consecutivo}</p>}
                       {acta.numero_inventario && <p>Número de Inventario: {acta.numero_inventario}</p>}
@@ -142,15 +172,15 @@ export default function MisActas() {
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="bg-skyBlue/10 dark:bg-lightBlue/10 px-4 py-2 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Cantidad de residuos</p>
-                      <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">{acta.residuos.length}</p>
-                    </div>
+                  <div className="bg-skyBlue/10 dark:bg-lightBlue/10 px-4 py-2 rounded-lg">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Cantidad de residuos</p>
+                    <p className="text-2xl font-bold text-skyBlue dark:text-lightBlue">
+                      {acta.residuos.length}
+                    </p>
                   </div>
                 </div>
 
-                {/* Operario */}
+                {/* OPERARIO */}
                 <div className="mb-6">
                   <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300">
                     👤 Datos del Operario
@@ -167,7 +197,7 @@ export default function MisActas() {
                   </div>
                 </div>
 
-                {/* Residuos */}
+                {/* RESIDUOS */}
                 <div>
                   <h3 className="text-lg font-bold mb-3 text-gray-700 dark:text-gray-300 flex justify-between">
                     <span>♻️ Residuos Registrados</span>
@@ -181,26 +211,79 @@ export default function MisActas() {
                       <thead>
                         <tr className="bg-gray-100 dark:bg-gray-700">
                           <th className="p-3 border">Residuo</th>
-                          {/* <th className="p-3 border">Categoría</th> Ocultada */}
+                          <th className="p-3 border">Detalle</th>
                           <th className="p-3 border">Motivo</th>
                           <th className="p-3 border text-right">Peso (kg)</th>
                           <th className="p-3 border">Fecha</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {acta.residuos.map((r, i) => (
-                          <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                            <td className="p-3 border">{r.residuo_nombre}</td>
-                            {/* <td className="p-3 border">{r.categoria_nombre}</td> Ocultada */}
-                            <td className="p-3 border">
-                              {r.motivo === 'Otra' && r.motivo_otro ? `Otro: ${r.motivo_otro}` : r.motivo}
-                            </td>
-                            <td className="p-3 border text-right font-semibold">
-                              {parseFloat(r.peso_reportado).toFixed(2)}
-                            </td>
-                            <td className="p-3 border">{new Date(r.fecha).toLocaleDateString('es-CO')}</td>
-                          </tr>
-                        ))}
+                        {acta.residuos.map((r: Residuo, i: number) => {
+                          const infoResiduo = obtenerInfoResiduo(r);
+                          
+                          return (
+                            <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                              {/* RESIDUO */}
+                              <td className="p-3 border">
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {infoResiduo.nombreBase}
+                                </div>
+                                {infoResiduo.esPeligroso && (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center px-2 py-1 text-xs rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                      ⚠️ Peligroso
+                                    </span>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* DETALLE */}
+                              <td className="p-3 border">
+                                {infoResiduo.tieneEspecificacion ? (
+                                  <div>
+                                    <div className="font-medium text-gray-900 dark:text-white">
+                                      {infoResiduo.especificacion}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-gray-400 dark:text-gray-500 italic text-sm">
+                                    —
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* MOTIVO */}
+                              <td className="p-3 border">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {r.motivo === 'Otro' && r.motivo_otro
+                                      ? 'Otro'
+                                      : r.motivo}
+                                  </span>
+                                  {r.motivo === 'Otro' && r.motivo_otro && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                      {r.motivo_otro}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* PESO */}
+                              <td className="p-3 border text-right">
+                                <div className="font-bold text-lg text-gray-900 dark:text-white">
+                                  {parseFloat(r.peso_reportado).toFixed(2)}
+                                </div>
+                              </td>
+
+                              {/* FECHA - MEJORADA */}
+                              <td className="p-3 border">
+                                <div className="text-gray-900 dark:text-white font-medium">
+                                  {formatearFecha(r.fecha)}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

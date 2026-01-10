@@ -46,13 +46,14 @@ export default function ActasConciliadasGestorPuntoVerde() {
   const { actaAEliminar, modalEliminarAbierto, eliminando, abrirModal: abrirModalEliminar, cerrarModal: cerrarModalEliminar, eliminarActa } =
     useModalEliminar(cargarActas);
 
-  // Modal de conciliación
+  // Modal de conciliación (ACTUALIZADO: ahora incluye novedadesPorResiduo)
   const {
     modalConciliarAbierto,
     actaConciliando,
     residuosEditables,
     residuosFiltrados,
     guardando,
+    novedadesPorResiduo, // NUEVO: obtener las novedades por residuo
     abrirModalResolverNovedad,
     cerrarModalConciliar,
     handleGuardarConciliacion,
@@ -75,7 +76,7 @@ export default function ActasConciliadasGestorPuntoVerde() {
     return true;
   });
 
-  // Exportar a Excel - EXACTAMENTE IGUAL QUE EL OTRO COMPONENTE
+  // Exportar a Excel 
   const exportarAExcel = () => {
     if (actasFiltradas.length === 0) {
       alert("No hay datos para exportar");
@@ -170,6 +171,8 @@ export default function ActasConciliadasGestorPuntoVerde() {
           operarios={operarios}
           operariosPuntoVerde={operariosPuntoVerde}
           guardando={guardando}
+          // NUEVO: No es necesario pasar novedadesPorResiduo directamente
+          // porque las novedades ya están incluidas en cada residuo dentro de residuosEditables
           onClose={cerrarModalConciliar}
           onGuardar={handleGuardarConciliacion}
           {...handlers}

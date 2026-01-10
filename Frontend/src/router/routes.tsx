@@ -23,6 +23,7 @@ import ActasConciliadas from "../pages/puntoVerde/ActasConciliadas";
 import EditActaPage from "../pages/gestorPuntoVerde/EditActaPage";
 import ActasConciliadasGestorPuntoVerde from "../pages/gestorPuntoVerde/ActasConciliadasGestorPuntoVerde";
 import GestionOperariosPuntoVerde from "../pages/gestorPuntoVerde/GestionOperariosPuntoVerde";
+import NuevaActaPage from "../pages/gestorPuntoVerde/NuevaActaPage";
 
 // Gestor Ambiental
 import ActasPageGestorAmbiental from "../pages/gestorAmbiental/ActasPage";
@@ -72,6 +73,8 @@ export const router = createBrowserRouter([
           { index: true, element: <ActasOperarioPuntoVerde /> }, // /punto-verde
           { path: "conciliar/:id", element: <ConciliarActa /> }, // /punto-verde/conciliar/1
           { path: "conciliadas", element: <ActasConciliadas /> },// /punto-verde/conciliadas
+          
+          
         ],
       },
 
@@ -95,6 +98,7 @@ export const router = createBrowserRouter([
           { path: "editar-acta/:id", element: <EditActaPage /> },   // /gestor-punto-verde/editar-acta/1
           { path: "conciliadas", element: <ActasConciliadasGestorPuntoVerde /> },
           { path: "operarios", element: <GestionOperariosPuntoVerde /> },
+          { path: "nueva-acta", element: <NuevaActaPage /> }, // /gestor-punto-verde/nueva-acta
         ],
       },
 

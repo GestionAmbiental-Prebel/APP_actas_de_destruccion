@@ -28,6 +28,7 @@ export const useModalConciliar = ({
   const [residuosEditables, setResiduosEditables] = useState<ResiduoEditable[]>([]);
   const [residuosFiltrados, setResiduosFiltrados] = useState<any[]>([]);
   const [guardando, setGuardando] = useState(false);
+  const [novedadesPorResiduo, setNovedadesPorResiduo] = useState<Record<number, string>>({});
 
   const encontrarOperarioPorDocumento = (documento: string): number | null => {
     if (!documento) return null;
@@ -39,7 +40,21 @@ export const useModalConciliar = ({
     setActaConciliando(acta);
 
     try {
+      // Obtener relaciones completas
       const relacionesCompletas = await apiRequest<any[]>("/actas-generacion-residuo/");
+
+      // OBTENER NOVEDADES ESPECÍFICAS POR RESIDUO
+      const novedadesResponse = await apiRequest<any[]>("/novedad-conciliacion/");
+      
+      // Crear un mapa de novedades por acta_generacion_residuo_id
+      const novedadesMap: Record<number, string> = {};
+      novedadesResponse.forEach((novedad) => {
+        if (novedad.acta_generacion_residuo_id) {
+          novedadesMap[novedad.acta_generacion_residuo_id] = novedad.descripcion || novedad.novedad || "";
+        }
+      });
+
+      setNovedadesPorResiduo(novedadesMap);
 
       const residuosEdit: ResiduoEditable[] = acta.residuos.map((r) => {
         const residuoEspecifico = residuosEspecificos.find(
@@ -51,6 +66,11 @@ export const useModalConciliar = ({
         const relacionCompleta = relacionesCompletas.find(
           (rel: any) => rel.id === r.acta_generacion_residuo_id
         );
+
+        // Obtener novedad específica para este residuo
+        const novedadResiduo = r.acta_generacion_residuo_id 
+          ? novedadesMap[r.acta_generacion_residuo_id] 
+          : null;
 
         return {
           acta_generacion_residuo_id: r.acta_generacion_residuo_id || 0,
@@ -65,6 +85,8 @@ export const useModalConciliar = ({
           peso_conciliado: r.peso_conciliado || r.peso_reportado,
           motivo_otro: r.motivo === "Otro" ? r.descripcion_motivo_otro : null,
           residuo_otro: r.residuo_nombre.includes("Otro") ? r.descripcion_residuo_otro : null,
+          // AGREGAR NOVEDAD ESPECÍFICA DEL RESIDUO
+          novedad_residuo: novedadResiduo,
         };
       });
 
@@ -91,6 +113,7 @@ export const useModalConciliar = ({
     setActaConciliando(null);
     setResiduosEditables([]);
     setResiduosFiltrados([]);
+    setNovedadesPorResiduo({}); // Limpiar novedades
   };
 
   // Handlers
@@ -599,6 +622,8 @@ export const useModalConciliar = ({
     residuosEditables,
     residuosFiltrados,
     guardando,
+    // EXPONER LAS NOVEDADES POR RESIDUO
+    novedadesPorResiduo,
     abrirModalResolverNovedad,
     cerrarModalConciliar,
     handleGuardarConciliacion,

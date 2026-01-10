@@ -1,3 +1,4 @@
+//NuevaActa.tsx
 import { useState, useEffect, useRef } from 'react';
 import SeccionIdentificacion from '../../components/form/SeccionIdentificacion';
 import SeccionUbicacion from '../../components/form/SeccionUbicacion';
@@ -198,10 +199,14 @@ export default function NuevaActa() {
     if (cedula.length >= 6) buscarPorCedula(cedula);
   };
 
-  const handleCentroCostoChange = (centroCostoId: number) => {
-    setCentroCostoId(centroCostoId);
+ const handleCentroCostoChange = (centroCostoId: number, subAreaId?: number) => {
+  setCentroCostoId(centroCostoId);
+  if (subAreaId) {
+    autocompletarUbicacionDesdeSubArea(subAreaId);
+  } else {
     autocompletarUbicacionDesdeCentroCosto(centroCostoId);
-  };
+  }
+};
 
   const handleResiduoChange = (index: number, residuoId: number) => {
     const residuoSeleccionado = residuosEspecificos.find(r => r.id === residuoId);
@@ -381,10 +386,59 @@ export default function NuevaActa() {
           valido = false;
         }
 
-        // Validación para residuo "Otro"
+        // Validación para residuos "Otro" y "Otro residuo peligroso"
         const residuoSeleccionado = residuosEspecificos.find(res => res.id === r.residuo_id);
-        if (residuoSeleccionado?.nombre === 'Otro' && (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+        const nombreResiduo = residuoSeleccionado?.nombre?.toLowerCase() || '';
+        
+        console.log('🔍 Validando residuo:', {
+          id: r.residuo_id,
+          nombre: residuoSeleccionado?.nombre,
+          residuo_otro: r.residuo_otro,
+          esOtro: nombreResiduo === 'otro',
+          esOtroResiduo: nombreResiduo === 'otro residuo',
+          esPeligroso: nombreResiduo.includes('peligroso'),
+          esMEConMarca: (
+            nombreResiduo.includes('me con marca') || 
+            nombreResiduo.includes('me - con marca')
+          ),
+          esMESinMarca: (
+            nombreResiduo.includes('me sin marca') || 
+            nombreResiduo.includes('me - sin marca')
+          )
+        });
+        
+        // Para "Otro" genérico
+        if (nombreResiduo === 'otro' && (!r.residuo_otro || r.residuo_otro.trim() === '')) {
           errores.push(`Residuo ${residuos.indexOf(r) + 1}: Especifique el tipo de residuo "Otro"`);
+          valido = false;
+        }
+        
+        // Para "Otro residuo" (no peligroso)
+        if (nombreResiduo === 'otro residuo' && (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+          errores.push(`Residuo ${residuos.indexOf(r) + 1}: Especifique el tipo de residuo "Otro"`);
+          valido = false;
+        }
+        
+        // Para "Otro residuo peligroso" - es requerido seleccionar un tipo
+        if ((nombreResiduo.includes('peligroso') || nombreResiduo === 'otro residuo peligroso') && 
+            (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+          errores.push(`Residuo ${residuos.indexOf(r) + 1}: Seleccione el tipo de residuo peligroso`);
+          valido = false;
+        }
+        
+        // Para "Otro ME - Con marca"
+        if ((nombreResiduo.includes('me con marca') || 
+             nombreResiduo.includes('me - con marca')) && 
+            (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+          errores.push(`Residuo ${residuos.indexOf(r) + 1}: Seleccione el tipo de residuo ME - Con marca`);
+          valido = false;
+        }
+        
+        // Para "Otro ME - Sin marca"
+        if ((nombreResiduo.includes('me sin marca') || 
+             nombreResiduo.includes('me - sin marca')) && 
+            (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+          errores.push(`Residuo ${residuos.indexOf(r) + 1}: Seleccione el tipo de residuo ME - Sin marca`);
           valido = false;
         }
 
@@ -407,15 +461,29 @@ export default function NuevaActa() {
 
       const residuosParaEnviar = residuosValidos.map(r => {
         const residuoEspecifico = residuosDisponibles.find(res => res.id === r.residuo_id);
+        const nombreResiduo = residuoEspecifico?.nombre?.toLowerCase() || '';
+        
+        console.log('📦 Preparando residuo para enviar:', {
+          residuo_id: r.residuo_id,
+          nombre: residuoEspecifico?.nombre,
+          residuo_otro: r.residuo_otro,
+          esOtro: nombreResiduo === 'otro',
+          esPeligroso: nombreResiduo.includes('peligroso'),
+          esMEConMarca: nombreResiduo.includes('me con marca'),
+          esMESinMarca: nombreResiduo.includes('me sin marca')
+        });
         
         return {
           residuo_id: r.residuo_id!,
           peso: r.peso,
           motivo: r.motivo || 'N/A',
           motivo_otro: r.motivo === 'Otro' ? r.motivo_otro || null : null,
-          residuo_otro: residuoEspecifico?.nombre === 'Otro' ? r.residuo_otro || null : null,
+          // Guardar residuo_otro para todos los casos que lo requieran
+          residuo_otro: r.residuo_otro && r.residuo_otro.trim() !== '' ? r.residuo_otro : null,
         };
       });
+
+      console.log('🚀 Residuos para enviar:', residuosParaEnviar);
 
       const resultado = await crearActaCompleta({
         cedula,
@@ -527,6 +595,10 @@ export default function NuevaActa() {
           sedeNombre={nombres.sedeNombre}
           onCentroCostoChange={handleCentroCostoChange}
           centrosCosto={centrosCosto}
+          subAreas={subAreas}
+          areas={areas}
+          procedencias={procedencias}
+          sedes={sedes}
         />
 
         <SeccionResiduos
