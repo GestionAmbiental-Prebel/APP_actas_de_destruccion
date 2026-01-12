@@ -1,4 +1,4 @@
-//SeccionResiduos.tsx
+// SeccionResiduos.tsx - VERSIÓN CORREGIDA SIN MOSTRAR IDS
 import Select from '../common/Select';
 import Input from '../common/Input';
 import SectionTitle from '../common/SectionTitle';
@@ -32,6 +32,7 @@ type SeccionResiduosProps = {
   areaNombre?: string;
   esAlmacenamiento?: boolean;
   disabled?: boolean;
+  ocultarBotonAgregar?: boolean;
 };
 
 const GRUPOS_RESIDUOS_CON_MOTIVO = [
@@ -101,46 +102,105 @@ export default function SeccionResiduos({
   areaId = null,
   areaNombre = '',
   esAlmacenamiento = false,
-  disabled = false
+  disabled = false,
+  ocultarBotonAgregar = false
 }: SeccionResiduosProps) {
 
   const obtenerResiduo = (id: number | null) =>
     residuosDisponibles.find(r => r.id === id);
 
+  // Función mejorada para obtener el residuo incluso si no está en residuosDisponibles
+  // CORREGIDA: Nunca devolver "Residuo ID: X"
+  const obtenerResiduoConFallback = (id: number | null) => {
+    if (!id) return null;
+    
+    // Buscar en residuosDisponibles
+    const encontrado = residuosDisponibles.find(r => r.id === id);
+    
+    if (encontrado) {
+      return encontrado;
+    }
+    
+    // Si no se encuentra, buscar en los residuos actuales para obtener su nombre
+    const residuoActual = residuos.find(r => r.residuo_id === id);
+    if (residuoActual?.residuo_otro) {
+      return {
+        id: id,
+        nombre: residuoActual.residuo_otro,
+        categoria_id: residuoActual.categoria_id
+      };
+    }
+    
+    // CORRECCIÓN: Nunca devolver "Residuo ID: X"
+    // En su lugar, devolver un nombre genérico
+    return {
+      id: id,
+      nombre: "Otro residuo",
+      categoria_id: null
+    };
+  };
+
+  // Obtener opciones de residuos, incluyendo el actual si no está en la lista
+  // CORREGIDA: Nunca mostrar "Residuo ID: X" como label
+  const obtenerOpcionesResiduos = () => {
+    const opciones = residuosDisponibles.map(r => ({
+      value: String(r.id),
+      label: r.nombre
+    }));
+    
+    // Agregar el residuo actual si no está en la lista
+    const residuoActual = residuos[0];
+    if (residuoActual?.residuo_id && 
+        !opciones.some(op => op.value === String(residuoActual.residuo_id))) {
+      
+      const residuoInfo = obtenerResiduoConFallback(residuoActual.residuo_id);
+      // CORRECCIÓN: Nunca usar el ID como label
+      opciones.unshift({
+        value: String(residuoActual.residuo_id),
+        label: residuoInfo?.nombre || "Otro residuo"
+      });
+    }
+    
+    return opciones;
+  };
+
   const esOtroResiduo = (residuoId: number | null): boolean => {
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo?.nombre) return false;
     
-    // Comparación insensible a mayúsculas/minúsculas
-    const nombreLower = residuo.nombre.toLowerCase();
-    return nombreLower === 'otro residuo';
+    const nombreLower = residuo.nombre.toLowerCase().trim();
+    
+    return (nombreLower === 'otro residuo' || 
+            nombreLower === 'otro residuo -' ||
+            nombreLower === 'otro residuo-') && 
+           !nombreLower.includes('peligroso');
   };
 
   const esOtroResiduoPeligroso = (residuoId: number | null): boolean => {
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo?.nombre) return false;
     
-    // Comparación insensible a mayúsculas/minúsculas
-    const nombreLower = residuo.nombre.toLowerCase();
-    return nombreLower.includes('peligroso') || nombreLower === 'otro residuo peligroso';
+    const nombreLower = residuo.nombre.toLowerCase().trim();
+    
+    return nombreLower === 'otro residuo peligroso' || 
+           nombreLower === 'otro residuo - peligroso' ||
+           nombreLower === 'otro residuo -peligroso' ||
+           nombreLower === 'otro residuo-peligroso';
   };
 
   const esResiduoOtroGenerico = (residuoId: number | null): boolean => {
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo?.nombre) return false;
     
-    // Comparación insensible a mayúsculas/minúsculas
     const nombreLower = residuo.nombre.toLowerCase();
     return nombreLower === 'otro' && !nombreLower.includes('peligroso') && !nombreLower.includes('residuo');
   };
 
-  // Nuevas funciones para detectar los tipos ME
   const esOtroMEConMarca = (residuoId: number | null): boolean => {
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo?.nombre) return false;
     
     const nombreLower = residuo.nombre.toLowerCase();
-    // Buscar variaciones del nombre
     return (
       nombreLower.includes('me con marca') || 
       nombreLower.includes('me - con marca') ||
@@ -150,11 +210,10 @@ export default function SeccionResiduos({
   };
 
   const esOtroMESinMarca = (residuoId: number | null): boolean => {
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo?.nombre) return false;
     
     const nombreLower = residuo.nombre.toLowerCase();
-    // Buscar variaciones del nombre
     return (
       nombreLower.includes('me sin marca') || 
       nombreLower.includes('me - sin marca') ||
@@ -166,7 +225,7 @@ export default function SeccionResiduos({
   const residuoRequiereMotivo = (residuoId: number | null): boolean => {
     if (!esAlmacenamiento) return false;
 
-    const residuo = obtenerResiduo(residuoId);
+    const residuo = obtenerResiduoConFallback(residuoId);
     if (!residuo) return false;
 
     return GRUPOS_RESIDUOS_CON_MOTIVO.some(grupo =>
@@ -177,11 +236,16 @@ export default function SeccionResiduos({
   const handleChange = (index: number, field: keyof Residuo, value: any) => {
     console.log('🔄 handleChange:', { index, field, value, residuo_id: residuos[index].residuo_id });
     
+    // Bloquear cambio si no hay área seleccionada
+    if (field === 'residuo_id' && !areaId && !disabled) {
+      return;
+    }
+    
     const nuevos = [...residuos];
 
     if (field === 'residuo_id') {
       const residuoId = Number(value);
-      const residuo = obtenerResiduo(residuoId);
+      const residuo = obtenerResiduoConFallback(residuoId);
       
       console.log('📝 Residuo seleccionado:', {
         id: residuoId,
@@ -212,6 +276,11 @@ export default function SeccionResiduos({
   };
 
   const agregarResiduo = () => {
+    // Bloquear agregar residuo si no hay área seleccionada
+    if (!areaId && !disabled) {
+      return;
+    }
+    
     setResiduos([
       ...residuos,
       { residuo_id: null, categoria_id: null, motivo: '', motivo_otro: '', residuo_otro: '', peso: '' }
@@ -222,10 +291,10 @@ export default function SeccionResiduos({
     setResiduos(residuos.filter((_, i) => i !== index));
   };
 
-  const residuosOptions = residuosDisponibles.map(r => ({
-    value: String(r.id),
-    label: r.nombre
-  }));
+  const residuosOptions = obtenerOpcionesResiduos();
+
+  // Determinar si el campo residuo debe estar deshabilitado
+  const residuoDisabled = disabled || !areaId;
 
   return (
     <div>
@@ -275,14 +344,22 @@ export default function SeccionResiduos({
           <div key={index} className="border p-4 rounded-lg mb-4 bg-white/10">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <Select
-                label="Residuo"
-                value={item.residuo_id ? String(item.residuo_id) : ''}
-                options={residuosOptions}
-                onChange={(v) => handleChange(index, 'residuo_id', Number(v))}
-                disabled={disabled}
-                required
-              />
+              <div>
+                <Select
+                  label="Residuo"
+                  value={item.residuo_id ? String(item.residuo_id) : ''}
+                  options={residuosOptions}
+                  onChange={(v) => handleChange(index, 'residuo_id', Number(v))}
+                  disabled={residuoDisabled}
+                  required
+                />
+                {/* Mensaje pequeño en rojo solo cuando no hay área seleccionada */}
+                {!areaId && !disabled && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Seleccione una Área primero
+                  </p>
+                )}
+              </div>
 
               {/* Campo para "Otro" genérico */}
               {esOtroGenerico && (
@@ -290,9 +367,9 @@ export default function SeccionResiduos({
                   label="Especifique el residuo"
                   value={item.residuo_otro || ''}
                   onChange={(v) => handleChange(index, 'residuo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
-                  placeholder="Ej: Cartón contaminado, plástico roto, etc."
+                  placeholder="Ej: Papel archivo, plástico limpio, etc."
                 />
               )}
 
@@ -302,14 +379,14 @@ export default function SeccionResiduos({
                   label="Especifique el residuo"
                   value={item.residuo_otro || ''}
                   onChange={(v) => handleChange(index, 'residuo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                   placeholder="Ej: Papel archivo, plástico limpio, etc."
                 />
               )}
 
-              {/* Select para "Otro residuo peligroso" */}
-              {esPeligroso && (
+              {/* Select para "Otro residuo peligroso" - SOLO cuando es específicamente "otro residuo peligroso" */}
+              {esPeligroso && !esMEConMarca && !esMESinMarca && (
                 <Select
                   label="Tipo de residuo peligroso"
                   value={item.residuo_otro || ''}
@@ -318,7 +395,7 @@ export default function SeccionResiduos({
                     label: op
                   }))}
                   onChange={(v) => handleChange(index, 'residuo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                   placeholder="Seleccione un tipo"
                 />
@@ -334,7 +411,7 @@ export default function SeccionResiduos({
                     label: op
                   }))}
                   onChange={(v) => handleChange(index, 'residuo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                   placeholder="Seleccione un tipo"
                 />
@@ -350,7 +427,7 @@ export default function SeccionResiduos({
                     label: op
                   }))}
                   onChange={(v) => handleChange(index, 'residuo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                   placeholder="Seleccione un tipo"
                 />
@@ -362,7 +439,7 @@ export default function SeccionResiduos({
                   value={item.motivo}
                   options={motivos.map(m => ({ value: m, label: m }))}
                   onChange={(v) => handleChange(index, 'motivo', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                 />
               )}
@@ -372,7 +449,7 @@ export default function SeccionResiduos({
                   label="Especifique motivo"
                   value={item.motivo_otro || ''}
                   onChange={(v) => handleChange(index, 'motivo_otro', v)}
-                  disabled={disabled}
+                  disabled={disabled || !areaId}
                   required
                 />
               )}
@@ -385,14 +462,18 @@ export default function SeccionResiduos({
                 min={0}
                 max={20000}
                 step={0.01}
-                disabled={disabled}
+                disabled={disabled || !areaId}
                 required
               />
             </div>
 
             {!disabled && residuos.length > 1 && (
               <div className="flex justify-end mt-3">
-                <Button variant="danger" onClick={() => eliminarResiduo(index)}>
+                <Button 
+                  variant="danger" 
+                  onClick={() => eliminarResiduo(index)}
+                  disabled={!areaId}
+                >
                   Eliminar
                 </Button>
               </div>
@@ -401,8 +482,12 @@ export default function SeccionResiduos({
         );
       })}
 
-      {!disabled && (
-        <Button onClick={agregarResiduo} type="button">
+      {!disabled && !ocultarBotonAgregar && (
+        <Button 
+          onClick={agregarResiduo} 
+          type="button"
+          disabled={!areaId}
+        >
           ➕ Agregar residuo
         </Button>
       )}

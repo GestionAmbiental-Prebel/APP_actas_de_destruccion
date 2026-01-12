@@ -1,4 +1,4 @@
-// src/components/common/NuevaActaForm.tsx
+// src/components/common/NuevaActaForm.tsx - VERSIÓN CORREGIDA CON VALIDACIONES ESPECÍFICAS
 import { useState, useEffect, useRef } from 'react';
 import SeccionIdentificacion from '../form/SeccionIdentificacion';
 import SeccionUbicacion from '../form/SeccionUbicacion';
@@ -108,6 +108,43 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
     autocompletarUbicacionDesdeSubArea(centro.subarea_id);
   };
 
+  // Función para determinar si un residuo requiere especificación "residuo_otro"
+  const requiereResiduoOtro = (nombreResiduo: string): boolean => {
+    const nombreLower = nombreResiduo.toLowerCase();
+    
+    // Casos que requieren residuo_otro
+    const casosEspecificos = [
+      'otro',
+      'otro residuo',
+      'otro residuo peligroso',
+      'otro residuo peligroso (me - con marca)',
+      'otro residuo peligroso (me - sin marca)'
+    ];
+    
+    return casosEspecificos.some(caso => 
+      nombreLower.includes(caso.toLowerCase())
+    );
+  };
+
+  // Función para obtener el mensaje de error específico para cada tipo de residuo
+  const obtenerMensajeErrorResiduoOtro = (nombreResiduo: string): string => {
+    const nombreLower = nombreResiduo.toLowerCase();
+    
+    if (nombreLower === 'otro') {
+      return 'Especifique el tipo de residuo "Otro"';
+    } else if (nombreLower === 'otro residuo') {
+      return 'Especifique el tipo de residuo "Otro"';
+    } else if (nombreLower === 'otro residuo peligroso') {
+      return 'Seleccione el tipo de residuo peligroso';
+    } else if (nombreLower.includes('me - con marca')) {
+      return 'Seleccione el tipo de residuo ME - Con marca';
+    } else if (nombreLower.includes('me - sin marca')) {
+      return 'Seleccione el tipo de residuo ME - Sin marca';
+    }
+    
+    return 'Especifique el tipo de residuo';
+  };
+
   // Función mejorada para obtener residuos disponibles (incluye residuos globales)
   const obtenerResiduosDisponibles = () => {
     // Si no hay subárea seleccionada, mostrar todos los residuos
@@ -205,9 +242,13 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
     if (cedula.length >= 6) buscarPorCedula(cedula);
   };
 
-  const handleCentroCostoChange = (centroCostoId: number) => {
+  const handleCentroCostoChange = (centroCostoId: number, subAreaId?: number) => {
     setCentroCostoId(centroCostoId);
-    autocompletarUbicacionDesdeCentroCosto(centroCostoId);
+    if (subAreaId) {
+      autocompletarUbicacionDesdeSubArea(subAreaId);
+    } else {
+      autocompletarUbicacionDesdeCentroCosto(centroCostoId);
+    }
   };
 
   const handleResiduoChange = (index: number, residuoId: number) => {
@@ -216,6 +257,12 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
       const copia = [...prev];
       copia[index].residuo_id = residuoId;
       copia[index].categoria_id = residuoSeleccionado?.categoria_id ?? null;
+      
+      // Si el residuo seleccionado NO requiere especificación, limpiar residuo_otro
+      if (residuoSeleccionado && !requiereResiduoOtro(residuoSeleccionado.nombre)) {
+        copia[index].residuo_otro = '';
+      }
+      
       return copia;
     });
   };
@@ -233,7 +280,9 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
           residuo_id: residuoId,
           categoria_id: residuoSeleccionado?.categoria_id ?? null,
           motivo: '',
-          motivo_otro: ''
+          motivo_otro: '',
+          // Solo mantener residuo_otro si el nuevo residuo lo requiere
+          residuo_otro: residuoSeleccionado && requiereResiduoOtro(residuoSeleccionado.nombre) ? '' : ''
         };
       } else {
         nuevos[index] = { ...nuevos[index], [campo]: valor };
@@ -397,10 +446,23 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
           valido = false;
         }
 
-        // Validación para residuo "Otro"
+        // Validación para residuos especiales
         const residuoSeleccionado = residuosEspecificos.find(res => res.id === r.residuo_id);
-        if (residuoSeleccionado?.nombre === 'Otro' && (!r.residuo_otro || r.residuo_otro.trim() === '')) {
-          errores.push(`Residuo ${residuos.indexOf(r) + 1}: Especifique el tipo de residuo "Otro"`);
+        if (!residuoSeleccionado) return valido;
+        
+        const nombreResiduo = residuoSeleccionado.nombre;
+        
+        console.log('🔍 Validando residuo:', {
+          id: r.residuo_id,
+          nombre: residuoSeleccionado.nombre,
+          residuo_otro: r.residuo_otro,
+          requiereResiduoOtro: requiereResiduoOtro(nombreResiduo)
+        });
+        
+        // Validar residuo_otro para casos específicos
+        if (requiereResiduoOtro(nombreResiduo) && (!r.residuo_otro || r.residuo_otro.trim() === '')) {
+          const mensajeError = obtenerMensajeErrorResiduoOtro(nombreResiduo);
+          errores.push(`Residuo ${residuos.indexOf(r) + 1}: ${mensajeError}`);
           valido = false;
         }
 
@@ -429,9 +491,11 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
           peso: r.peso,
           motivo: r.motivo || 'N/A',
           motivo_otro: r.motivo === 'Otro' ? r.motivo_otro || null : null,
-          residuo_otro: residuoEspecifico?.nombre === 'Otro' ? r.residuo_otro || null : null,
+          residuo_otro: r.residuo_otro && r.residuo_otro.trim() !== '' ? r.residuo_otro : null,
         };
       });
+
+      console.log('🚀 Residuos para enviar:', residuosParaEnviar);
 
       const resultado = await crearActaCompleta({
         cedula,
@@ -549,6 +613,7 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
         {buscando && <p className="text-sm text-gray-500 italic">🔍 Buscando operario...</p>}
         {operario && <p className="text-sm text-green-600">✓ Operario encontrado</p>}
 
+        {/* SECCIÓN UBICACIÓN CORREGIDA - PASANDO TODOS LOS CATÁLOGOS */}
         <SeccionUbicacion
           centroCostoId={centroCostoId}
           subAreaNombre={nombres.subAreaNombre}
@@ -557,6 +622,12 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
           sedeNombre={nombres.sedeNombre}
           onCentroCostoChange={handleCentroCostoChange}
           centrosCosto={centrosCosto}
+          // PROPS FALTANTES AÑADIDAS:
+          subAreas={subAreas}
+          areas={areas}
+          procedencias={procedencias}
+          sedes={sedes}
+          disabled={enviando}
         />
 
         <SeccionResiduos
@@ -575,7 +646,6 @@ export default function NuevaActaForm({ rol, onSuccess, onCancel }: NuevaActaFor
           areaNombre={nombres.areaNombre}
           esAlmacenamiento={esAlmacenamiento}
           disabled={enviando}
-          
         />
 
         <div className="flex gap-4 justify-end pt-6 border-t border-gray-200 dark:border-gray-700">

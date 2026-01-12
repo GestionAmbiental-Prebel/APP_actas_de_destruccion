@@ -1,4 +1,4 @@
-// ConciliarActa.tsx
+// ConciliarActa.tsx - VERSIÓN SIMPLIFICADA CON ID FIJO
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { obtenerActasCompletas } from '../../services/actas.service';
@@ -28,6 +28,9 @@ const TIPOS_NOVEDAD = [
   { value: 'otro', label: 'Otro (especificar)' },
 ];
 
+// ID FIJO DE LA SUBÁREA PUNTO VERDE
+const ID_SUBAREA_PUNTO_VERDE = 69;
+
 export default function ConciliarActa() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -40,6 +43,7 @@ export default function ConciliarActa() {
   const [enviando, setEnviando] = useState(false);
   const [mostrarExito, setMostrarExito] = useState(false);
   const [operariosMap, setOperariosMap] = useState<Record<string, string>>({});
+  const [operariosPuntoVerde, setOperariosPuntoVerde] = useState<any[]>([]);
   const [cargandoOperarios, setCargandoOperarios] = useState(false);
 
   useEffect(() => {
@@ -51,8 +55,17 @@ export default function ConciliarActa() {
     try {
       setCargandoOperarios(true);
       const data = await obtenerOperarios();
+      
+      // Filtrar operarios que pertenecen específicamente a la subárea Punto Verde (ID 69)
+      const operariosPuntoVerdeFiltrados = data.filter((op: any) => 
+        op.subarea_id === ID_SUBAREA_PUNTO_VERDE
+      );
+      
+      setOperariosPuntoVerde(operariosPuntoVerdeFiltrados);
+      
+      // Crear mapa solo con operarios de Punto Verde
       const map: Record<string, string> = {};
-      data.forEach((op: any) => {
+      operariosPuntoVerdeFiltrados.forEach((op: any) => {
         const documento = op.documento || '';
         if (documento) {
           const nombreCompleto = `${op.nombre || ''} ${op.apellido || ''}`.trim();
@@ -62,6 +75,10 @@ export default function ConciliarActa() {
         }
       });
       setOperariosMap(map);
+      
+      console.log('Operarios de Punto Verde cargados:', operariosPuntoVerdeFiltrados.length);
+      console.log('IDs de documentos autorizados:', Object.keys(map));
+      
     } catch (err) {
       console.error('Error cargando operarios:', err);
     } finally {
@@ -213,6 +230,16 @@ export default function ConciliarActa() {
       return;
     }
 
+    // VERIFICAR SI EL DOCUMENTO EXISTE EN LA BASE DE DATOS Y ES OPERARIO DE PUNTO VERDE
+    if (!operariosMap[documentoConciliador]) {
+      alert('❌ Solo el personal de Punto Verde puede conciliar actas. \n\n' +
+            'Verifique que:\n' +
+            '1. Su documento esté registrado\n' +
+            '2. Pertenezca a la subárea "Punto Verde"\n' +
+            '3. Contacte al coordinador si necesita acceso');
+      return;
+    }
+
     const residuosConNovedadSinCompletar = residuos.filter(r => {
       if (!r.tiene_novedad) return false;
       if (!r.tipo_novedad) return true;
@@ -293,6 +320,11 @@ export default function ConciliarActa() {
   const pesoTotalConciliado = calcularPesoTotal('conciliado');
   const diferenciaPeso = pesoTotalConciliado - pesoTotalReportado;
 
+  // Determinar si el botón de enviar debe estar deshabilitado
+  const documentoValido = documentoConciliador.length >= 6;
+  const esOperarioPuntoVerde = operariosMap[documentoConciliador];
+  const puedeConciliar = documentoValido && esOperarioPuntoVerde;
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8 text-skyBlue dark:text-lightBlue">
@@ -357,7 +389,7 @@ export default function ConciliarActa() {
 
             {acta.subarea && (
               <div>
-                <p className="text-gray-500 dark:text-gray-400">Subárea</p>
+                <p className="text-gray-500 dark:text-gray-400">Área</p>
                 <p className="font-semibold">{acta.subarea}</p>
               </div>
             )}
@@ -407,6 +439,15 @@ export default function ConciliarActa() {
         <div>
           <SectionTitle>Datos del Conciliador</SectionTitle>
           <div className="max-w-md space-y-4">
+            <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                ⓘ Acceso restringido
+              </p>
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                Solo el personal registrado en el área <strong>Punto Verde</strong> puede conciliar actas.
+              </p>
+            </div>
+            
             <Input
               label="Documento de Identidad"
               value={documentoConciliador}
@@ -421,21 +462,29 @@ export default function ConciliarActa() {
             {nombreConciliador && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
                 <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                  Operario encontrado:
+                  ✅ Operario de Punto Verde encontrado:
                 </p>
                 <p className="font-semibold text-green-700 dark:text-green-400">
                   {nombreConciliador}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  Subárea autorizada: Punto Verde (ID: {ID_SUBAREA_PUNTO_VERDE})
                 </p>
               </div>
             )}
             
             {documentoConciliador.length >= 6 && !nombreConciliador && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                  Documento no encontrado en el sistema. Verifique el número.
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+                <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                  ❌ Acceso denegado
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Solo el personal de <strong>Punto Verde</strong> puede conciliar actas. 
+                  Verifique su documento o contacte al coordinador.
                 </p>
               </div>
             )}
+            
           </div>
         </div>
 
@@ -615,7 +664,7 @@ export default function ConciliarActa() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Conciliador:</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Conciliador (Punto Verde):</p>
               <p className="font-semibold">
                 {nombreConciliador || 'Por confirmar'} ({documentoConciliador || 'Sin documento'})
               </p>
@@ -636,7 +685,7 @@ export default function ConciliarActa() {
           <Button
             type="submit"
             variant="primary"
-            disabled={enviando}
+            disabled={enviando || !puedeConciliar}
           >
             {enviando ? 'Guardando...' : '✓ Guardar Conciliación'}
           </Button>

@@ -366,8 +366,8 @@ export default function GestionOperariosPuntoVerde() {
       return false;
     }
 
-    if (formData.documento.length < 5 || formData.documento.length > 15) {
-      setError('El documento debe tener entre 5 y 15 dígitos');
+    if (formData.documento.length < 8 || formData.documento.length > 10) {
+      setError('El documento debe tener entre 8 y 10 dígitos');
       return false;
     }
 
@@ -664,7 +664,7 @@ export default function GestionOperariosPuntoVerde() {
             />
             <div className="flex justify-between mt-1">
               <p className="text-xs text-gray-500">Solo números, sin puntos ni comas</p>
-              <p className="text-xs text-gray-500">{formData.documento.length}/15</p>
+              <p className="text-xs text-gray-500">{formData.documento.length}/10</p>
             </div>
           </div>
 

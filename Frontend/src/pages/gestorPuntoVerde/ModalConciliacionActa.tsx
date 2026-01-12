@@ -1,4 +1,4 @@
-// components/ModalConciliacionActa.tsx - VERSIÓN CORREGIDA
+// components/ModalConciliacionActa.tsx - VERSIÓN SIN BOTÓN ELIMINAR
 import { useState, useEffect } from "react";
 
 type ResiduoEditable = {
@@ -81,6 +81,44 @@ type ModalEdicionActaProps = {
   permiteEditarTodo?: boolean;
 };
 
+// CONSTANTES PARA LOS TIPOS ESPECIALES DE RESIDUOS
+const OPCIONES_OTRO_PELIGROSO = [
+  'Biosanitario',
+  'Carbon Activado',
+  'Comburente',
+  'Pintura',
+  'Biologico',
+  'Tintura',
+  'Solventes',
+  'Liquido mezclado con etanol',
+  'Recipientes contaminados con pintura',
+  'Tiner'
+];
+
+const OPCIONES_OTRO_ME_CON_MARCA = [
+  'Chatarra',
+  'Archivo - PM',
+  'Cartón - PM',
+  'Laminado',
+  'Sachet',
+  'Pasta - PM',
+  'Plegable - PM',
+  'Etiquetas',
+  'Muebles',
+  'Carton - AP',
+  'Vidrio - PM'
+];
+
+const OPCIONES_OTRO_ME_SIN_MARCA = [
+  'Carton - AP',
+  'Plastico sucio',
+  'Valvula de pasta',
+  'Laminado',
+  'Etiquetas',
+  'Chatarra',
+  'Pasta AP'
+];
+
 export default function ModalEdicionActa({
   actaEditando,
   residuosEditables,
@@ -135,6 +173,59 @@ export default function ModalEdicionActa({
 
   const esEdicionCompleta = modo === "edicion_completa";
   const puedeEditarTodo = esEdicionCompleta || permiteEditarTodo || mostrarCamposAvanzados;
+
+  // FUNCIONES PARA DETECTAR TIPOS ESPECIALES DE RESIDUOS (copiadas del componente de referencia)
+  const esOtroResiduo = (residuoNombre: string | undefined): boolean => {
+    if (!residuoNombre) return false;
+    const nombreLower = residuoNombre.toLowerCase().trim();
+    return (nombreLower === 'otro residuo' || 
+            nombreLower === 'otro residuo -' ||
+            nombreLower === 'otro residuo-') && 
+           !nombreLower.includes('peligroso');
+  };
+
+  const esOtroResiduoPeligroso = (residuoNombre: string | undefined): boolean => {
+    if (!residuoNombre) return false;
+    const nombreLower = residuoNombre.toLowerCase().trim();
+    return nombreLower === 'otro residuo peligroso' || 
+           nombreLower === 'otro residuo - peligroso' ||
+           nombreLower === 'otro residuo -peligroso' ||
+           nombreLower === 'otro residuo-peligroso';
+  };
+
+  const esResiduoOtroGenerico = (residuoNombre: string | undefined): boolean => {
+    if (!residuoNombre) return false;
+    const nombreLower = residuoNombre.toLowerCase();
+    return nombreLower === 'otro' && !nombreLower.includes('peligroso') && !nombreLower.includes('residuo');
+  };
+
+  const esOtroMEConMarca = (residuoNombre: string | undefined): boolean => {
+    if (!residuoNombre) return false;
+    const nombreLower = residuoNombre.toLowerCase();
+    return (
+      nombreLower.includes('me con marca') || 
+      nombreLower.includes('me - con marca') ||
+      nombreLower.includes('me_con_marca') ||
+      nombreLower === 'otro me - con marca'
+    );
+  };
+
+  const esOtroMESinMarca = (residuoNombre: string | undefined): boolean => {
+    if (!residuoNombre) return false;
+    const nombreLower = residuoNombre.toLowerCase();
+    return (
+      nombreLower.includes('me sin marca') || 
+      nombreLower.includes('me - sin marca') ||
+      nombreLower.includes('me_sin_marca') ||
+      nombreLower === 'otro me - sin marca'
+    );
+  };
+
+  // Obtener el nombre del residuo desde residuosFiltrados
+  const obtenerNombreResiduo = (residuoId: number): string => {
+    const residuo = residuosFiltrados.find(r => r.id === residuoId);
+    return residuo?.nombre || '';
+  };
 
   useEffect(() => {
     if (operarioDoc && operarios.length > 0) {
@@ -278,9 +369,132 @@ export default function ModalEdicionActa({
     }
   };
 
+  // Función para manejar el cambio en select especial de residuos peligrosos
+  const handleCambioSelectResiduoEspecial = (index: number, valor: string) => {
+    // Esto actualiza tanto descripcion_residuo_otro como residuo_otro
+    handleCambioDescripcionResiduoOtro(index, valor);
+  };
+
   const residuosConNovedad = residuosEditables.filter(r => r.novedad_residuo);
   const pesoTotalReportado = residuosEditables.reduce((sum, r) => sum + parseFloat(r.peso_reportado || "0"), 0);
   const pesoTotalConciliado = residuosEditables.reduce((sum, r) => sum + parseFloat(r.peso_conciliado || "0"), 0);
+
+  // Función para renderizar el campo de descripción específico según el tipo de residuo
+  const renderCampoDescripcionResiduo = (residuo: ResiduoEditable, index: number) => {
+    const nombreResiduo = residuo.residuo_nombre;
+    
+    if (esOtroResiduoPeligroso(nombreResiduo)) {
+      return (
+        <div className="mt-1">
+          <label className="block text-xs text-gray-500 mb-1">Tipo de residuo peligroso *</label>
+          <select
+            value={residuo.descripcion_residuo_otro || residuo.residuo_otro || ""}
+            onChange={(e) => handleCambioSelectResiduoEspecial(index, e.target.value)}
+            className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+            disabled={!puedeEditarTodo || guardando}
+            required
+          >
+            <option value="">Seleccione un tipo</option>
+            {OPCIONES_OTRO_PELIGROSO.map((opcion) => (
+              <option key={opcion} value={opcion}>
+                {opcion}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    
+    if (esOtroMEConMarca(nombreResiduo)) {
+      return (
+        <div className="mt-1">
+          <label className="block text-xs text-gray-500 mb-1">Tipo de residuo ME - Con marca *</label>
+          <select
+            value={residuo.descripcion_residuo_otro || residuo.residuo_otro || ""}
+            onChange={(e) => handleCambioSelectResiduoEspecial(index, e.target.value)}
+            className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+            disabled={!puedeEditarTodo || guardando}
+            required
+          >
+            <option value="">Seleccione un tipo</option>
+            {OPCIONES_OTRO_ME_CON_MARCA.map((opcion) => (
+              <option key={opcion} value={opcion}>
+                {opcion}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    
+    if (esOtroMESinMarca(nombreResiduo)) {
+      return (
+        <div className="mt-1">
+          <label className="block text-xs text-gray-500 mb-1">Tipo de residuo ME - Sin marca *</label>
+          <select
+            value={residuo.descripcion_residuo_otro || residuo.residuo_otro || ""}
+            onChange={(e) => handleCambioSelectResiduoEspecial(index, e.target.value)}
+            className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+            disabled={!puedeEditarTodo || guardando}
+            required
+          >
+            <option value="">Seleccione un tipo</option>
+            {OPCIONES_OTRO_ME_SIN_MARCA.map((opcion) => (
+              <option key={opcion} value={opcion}>
+                {opcion}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+    
+    if (esResiduoOtroGenerico(nombreResiduo) || esOtroResiduo(nombreResiduo)) {
+      return (
+        <div className="mt-1">
+          <label className="block text-xs text-gray-500 mb-1">
+            {esResiduoOtroGenerico(nombreResiduo) 
+              ? "Especifique el residuo *" 
+              : "Especifique el residuo *"}
+          </label>
+          <input
+            type="text"
+            value={residuo.descripcion_residuo_otro || residuo.residuo_otro || ""}
+            onChange={(e) => handleCambioDescripcionResiduoOtro(index, e.target.value)}
+            placeholder={
+              esResiduoOtroGenerico(nombreResiduo)
+                ? "Ej: Papel archivo, plástico limpio, etc."
+                : "Ej: Papel archivo, plástico limpio, etc."
+            }
+            className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+            disabled={!puedeEditarTodo || guardando}
+            required
+          />
+        </div>
+      );
+    }
+    
+    return null;
+  };
+
+  // Función para obtener el texto del residuo para mostrar
+  const getTextoResiduo = (residuo: ResiduoEditable) => {
+    const nombreResiduo = residuo.residuo_nombre;
+    
+    if (esOtroResiduoPeligroso(nombreResiduo) || 
+        esOtroMEConMarca(nombreResiduo) || 
+        esOtroMESinMarca(nombreResiduo) ||
+        esResiduoOtroGenerico(nombreResiduo) ||
+        esOtroResiduo(nombreResiduo)) {
+      
+      const descripcion = residuo.descripcion_residuo_otro || residuo.residuo_otro;
+      if (descripcion) {
+        return `${nombreResiduo}: ${descripcion}`;
+      }
+    }
+    
+    return nombreResiduo;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -331,6 +545,7 @@ export default function ModalEdicionActa({
                 type="button"
                 onClick={() => setMostrarCamposAvanzados(!mostrarCamposAvanzados)}
                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+                disabled={guardando}
               >
                 {mostrarCamposAvanzados ? (
                   <>
@@ -382,9 +597,7 @@ export default function ModalEdicionActa({
                         {residuosConNovedad.map((residuo, index) => (
                           <div key={index} className="text-xs sm:text-sm bg-orange-50 dark:bg-orange-900/20 p-3 rounded">
                             <div className="font-medium text-orange-800 dark:text-orange-200 mb-1">
-                              {residuo.residuo_nombre === "Otro" 
-                                ? residuo.descripcion_residuo_otro || "Residuo"
-                                : residuo.residuo_nombre}
+                              {getTextoResiduo(residuo)}
                             </div>
                             <div className="text-orange-700 dark:text-orange-300 ml-2">
                               {residuo.novedad_residuo}
@@ -439,6 +652,7 @@ export default function ModalEdicionActa({
                   className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
                   placeholder="Máx 6 dígitos"
                   maxLength={6}
+                  disabled={guardando}
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Solo números</p>
               </div>
@@ -454,6 +668,7 @@ export default function ModalEdicionActa({
                   className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
                   placeholder="Máx 11 dígitos"
                   maxLength={11}
+                  disabled={guardando}
                 />
                 <p className="text-xs text-gray-500 mt-0.5">Solo números</p>
               </div>
@@ -483,6 +698,7 @@ export default function ModalEdicionActa({
                         value={subareaId || ""}
                         onChange={(e) => handleSubareaChange(e.target.value)}
                         className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
+                        disabled={guardando}
                       >
                         <option value="">Seleccionar subárea</option>
                         {subareas.map((s) => (
@@ -500,6 +716,7 @@ export default function ModalEdicionActa({
                       value={centroCostoId || ""}
                       onChange={(e) => handleCentroCostoChange(e.target.value)}
                       className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
+                      disabled={guardando}
                     >
                       <option value="">Seleccionar centro de costo</option>
                       {centrosCosto.map((c) => (
@@ -528,6 +745,7 @@ export default function ModalEdicionActa({
                     value={operarioId || ""}
                     onChange={(e) => handleOperarioChange(e.target.value)}
                     className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
+                    disabled={guardando}
                   >
                     <option value="">Seleccionar operario</option>
                     {operarios.map((op) => (
@@ -553,6 +771,7 @@ export default function ModalEdicionActa({
                   placeholder="Ej: 1234567890"
                   maxLength={10}
                   required
+                  disabled={guardando}
                 />
                 
                 {nombreOperarioAutocompletado && (
@@ -575,6 +794,7 @@ export default function ModalEdicionActa({
                     value={conciliadorId || ""}
                     onChange={(e) => handleConciliadorChange(e.target.value)}
                     className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border rounded dark:bg-gray-700 text-sm"
+                    disabled={guardando}
                   >
                     <option value="">Seleccionar conciliador</option>
                     {operariosPuntoVerde.map((op) => (
@@ -600,6 +820,7 @@ export default function ModalEdicionActa({
                   placeholder="Ej: 1234567890"
                   maxLength={10}
                   required
+                  disabled={guardando}
                 />
                 
                 {nombreConciliadorAutocompletado && (
@@ -611,7 +832,7 @@ export default function ModalEdicionActa({
             </div>
           </div>
 
-          {/* RESIDUOS - VERSIÓN TABLA MEJORADA CON COLUMNA DE NOVEDAD */}
+          {/* RESIDUOS - VERSIÓN SIN BOTÓN ELIMINAR */}
           <div className="bg-gray-50 dark:bg-gray-900/50 p-3 sm:p-4 rounded-lg">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
               <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
@@ -623,7 +844,8 @@ export default function ModalEdicionActa({
                   <button
                     type="button"
                     onClick={onAgregarResiduo}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500 text-white rounded hover:bg-green-600 transition flex items-center gap-2 text-xs sm:text-sm"
+                    disabled={guardando}
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-green-500 text-white rounded hover:bg-green-600 transition flex items-center gap-2 text-xs sm:text-sm disabled:opacity-50"
                   >
                     <span>+</span>
                     Agregar Residuo
@@ -634,7 +856,8 @@ export default function ModalEdicionActa({
                   <button
                     type="button"
                     onClick={() => setVistaTablaResiduos(vistaTablaResiduos === 'tabla' ? 'tarjetas' : 'tabla')}
-                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2 text-xs sm:text-sm"
+                    disabled={guardando}
+                    className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition flex items-center gap-2 text-xs sm:text-sm disabled:opacity-50"
                   >
                     {vistaTablaResiduos === 'tabla' ? '📱 Ver tarjetas' : '📊 Ver tabla'}
                   </button>
@@ -644,19 +867,16 @@ export default function ModalEdicionActa({
 
             {residuosEditables.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No hay residuos registrados.
+                No hay residuos registrados. {puedeEditarTodo && 'Agrega al menos uno para continuar.'}
               </div>
             ) : vistaTablaResiduos === 'tabla' ? (
-              /* TABLA RESPONSIVA CON COLUMNA DE NOVEDAD */
+              /* TABLA RESPONSIVA SIN COLUMNA ACCIÓN */
               <div className="overflow-x-auto -mx-2 sm:mx-0">
                 <table className="min-w-full border dark:border-gray-700 text-xs sm:text-sm">
                   <thead className="bg-gray-100 dark:bg-gray-800">
                     <tr>
-                      {puedeEditarTodo && onEliminarResiduo && (
-                        <th className="px-2 py-2 text-center font-semibold w-12">Acción</th>
-                      )}
                       <th className="px-2 py-2 text-left font-semibold w-1/5">Residuo</th>
-                      <th className="px-2 py-2 text-left font-semibold w-1/6">Descripción</th>
+                      <th className="px-2 py-2 text-left font-semibold w-1/6">Descripción Específica</th>
                       <th className="px-2 py-2 text-left font-semibold w-1/6">Motivo</th>
                       {esNovedad && (
                         <th className="px-2 py-2 text-left font-semibold w-1/5">Novedad</th>
@@ -668,42 +888,21 @@ export default function ModalEdicionActa({
                   <tbody className="divide-y dark:divide-gray-700">
                     {residuosEditables.map((residuo, index) => (
                       <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        {puedeEditarTodo && onEliminarResiduo && (
-                          <td className="px-2 py-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => onEliminarResiduo(index)}
-                              className="text-red-500 hover:text-red-700 text-lg font-bold w-8 h-8 flex items-center justify-center mx-auto"
-                              title="Eliminar residuo"
-                            >
-                              ×
-                            </button>
-                          </td>
-                        )}
-                        
                         <td className="px-2 py-3">
                           <div className="space-y-1">
                             <div className={`px-2 py-1 border rounded dark:bg-gray-700/50 ${
                               residuo.novedad_residuo ? 'border-yellow-300 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20' : ''
                             }`}>
-                              {residuo.residuo_nombre ? (
-                                <div className="font-medium">
-                                  {residuo.residuo_nombre}
-                                  {residuo.residuo_nombre === "Otro" && residuo.descripcion_residuo_otro && (
-                                    <div className="text-xs text-gray-500 mt-0.5">
-                                      ({residuo.descripcion_residuo_otro})
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-gray-500 italic">Sin nombre</span>
-                              )}
+                              <div className="font-medium">
+                                {getTextoResiduo(residuo)}
+                              </div>
                             </div>
                             {puedeEditarTodo && residuosFiltrados.length > 0 && (
                               <select
                                 value={residuo.residuo_id}
                                 onChange={(e) => onCambioResiduo(index, parseInt(e.target.value))}
                                 className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+                                disabled={guardando}
                               >
                                 <option value="">Cambiar residuo...</option>
                                 {residuosFiltrados.map((r) => (
@@ -717,37 +916,40 @@ export default function ModalEdicionActa({
                         </td>
                         
                         <td className="px-2 py-3">
-                          {(residuo.residuo_nombre === "Otro" || residuo.residuo_otro) ? (
-                            <input
-                              type="text"
-                              value={residuo.descripcion_residuo_otro || residuo.residuo_otro || ""}
-                              onChange={(e) => handleCambioDescripcionResiduoOtro(index, e.target.value)}
-                              placeholder="Descripción..."
-                              className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
-                              disabled={!puedeEditarTodo}
-                            />
-                          ) : (
-                            <span className="text-gray-500 text-xs">-</span>
-                          )}
+                          {/* RENDERIZAR CAMPO ESPECIAL SEGÚN TIPO DE RESIDUO */}
+                          {renderCampoDescripcionResiduo(residuo, index)}
                         </td>
                         
                         <td className="px-2 py-3">
-                          <select
-                            value={residuo.motivo}
-                            onChange={(e) => onCambioMotivo(index, e.target.value)}
-                            className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
-                            disabled={!puedeEditarTodo}
-                          >
-                            <option value="">Seleccionar</option>
-                            {motivosFiltrados.map((m) => (
-                              <option key={m.id} value={m.nombre}>
-                                {m.nombre}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="space-y-1">
+                            <select
+                              value={residuo.motivo}
+                              onChange={(e) => onCambioMotivo(index, e.target.value)}
+                              className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs"
+                              disabled={!puedeEditarTodo || guardando}
+                            >
+                              <option value="">Seleccionar</option>
+                              {motivosFiltrados.map((m) => (
+                                <option key={m.id} value={m.nombre}>
+                                  {m.nombre}
+                                </option>
+                              ))}
+                            </select>
+                            
+                            {residuo.motivo === 'Otro' && (
+                              <input
+                                type="text"
+                                value={residuo.descripcion_motivo_otro || residuo.motivo_otro || ""}
+                                onChange={(e) => handleCambioDescripcionMotivoOtro(index, e.target.value)}
+                                placeholder="Especifique motivo..."
+                                className="w-full px-2 py-1 border rounded dark:bg-gray-700 text-xs mt-1"
+                                disabled={!puedeEditarTodo || guardando}
+                              />
+                            )}
+                          </div>
                         </td>
                         
-                        {/* COLUMNA DE NOVEDAD - RECUPERADA */}
+                        {/* COLUMNA DE NOVEDAD */}
                         {esNovedad && (
                           <td className="px-2 py-3">
                             {residuo.novedad_residuo ? (
@@ -772,12 +974,13 @@ export default function ModalEdicionActa({
                               step="0.01"
                               min="0"
                               value={residuo.peso_reportado}
-                              onChange={(e) => onCambioPesoReportado(index, e.target.value)}
+                              onChange={(e) => onCambioPesoReportado && onCambioPesoReportado(index, e.target.value)}
                               className="w-full px-2 py-1 border rounded text-right dark:bg-gray-700 text-xs sm:text-sm"
+                              disabled={guardando}
                             />
                           ) : (
                             <span className="font-medium">
-                              {parseFloat(residuo.peso_reportado).toFixed(2)}
+                              {parseFloat(residuo.peso_reportado || "0").toFixed(2)}
                             </span>
                           )}
                         </td>
@@ -791,6 +994,7 @@ export default function ModalEdicionActa({
                             onChange={(e) => onCambioPesoConciliado(index, e.target.value)}
                             className="w-full px-2 py-1 border rounded text-right dark:bg-gray-700 font-bold text-xs sm:text-sm"
                             required
+                            disabled={guardando}
                           />
                         </td>
                       </tr>
@@ -800,8 +1004,7 @@ export default function ModalEdicionActa({
                     <tr>
                       <td 
                         colSpan={
-                          (puedeEditarTodo && onEliminarResiduo ? 1 : 0) + 
-                          3 + 
+                          2 + 
                           (esNovedad ? 1 : 0)
                         } 
                         className="px-2 py-3 text-right"
@@ -819,95 +1022,101 @@ export default function ModalEdicionActa({
                 </table>
               </div>
             ) : (
-              /* VISTA TARJETAS (PARA MÓVIL) CON INFORMACIÓN DE NOVEDAD */
+              /* VISTA TARJETAS SIN BOTÓN ELIMINAR */
               <div className="grid grid-cols-1 gap-3">
                 {residuosEditables.map((residuo, index) => (
                   <div key={index} className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="font-bold">
-                          {residuo.residuo_nombre || "Sin nombre"}
-                          {residuo.residuo_nombre === "Otro" && residuo.descripcion_residuo_otro && (
-                            <span className="text-gray-600 dark:text-gray-400 ml-2 text-sm">
-                              ({residuo.descripcion_residuo_otro})
-                            </span>
-                          )}
-                        </div>
-                        {residuo.novedad_residuo && (
-                          <div className="mt-2">
-                            <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mb-1">
-                              ⚠️ Novedad:
-                            </div>
-                            <div className="text-xs bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
-                              {residuo.novedad_residuo}
-                            </div>
-                          </div>
-                        )}
+                    <div className="mb-3">
+                      <div className="font-bold">
+                        {getTextoResiduo(residuo)}
                       </div>
-                      {puedeEditarTodo && onEliminarResiduo && (
-                        <button
-                          onClick={() => onEliminarResiduo(index)}
-                          className="text-red-500 hover:text-red-700"
-                          title="Eliminar"
-                        >
-                          ×
-                        </button>
+                      {residuo.novedad_residuo && (
+                        <div className="mt-2">
+                          <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mb-1">
+                            ⚠️ Novedad:
+                          </div>
+                          <div className="text-xs bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
+                            {residuo.novedad_residuo}
+                          </div>
+                        </div>
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Peso Reportado</label>
-                        {puedeEditarTodo && onCambioPesoReportado ? (
+                    <div className="grid grid-cols-1 gap-3">
+                      {/* CAMPO DE DESCRIPCIÓN ESPECIAL */}
+                      {renderCampoDescripcionResiduo(residuo, index)}
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Peso Reportado</label>
+                          {puedeEditarTodo && onCambioPesoReportado ? (
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={residuo.peso_reportado}
+                              onChange={(e) => onCambioPesoReportado && onCambioPesoReportado(index, e.target.value)}
+                              className="w-full px-2 py-1 border rounded dark:bg-gray-700"
+                              disabled={guardando}
+                            />
+                          ) : (
+                            <div className="font-medium">{parseFloat(residuo.peso_reportado || "0").toFixed(2)} kg</div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Peso Conciliado *</label>
                           <input
                             type="number"
                             step="0.01"
                             min="0"
-                            value={residuo.peso_reportado}
-                            onChange={(e) => onCambioPesoReportado(index, e.target.value)}
-                            className="w-full px-2 py-1 border rounded dark:bg-gray-700"
+                            value={residuo.peso_conciliado}
+                            onChange={(e) => onCambioPesoConciliado(index, e.target.value)}
+                            className="w-full px-2 py-1 border rounded dark:bg-gray-700 font-bold"
+                            required
+                            disabled={guardando}
                           />
-                        ) : (
-                          <div className="font-medium">{parseFloat(residuo.peso_reportado).toFixed(2)} kg</div>
-                        )}
+                        </div>
                       </div>
                       
                       <div>
-                        <label className="block text-xs text-gray-500 mb-1">Peso Conciliado *</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={residuo.peso_conciliado}
-                          onChange={(e) => onCambioPesoConciliado(index, e.target.value)}
-                          className="w-full px-2 py-1 border rounded dark:bg-gray-700 font-bold"
-                          required
-                        />
-                      </div>
-                      
-                      <div className="col-span-2">
                         <label className="block text-xs text-gray-500 mb-1">Motivo</label>
-                        <select
-                          value={residuo.motivo}
-                          onChange={(e) => onCambioMotivo(index, e.target.value)}
-                          className="w-full px-2 py-1 border rounded dark:bg-gray-700"
-                        >
-                          <option value="">Seleccionar motivo</option>
-                          {motivosFiltrados.map((m) => (
-                            <option key={m.id} value={m.nombre}>
-                              {m.nombre}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="space-y-1">
+                          <select
+                            value={residuo.motivo}
+                            onChange={(e) => onCambioMotivo(index, e.target.value)}
+                            className="w-full px-2 py-1 border rounded dark:bg-gray-700"
+                            disabled={guardando}
+                          >
+                            <option value="">Seleccionar motivo</option>
+                            {motivosFiltrados.map((m) => (
+                              <option key={m.id} value={m.nombre}>
+                                {m.nombre}
+                              </option>
+                            ))}
+                          </select>
+                          
+                          {residuo.motivo === 'Otro' && (
+                            <input
+                              type="text"
+                              value={residuo.descripcion_motivo_otro || residuo.motivo_otro || ""}
+                              onChange={(e) => handleCambioDescripcionMotivoOtro(index, e.target.value)}
+                              placeholder="Especifique motivo..."
+                              className="w-full px-2 py-1 border rounded dark:bg-gray-700 mt-1"
+                              disabled={!puedeEditarTodo || guardando}
+                            />
+                          )}
+                        </div>
                       </div>
                       
                       {puedeEditarTodo && residuosFiltrados.length > 0 && (
-                        <div className="col-span-2">
+                        <div>
                           <label className="block text-xs text-gray-500 mb-1">Cambiar Residuo</label>
                           <select
                             value={residuo.residuo_id}
                             onChange={(e) => onCambioResiduo(index, parseInt(e.target.value))}
                             className="w-full px-2 py-1 border rounded dark:bg-gray-700"
+                            disabled={guardando}
                           >
                             <option value="">Cambiar residuo...</option>
                             {residuosFiltrados.map((r) => (
@@ -949,6 +1158,11 @@ export default function ModalEdicionActa({
                   Los campos avanzados se guardarán junto con la conciliación.
                 </p>
               )}
+              {residuosEditables.length === 0 && (
+                <p className="text-red-500 font-semibold mt-1">
+                  ⚠️ Debes tener al menos un residuo para continuar.
+                </p>
+              )}
             </div>
             <div className="flex gap-3">
               <button
@@ -962,11 +1176,11 @@ export default function ModalEdicionActa({
               <button
                 type="button"
                 onClick={onGuardar}
-                disabled={guardando}
+                disabled={guardando || residuosEditables.length === 0}
                 className={`px-6 py-2 text-white rounded hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 text-sm flex-1 sm:flex-none ${
                   esNovedad ? "bg-yellow-500 hover:bg-yellow-600" :
                   "bg-green-500 hover:bg-green-600"
-                }`}
+                } ${residuosEditables.length === 0 ? "cursor-not-allowed" : ""}`}
               >
                 {guardando ? (
                   <>

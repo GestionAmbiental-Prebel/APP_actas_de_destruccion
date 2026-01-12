@@ -469,7 +469,7 @@ export default function ActasConciliadas() {
               <div className="text-sm text-gray-500 dark:text-gray-400 mt-2 space-y-1">
                 {acta.consecutivo && <p><span className="font-semibold">Consecutivo:</span> {acta.consecutivo}</p>}
                 {acta.numero_inventario && <p><span className="font-semibold">Número de Inventario:</span> {acta.numero_inventario}</p>}
-                <p><span className="font-semibold">Subárea:</span> {renderSubarea(acta.subarea_id, acta.subarea_nombre || acta.subarea)}</p>
+                <p><span className="font-semibold">Área:</span> {renderSubarea(acta.subarea_id, acta.subarea_nombre || acta.subarea)}</p>
                 <p><span className="font-semibold">Centro de Costo:</span> {renderCentroCosto(acta.centro_costo_id, acta.centro_costo_codigo, acta.centro_costo_nombre)}</p>
               </div>
 

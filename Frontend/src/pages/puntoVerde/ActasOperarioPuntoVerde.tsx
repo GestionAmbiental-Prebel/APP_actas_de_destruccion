@@ -238,7 +238,7 @@ export default function ActasOperarioPuntoVerde() {
 
                     {/* SHOW SUBAREA */}
                     <p>
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Subárea:</span>{" "}
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Área:</span>{" "}
                       { renderSubarea(acta) }
                     </p>
 

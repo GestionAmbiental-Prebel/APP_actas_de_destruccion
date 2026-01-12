@@ -18,7 +18,7 @@ export const ActaInfoSection = ({ acta }: ActaInfoSectionProps) => {
         </p>
       )}
       <p>
-        <span className="font-semibold">Subárea:</span> {acta.subarea_nombre ?? "Sin subárea"}
+        <span className="font-semibold">Área:</span> {acta.subarea_nombre ?? "Sin subárea"}
       </p>
       <p>
         <span className="font-semibold">Centro de Costo:</span>{" "}

@@ -13,11 +13,11 @@ type SeccionUbicacionProps = {
   sedeNombre: string;
   onCentroCostoChange: (centroCostoId: number) => void;
   centrosCosto: CentroCosto[];
-  // Necesitamos todos los catálogos para obtener la sede de cada subárea
-  subAreas: SubArea[];
-  areas: Area[];
-  procedencias: Procedencia[];
-  sedes: Sede[];
+  // Añadir valores por defecto para todos los arrays
+  subAreas?: SubArea[];
+  areas?: Area[];
+  procedencias?: Procedencia[];
+  sedes?: Sede[];
   disabled?: boolean;
 };
 
@@ -28,25 +28,37 @@ export default function SeccionUbicacion({
   procedenciaNombre,
   sedeNombre,
   onCentroCostoChange,
-  centrosCosto,
-  subAreas,
-  areas,
-  procedencias,
-  sedes,
+  centrosCosto = [], // Valor por defecto
+  subAreas = [], // Valor por defecto
+  areas = [], // Valor por defecto
+  procedencias = [], // Valor por defecto
+  sedes = [], // Valor por defecto
   disabled = false
 }: SeccionUbicacionProps) {
   const [subAreaIdSeleccionada, setSubAreaIdSeleccionada] = useState<number | null>(null);
 
-  // Función para obtener la sede de una subárea
+  // Función segura para obtener la sede de una subárea
   const obtenerSedeDeSubArea = (subAreaId: number): string => {
+    // Verificar que subAreas exista y sea un array
+    if (!Array.isArray(subAreas) || subAreas.length === 0) return '';
+    
     const subArea = subAreas.find(sa => sa.id === subAreaId);
     if (!subArea) return '';
+    
+    // Verificar que areas exista y sea un array
+    if (!Array.isArray(areas) || areas.length === 0) return '';
     
     const area = areas.find(a => a.id === subArea.area_id);
     if (!area) return '';
     
+    // Verificar que procedencias exista y sea un array
+    if (!Array.isArray(procedencias) || procedencias.length === 0) return '';
+    
     const procedencia = procedencias.find(p => p.id === area.procedencia_id);
     if (!procedencia) return '';
+    
+    // Verificar que sedes exista y sea un array
+    if (!Array.isArray(sedes) || sedes.length === 0) return '';
     
     const sede = sedes.find(s => s.id === procedencia.sede_id);
     return sede?.nombre || '';
@@ -54,9 +66,16 @@ export default function SeccionUbicacion({
 
   // Obtener subáreas únicas para el combobox con información de sede
   const subAreasOptions = useMemo(() => {
+    // Verificar que los arrays existan
+    if (!Array.isArray(centrosCosto)) return [];
+    if (!Array.isArray(subAreas)) return [];
+    
     // Obtener IDs de subáreas únicas de los centros de costo
     const subAreaIdsUnicas = Array.from(
-      new Set(centrosCosto.map(cc => cc.subarea_id).filter((id): id is number => id !== null && id !== undefined))
+      new Set(centrosCosto
+        .map(cc => cc.subarea_id)
+        .filter((id): id is number => id !== null && id !== undefined && !isNaN(id))
+      )
     );
     
     // Mapear IDs a objetos con nombre y sede
@@ -83,6 +102,7 @@ export default function SeccionUbicacion({
   // Filtrar centros por subárea seleccionada
   const centrosPorSubArea = useMemo(() => {
     if (!subAreaIdSeleccionada) return [];
+    if (!Array.isArray(centrosCosto)) return [];
     
     return centrosCosto.filter(centro => centro.subarea_id === subAreaIdSeleccionada);
   }, [centrosCosto, subAreaIdSeleccionada]);
@@ -95,6 +115,8 @@ export default function SeccionUbicacion({
 
   // Opciones para centros de costo con sede
   const centrosOptions = useMemo(() => {
+    if (!Array.isArray(centrosPorSubArea)) return [];
+    
     return centrosPorSubArea.map(centro => {
       const sede = obtenerSedeDeCentroCosto(centro);
       const labelSede = sede ? ` (${sede})` : '';
@@ -108,6 +130,7 @@ export default function SeccionUbicacion({
 
   // Encontrar el centro de costo actual
   const centroCostoActual = useMemo(() => {
+    if (!Array.isArray(centrosCosto)) return undefined;
     return centrosCosto.find(cc => cc.id === centroCostoId);
   }, [centrosCosto, centroCostoId]);
 
@@ -122,6 +145,16 @@ export default function SeccionUbicacion({
       };
     }
 
+    // Verificar que subAreas sea un array
+    if (!Array.isArray(subAreas)) {
+      return {
+        subAreaNombre: subAreaNombre,
+        areaNombre: areaNombre,
+        procedenciaNombre: procedenciaNombre,
+        sedeNombre: sedeNombre
+      };
+    }
+
     const subArea = subAreas.find(sa => sa.id === centroCostoActual.subarea_id);
     if (!subArea) {
       return {
@@ -132,24 +165,52 @@ export default function SeccionUbicacion({
       };
     }
 
+    // Verificar que areas sea un array
+    if (!Array.isArray(areas)) {
+      return {
+        subAreaNombre: subArea.nombre,
+        areaNombre: areaNombre,
+        procedenciaNombre: procedenciaNombre,
+        sedeNombre: sedeNombre
+      };
+    }
+
     const area = areas.find(a => a.id === subArea.area_id);
-    const procedencia = area ? procedencias.find(p => p.id === area.procedencia_id) : undefined;
-    const sede = procedencia ? sedes.find(s => s.id === procedencia.sede_id) : undefined;
+    
+    let procedenciaNombreActual = procedenciaNombre;
+    let sedeNombreActual = sedeNombre;
+    
+    if (area) {
+      // Verificar que procedencias sea un array
+      if (Array.isArray(procedencias)) {
+        const procedencia = procedencias.find(p => p.id === area.procedencia_id);
+        if (procedencia) {
+          procedenciaNombreActual = procedencia.nombre;
+          
+          // Verificar que sedes sea un array
+          if (Array.isArray(sedes)) {
+            const sede = sedes.find(s => s.id === procedencia.sede_id);
+            if (sede) {
+              sedeNombreActual = sede.nombre;
+            }
+          }
+        }
+      }
+    }
 
     return {
       subAreaNombre: subArea.nombre,
       areaNombre: area?.nombre || areaNombre,
-      procedenciaNombre: procedencia?.nombre || procedenciaNombre,
-      sedeNombre: sede?.nombre || sedeNombre
+      procedenciaNombre: procedenciaNombreActual,
+      sedeNombre: sedeNombreActual
     };
   };
 
   const infoActual = obtenerInfoRelacionada();
 
-  // Sincronizar cuando cambia el centro externamente - CORRECCIÓN AQUÍ
+  // Sincronizar cuando cambia el centro externamente
   useEffect(() => {
     if (centroCostoActual?.subarea_id && centroCostoActual.subarea_id !== subAreaIdSeleccionada) {
-      // Asegurarnos de que subarea_id no sea null o undefined
       const subAreaId = centroCostoActual.subarea_id;
       if (subAreaId !== null && subAreaId !== undefined) {
         setSubAreaIdSeleccionada(subAreaId);
@@ -159,6 +220,8 @@ export default function SeccionUbicacion({
 
   const handleSubAreaChange = (subAreaIdStr: string) => {
     const subAreaId = parseInt(subAreaIdStr);
+    if (isNaN(subAreaId)) return;
+    
     setSubAreaIdSeleccionada(subAreaId);
     
     // Seleccionar el primer centro de costo de esta subárea
@@ -182,12 +245,12 @@ export default function SeccionUbicacion({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Sub Área con sede */}
         <Combobox
-          label="Sub Área"
+          label="Area"
           value={subAreaIdSeleccionada ? String(subAreaIdSeleccionada) : ""}
           onChange={handleSubAreaChange}
           options={subAreasOptions}
           disabled={disabled}
-          placeholder="Seleccione sub área"
+          placeholder="Seleccione Area"
         />
 
         {/* Centro de Costos con sede */}
@@ -199,19 +262,11 @@ export default function SeccionUbicacion({
           disabled={disabled || !subAreaIdSeleccionada}
           placeholder={subAreaIdSeleccionada ? 
             `Seleccione centro de costos (${centrosPorSubArea.length} disponibles)` : 
-            "Primero seleccione sub área"
+            "Primero seleccione Area"
           }
         />
 
         {/* Campos de información */}
-
-        <Input
-          label="Área"
-          value={infoActual.areaNombre}
-          onChange={() => {}}
-          disabled
-        />
-
         <Input
           label="Procedencia"
           value={infoActual.procedenciaNombre}

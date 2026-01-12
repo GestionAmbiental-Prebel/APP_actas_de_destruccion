@@ -16,16 +16,16 @@ export const exportToExcel = (
   try {
     // Validar datos
     if (!data || data.length === 0) {
-      alert("No hay datos para exportar");
+      alert("NO HAY DATOS PARA EXPORTAR");
       return;
     }
 
     if (!Array.isArray(data)) {
-      throw new Error("Los datos deben ser un array");
+      throw new Error("LOS DATOS DEBEN SER UN ARRAY");
     }
 
     const {
-      sheetName = "Datos",
+      sheetName = "DATOS",
       showFilter = true,
       autoSizeColumns = true,
       dateFormat = "dd/mm/yyyy"
@@ -56,15 +56,12 @@ export const exportToExcel = (
     const lastRow = range.e.r;
     const lastCol = range.e.c;
 
-    // Agregar estilo de tabla con filtros
+    // Agregar filtros automáticos
     if (showFilter) {
-      // Definir el rango de la tabla (incluyendo encabezados y datos)
       const tableRange = XLSX.utils.encode_range({ 
         s: { r: 0, c: 0 }, 
         e: { r: lastRow, c: lastCol } 
       });
-
-      // Agregar propiedad de filtro automático
       worksheet['!autofilter'] = { ref: tableRange };
     }
 
@@ -75,7 +72,7 @@ export const exportToExcel = (
       
       // Ancho mínimo para encabezados
       headers.forEach((header, index) => {
-        columnWidths[index] = Math.max(header.length + 2, 10); // +2 para padding
+        columnWidths[index] = Math.max(header.length + 2, 12);
       });
 
       // Ancho según contenido
@@ -88,78 +85,11 @@ export const exportToExcel = (
 
       // Aplicar anchos de columna
       worksheet['!cols'] = columnWidths.map(width => ({
-        wch: Math.min(width, 50), // Máximo 50 caracteres
-        width // Propiedad adicional para compatibilidad
+        wch: Math.min(width, 50),
       }));
     }
 
-    // Agregar estilo a los encabezados
-    if (worksheet['!ref']) {
-      const headers = Object.keys(preparedData[0]);
-      
-      // Aplicar formato a los encabezados (fila 1)
-      headers.forEach((_, colIndex) => {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: colIndex });
-        
-        if (!worksheet[cellAddress]) {
-          worksheet[cellAddress] = { v: headers[colIndex] };
-        }
-        
-        // Agregar estilo al encabezado
-        worksheet[cellAddress].s = {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { 
-            fgColor: { rgb: "4472C4" }, // Azul de Excel
-            patternType: "solid"
-          },
-          alignment: { 
-            horizontal: "center",
-            vertical: "center",
-            wrapText: true
-          },
-          border: {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-          }
-        };
-      });
-
-      // Aplicar bordes a todas las celdas de datos
-      for (let row = 1; row <= lastRow; row++) {
-        for (let col = 0; col <= lastCol; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-          
-          if (!worksheet[cellAddress]) {
-            worksheet[cellAddress] = { v: "" };
-          }
-          
-          // Estilo para filas alternadas (bandas)
-          if (!worksheet[cellAddress].s) {
-            worksheet[cellAddress].s = {};
-          }
-          
-          // Bordes para todas las celdas
-          worksheet[cellAddress].s.border = {
-            top: { style: "thin", color: { rgb: "D9D9D9" } },
-            bottom: { style: "thin", color: { rgb: "D9D9D9" } },
-            left: { style: "thin", color: { rgb: "D9D9D9" } },
-            right: { style: "thin", color: { rgb: "D9D9D9" } }
-          };
-          
-          // Bandas alternadas para mejor legibilidad
-          if (row % 2 === 0) {
-            worksheet[cellAddress].s.fill = {
-              fgColor: { rgb: "F2F2F2" },
-              patternType: "solid"
-            };
-          }
-        }
-      }
-    }
-
-    // Crear libro con más opciones
+    // Crear libro
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
@@ -167,24 +97,22 @@ export const exportToExcel = (
     worksheet['!views'] = [{
       state: 'frozen',
       xSplit: 0,
-      ySplit: 1, // Congela la primera fila
+      ySplit: 1,
       topLeftCell: 'A2',
       activeCell: 'A2'
     }];
 
     // Agregar propiedades del libro
     workbook.Props = {
-      Title: fileName,
-      Author: "Sistema de Gestión Ambiental",
+      Title: fileName.toUpperCase(),
+      Author: "SISTEMA DE GESTIÓN AMBIENTAL",
       CreatedDate: new Date()
     };
 
-    // Convertir a blob con mejor rendimiento
+    // Generar archivo Excel - SIN estilos
     const excelBuffer = XLSX.write(workbook, { 
       bookType: "xlsx", 
-      type: "array",
-      cellStyles: true,
-      bookSST: false
+      type: "array"
     });
 
     const blob = new Blob([excelBuffer], { 
@@ -193,16 +121,16 @@ export const exportToExcel = (
 
     // Generar nombre con fecha
     const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    const finalFileName = `${fileName}_${timestamp}.xlsx`;
+    const finalFileName = `${fileName.toUpperCase()}_${timestamp}.xlsx`;
 
     // Descargar
     saveAs(blob, finalFileName);
 
-    console.log(`✅ Exportado: ${finalFileName} (${preparedData.length} registros)`);
+    console.log(`✅ EXPORTADO: ${finalFileName} (${preparedData.length} registros)`);
 
-  } catch (error) {
-    console.error("❌ Error al exportar a Excel:", error);
-    alert("Ocurrió un error al exportar los datos. Por favor, intente nuevamente.");
+  } catch (error: any) {
+    console.error("❌ ERROR AL EXPORTAR A EXCEL:", error?.message || error);
+    alert("OCURRIÓ UN ERROR AL EXPORTAR LOS DATOS. POR FAVOR, INTENTE NUEVAMENTE.");
   }
 };
 
@@ -268,13 +196,13 @@ const formatDateString = (dateString: string, format: string): string => {
 const getEstadoActa = (tipoActa: string): string => {
   switch (tipoActa) {
     case "conciliada":
-      return "Conciliada";
+      return "CONCILIADA";
     case "pendiente":
-      return "Pendiente";
+      return "PENDIENTE";
     case "con_novedad":
-      return "Con Novedad";
+      return "CON NOVEDAD";
     default:
-      return "Sin estado";
+      return "SIN ESTADO";
   }
 };
 
@@ -283,7 +211,7 @@ export const exportActasDetalladasToExcel = (
   tipo: string = "actas"
 ) => {
   if (!actas || actas.length === 0) {
-    alert("No hay actas para exportar");
+    alert("NO HAY ACTAS PARA EXPORTAR");
     return;
   }
 
@@ -298,70 +226,80 @@ export const exportActasDetalladasToExcel = (
     // Si no hay residuos, crear una fila
     if (!acta.residuos || acta.residuos.length === 0) {
       return [{
-        "Número de Acta": acta.numero_acta || "",
-        "Fecha": acta.fecha_acta ? formatDateString(acta.fecha_acta, "dd/mm/yyyy") : "",
-        "Estado": getEstadoActa(acta.tipo),
-        "Sede": acta.sede_nombre || "Sin sede",
-        "Subárea": acta.subarea_nombre || "Sin subárea",
-        "Código Centro de Costo": acta.centro_costo_codigo || "",
-        "Nombre Centro de Costo": acta.centro_costo_nombre || "",
-        "Clase de Movimiento": acta.clase_movimiento || "Sin clase",
-        "Consecutivo": acta.consecutivo || "",
-        "Número de Inventario": acta.numero_inventario || "",
-        "Operario (Cédula)": acta.operario_documento || "",
-        "Operario (Nombre)": acta.operario_nombre || "",
-        "Conciliador (Cédula)": acta.conciliador_documento || "",
-        "Conciliador (Nombre)": acta.conciliador_nombre || "",
-        "Peso Reportado (kg)": "0.00",
-        "Peso Conciliado (kg)": "0.00",
-        "Fecha Conciliación": acta.fecha_conciliacion
+        // ORDEN CORREGIDO SEGÚN LO SOLICITADO - TODOS EN MAYÚSCULA
+        "FECHA": acta.fecha_acta ? formatDateString(acta.fecha_acta, "dd/mm/yyyy") : "",
+        "SEDE": acta.sede_nombre || "SIN SEDE",
+        "ACTA": acta.numero_acta || "",
+        "CONSECUTIVO": acta.consecutivo || "",
+        "PESO ACTA (KG)": "0.00",
+        "CÓDIGO CENTRO DE COSTOS": acta.centro_costo_codigo || "",
+        "NOMBRE CENTRO DE COSTOS": acta.centro_costo_nombre || "",
+        "CLASE DE MOVIMIENTO": acta.clase_movimiento || "SIN CLASE",
+        "ÁREA": acta.subarea_nombre || "SIN ÁREA",
+        "TIPO DE PRODUCTO": "SIN RESIDUOS",
+        "PESO TIPO PRODUCTO (KG)": "0.00",
+        
+        // COLUMNAS RESTANTES EN MAYÚSCULA
+        "ESTADO": getEstadoActa(acta.tipo),
+        "NÚMERO DE INVENTARIO": acta.numero_inventario || "",
+        "OPERARIO (CÉDULA)": acta.operario_documento || "",
+        "OPERARIO (NOMBRE)": acta.operario_nombre || "",
+        "CONCILIADOR (CÉDULA)": acta.conciliador_documento || "",
+        "CONCILIADOR (NOMBRE)": acta.conciliador_nombre || "",
+        "PESO REPORTADO (KG)": "0.00",
+        "PESO CONCILIADO (KG)": "0.00",
+        "FECHA CONCILIACIÓN": acta.fecha_conciliacion
           ? formatDateString(acta.fecha_conciliacion, "dd/mm/yyyy")
           : "",
-        "Número de Residuos": 0,
-        "Novedad": acta.novedad || "",
-        "Residuo": "SIN RESIDUOS",
-        "Peso Residuo (kg)": "0.00",
-        "Motivo Residuo": "",
-        "Peso Total (kg)": "0.00",
+        "NÚMERO DE RESIDUOS": 0,
+        "NOVEDAD": acta.novedad || "",
+        "MOTIVO RESIDUO": "",
+        "PESO TOTAL (KG)": "0.00",
       }];
     }
 
     // Para cada residuo, crear una fila
     return acta.residuos.map((residuo: any, index: number) => {
       const pesoResiduo = Number(residuo.peso_conciliado ?? residuo.peso_reportado ?? 0);
+      const pesoTotalResiduos = pesoTotalConciliado;
       
       return {
-        "Número de Acta": acta.numero_acta || "",
-        "Fecha": acta.fecha_acta ? formatDateString(acta.fecha_acta, "dd/mm/yyyy") : "",
-        "Estado": getEstadoActa(acta.tipo),
-        "Sede": acta.sede_nombre || "Sin sede",
-        "Subárea": acta.subarea_nombre || "Sin subárea",
-        "Código Centro de Costo": acta.centro_costo_codigo || "",
-        "Nombre Centro de Costo": acta.centro_costo_nombre || "",
-        "Clase de Movimiento": acta.clase_movimiento || "Sin clase",
-        "Consecutivo": acta.consecutivo || "",
-        "Número de Inventario": acta.numero_inventario || "",
-        "Operario (Cédula)": acta.operario_documento || "",
-        "Operario (Nombre)": acta.operario_nombre || "",
-        "Conciliador (Cédula)": acta.conciliador_documento || "",
-        "Conciliador (Nombre)": acta.conciliador_nombre || "",
-        "Peso Reportado (kg)": pesoTotalReportado.toFixed(2),
-        "Peso Conciliado (kg)": pesoTotalConciliado.toFixed(2),
-        "Fecha Conciliación": acta.fecha_conciliacion
+        // ORDEN CORREGIDO SEGÚN LO SOLICITADO - TODOS EN MAYÚSCULA
+        "FECHA": acta.fecha_acta ? formatDateString(acta.fecha_acta, "dd/mm/yyyy") : "",
+        "SEDE": acta.sede_nombre || "SIN SEDE",
+        "ACTA": acta.numero_acta || "",
+        "CONSECUTIVO": acta.consecutivo || "",
+        "PESO ACTA (KG)": pesoTotalResiduos.toFixed(2),
+        "CÓDIGO CENTRO DE COSTOS": acta.centro_costo_codigo || "",
+        "NOMBRE CENTRO DE COSTOS": acta.centro_costo_nombre || "",
+        "CLASE DE MOVIMIENTO": acta.clase_movimiento || "SIN CLASE",
+        "ÁREA": acta.subarea_nombre || "SIN ÁREA",
+        "TIPO DE PRODUCTO": residuo.residuo_nombre || `RESIDUO ${index + 1}`,
+        "PESO TIPO PRODUCTO (KG)": pesoResiduo.toFixed(2),
+        
+        // COLUMNAS RESTANTES EN MAYÚSCULA
+        "ESTADO": getEstadoActa(acta.tipo),
+        "NÚMERO DE INVENTARIO": acta.numero_inventario || "",
+        "OPERARIO (CÉDULA)": acta.operario_documento || "",
+        "OPERARIO (NOMBRE)": acta.operario_nombre || "",
+        "CONCILIADOR (CÉDULA)": acta.conciliador_documento || "",
+        "CONCILIADOR (NOMBRE)": acta.conciliador_nombre || "",
+        "PESO REPORTADO (KG)": pesoTotalReportado.toFixed(2),
+        "PESO CONCILIADO (KG)": pesoTotalConciliado.toFixed(2),
+        "FECHA CONCILIACIÓN": acta.fecha_conciliacion
           ? formatDateString(acta.fecha_conciliacion, "dd/mm/yyyy")
           : "",
-        "Número de Residuos": acta.residuos.length,
-        "Novedad": acta.novedad || "",
-        "Residuo": residuo.residuo_nombre || `Residuo ${index + 1}`,
-        "Peso Residuo (kg)": pesoResiduo.toFixed(2),
-        "Motivo Residuo": residuo.motivo || "",
-        "Peso Total (kg)": pesoTotalConciliado.toFixed(2),
+        "NÚMERO DE RESIDUOS": acta.residuos.length,
+        "NOVEDAD": acta.novedad || "",
+        "MOTIVO RESIDUO": residuo.motivo || "",
+        "PESO TOTAL (KG)": pesoTotalResiduos.toFixed(2),
       };
     });
   });
 
-  exportToExcel(datosParaExcel, `${tipo}_detalladas`, {
-    sheetName: "Actas Detalladas",
+  // Llamar a la función exportToExcel SIN colores
+  exportToExcel(datosParaExcel, `${tipo.toUpperCase()}_DETALLADAS`, {
+    sheetName: "ACTAS DETALLADAS",
     showFilter: true,
     autoSizeColumns: true,
     dateFormat: "dd/mm/yyyy"
